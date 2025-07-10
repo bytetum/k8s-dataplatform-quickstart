@@ -1,32 +1,26 @@
-using Pulumi;
-using Pulumi.Kubernetes.ApiExtensions;
-using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
-using System.Collections.Generic;
-using Pulumi.Kubernetes;
-using Pulumi.Kubernetes.ApiExtensions.V1;
-using Pulumi.Kubernetes.Types.Inputs.ApiExtensions.V1;
-using Pulumi.Kubernetes.Yaml;
 using Kubernetes = Pulumi.Kubernetes;
 
 namespace infrastructure.Cluster;
 using Pulumi;
 using Pulumi.Kubernetes.Core.V1;
-using Pulumi.Kubernetes.Helm.V4;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 using System.Collections.Generic;
-using System.IO;
+
 public class Flink : ComponentResource
 {
-    public Flink(CertManager certManager) : base("flink-installation", "flink-installation")
+    public Flink(CertManager certManager, Kubernetes.Provider? provider = null) : base("flink-installation", "flink-installation")
     {
         var config = new Config();
 
         var ns = new Namespace("ns-flink", new()
         {
-            Metadata = new Pulumi.Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
+            Metadata = new ObjectMetaArgs
             {
                 Name = "ns-flink"
             }
+        }, new CustomResourceOptions
+        {
+            Provider = provider
         });
 
 
@@ -34,14 +28,15 @@ public class Flink : ComponentResource
         {
             Namespace = ns.Metadata.Apply(metadata => metadata.Name),
             Chart = "flink-kubernetes-operator",
-            Version = "1.12.0",
+            Version = "1.12.1",
             RepositoryOpts = new Pulumi.Kubernetes.Types.Inputs.Helm.V4.RepositoryOptsArgs
             {
-                Repo = "https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.0/",
+                Repo = "https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/",
             },
-        }, new()
+        }, new ComponentResourceOptions
         {
-            DependsOn = certManager
+            DependsOn = certManager,
+            Provider = provider
         });
         
         var flinkDeployment = new Kubernetes.ApiExtensions.CustomResource("flink-deployment", new FlinkDeploymentArgs()
@@ -84,7 +79,10 @@ public class Flink : ComponentResource
                     ["state"] = "running"
                 }
             }
-        }, new CustomResourceOptions());
+        }, new CustomResourceOptions
+        {
+            Provider = provider
+        });
         
     }
 

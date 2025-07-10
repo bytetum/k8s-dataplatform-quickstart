@@ -8,13 +8,16 @@ using Pulumi.Kubernetes.Core.V1;
 using System.Collections.Generic;
 public class CertManager : ComponentResource
 {
-    public CertManager() : base("cert-manager-installation", "cert-manager-installation")
+    public CertManager(Kubernetes.Provider? provider = null) : base("cert-manager-installation", "cert-manager-installation")
     {
         var config = new Config();
 
         var certManagerCrds = new ConfigFile("cert-manager-crds", new ConfigFileArgs
         {
             File = "https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.crds.yaml"
+        }, new ComponentResourceOptions
+        {
+            Provider = provider
         });
 
         var ns = new Namespace("ns-cert-manager", new()
@@ -23,6 +26,9 @@ public class CertManager : ComponentResource
             {
                 Name = "ns-cert-manager"
             }
+        }, new CustomResourceOptions
+        {
+            Provider = provider
         });
         
         var certManager = new Kubernetes.Helm.V4.Chart("cert-manager", new()
@@ -34,9 +40,10 @@ public class CertManager : ComponentResource
             {
                 Repo = "https://charts.jetstack.io",
             }
-        },  new()
+        },  new ComponentResourceOptions
         {
-            DependsOn = new List<Pulumi.Resource> { certManagerCrds, ns }
+            DependsOn = new List<Pulumi.Resource> { certManagerCrds, ns },
+            Provider = provider
         });
     }
 }
