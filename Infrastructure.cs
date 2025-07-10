@@ -11,8 +11,7 @@ internal class Infrastructure : Stack
     {
         var k8sProvider = new Kubernetes.Provider("k8s-provider", new()
         {
-            // Use the current kubeconfig context
-            Context = "kind-kind"
+            // Use the current kubectl context (default)
         });
 
         var certManager = new CertManager(k8sProvider);
