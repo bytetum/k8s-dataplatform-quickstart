@@ -6,6 +6,8 @@ using Kubernetes.Core.V1;
 using Kubernetes.Types.Inputs.Meta.V1;
 using Kubernetes.Types.Inputs.Core.V1;
 using System.Collections.Generic;
+using Pulumi.Kubernetes.Types.Inputs.Apps.V1;
+using Pulumi.Kubernetes.Types.Inputs.Storage.V1;
 
 public class Flink : ComponentResource
 {
@@ -20,7 +22,59 @@ public class Flink : ComponentResource
             }
         }, new CustomResourceOptions
         {
-            Provider = provider
+            Provider = provider,
+        });
+        // Create a persistent volume for Flink data
+        var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink-pv"
+            },
+            Spec = new PersistentVolumeSpecArgs
+            {
+                StorageClassName = "standard",
+                Capacity = new Dictionary<string, string>
+                {
+                    { "storage", "10Gi" }
+                },
+                AccessModes = new[] { "ReadWriteMany" },
+                PersistentVolumeReclaimPolicy = "Retain",
+                HostPath = new HostPathVolumeSourceArgs
+                {
+                    Path = "/tmp/flink",
+                    Type = "DirectoryOrCreate"
+                }
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+        });
+        // Create a persistent volume claim for Flink data
+        var flinkPvc = new PersistentVolumeClaim("flink-pvc", new PersistentVolumeClaimArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink-pvc",
+                Namespace = ns.Metadata.Apply(metadata => metadata.Name)
+            },
+            Spec = new PersistentVolumeClaimSpecArgs
+            {
+                StorageClassName = "standard",
+                AccessModes = new[] { "ReadWriteMany" },
+                Resources = new VolumeResourceRequirementsArgs
+                {
+                    Requests = new Dictionary<string, string>
+                    {
+                        { "storage", "10Gi" }
+                    }
+                },
+                VolumeName = flinkPv.Metadata.Apply(metadata => metadata.Name)
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            DependsOn = new[] { flinkPv }
         });
         
         var flinkOperator = new Pulumi.Kubernetes.Helm.V3.Chart("flink-operator", new ChartArgs()
@@ -42,16 +96,20 @@ public class Flink : ComponentResource
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = "basic-example",
+                Name = "basic-checkpoint-ha-example",
                 Namespace = "ns-flink",
             },
             Spec = new Dictionary<string, object>
             {
-                ["image"] = "flink:1.16",
-                ["flinkVersion"] = "v1_16",
+                ["image"] = "flink:1.20",
+                ["flinkVersion"] = "v1_20",
                 ["flinkConfiguration"] = new Dictionary<string, object>
                 {
-                    ["taskmanager.numberOfTaskSlots"] = "2"
+                    ["taskmanager.numberOfTaskSlots"] = "2",
+                    ["state.savepoints.dir"] = "file:///flink-data/savepoints",
+                    ["state.checkpoints.dir"] = "file:///flink-data/checkpoints",
+                    ["high-availability"] = "org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory",
+                    ["high-availability.storageDir"] = "file:///flink-data/ha"
                 },
                 ["serviceAccount"] = "flink",
                 ["jobManager"] = new Dictionary<string, object>
@@ -70,17 +128,50 @@ public class Flink : ComponentResource
                         ["cpu"] = 1
                     }
                 },
+                ["podTemplate"] = new Dictionary<string, object>
+                {
+                    ["spec"] = new Dictionary<string, object>
+                    {
+                        ["containers"] = new List<Dictionary<string, object>>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["name"] = "flink-main-container",
+                                ["volumeMounts"] = new List<Dictionary<string, object>>
+                                {
+                                    new Dictionary<string, object>
+                                    {
+                                        ["mountPath"] = "/flink-data",
+                                        ["name"] = "flink-volume"
+                                    }
+                                }
+                            }
+                        },
+                        ["volumes"] = new List<Dictionary<string, object>>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["name"] = "flink-volume",
+                                ["persistentVolumeClaim"] = new Dictionary<string, object>
+                                {
+                                    ["claimName"] = flinkPvc.Metadata.Apply(metadata => metadata.Name)
+                                }
+                            }
+                        }
+                    }
+                },
                 ["job"] = new Dictionary<string, object>
                 {
                     ["jarURI"] = "local:///opt/flink/examples/streaming/StateMachineExample.jar",
                     ["parallelism"] = 2,
-                    ["upgradeMode"] = "stateless",
+                    ["upgradeMode"] = "last-state",
                     ["state"] = "running"
                 }
             }
         }, new CustomResourceOptions
         {
-            Provider = provider
+            Provider = provider,
+            DependsOn = new List<Pulumi.Resource> { flinkPvc }
         });
         
     }
