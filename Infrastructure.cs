@@ -16,6 +16,7 @@ internal class Infrastructure : Stack
 
         var certManager = new CertManager(k8sProvider);
         var flink = new Flink(certManager, k8sProvider);
+        var flinkDeployment = new FlinkDeployment(flink, k8sProvider);
     }
 }
 

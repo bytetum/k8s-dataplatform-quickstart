@@ -1,29 +1,17 @@
-using Pulumi.Kubernetes.Helm;
-using Kubernetes = Pulumi.Kubernetes;
-namespace infrastructure.Cluster;
-using Pulumi;
-using Kubernetes.Core.V1;
-using Kubernetes.Types.Inputs.Meta.V1;
-using Kubernetes.Types.Inputs.Core.V1;
 using System.Collections.Generic;
-using Pulumi.Kubernetes.Types.Inputs.Apps.V1;
-using Pulumi.Kubernetes.Types.Inputs.Storage.V1;
+using Pulumi;
+using Pulumi.Kubernetes.Core.V1;
+using Pulumi.Kubernetes.Helm.V3;
+using Pulumi.Kubernetes.Types.Inputs.Core.V1;
+using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
+using Kubernetes = Pulumi.Kubernetes;
 
-public class Flink : ComponentResource
+namespace infrastructure.Cluster;
+
+public class FlinkDeployment : ComponentResource
 {
-    public Flink(CertManager certManager,Kubernetes.Provider? provider = null) : base("flink-installation", "flink-installation")
+    public FlinkDeployment(Flink flinkOperator, Kubernetes.Provider? provider = null) : base("flink-deployment", "flink-deployment")
     {
-
-        var ns = new Namespace("ns-flink", new()
-        {
-            Metadata = new ObjectMetaArgs
-            {
-                Name = "ns-flink"
-            }
-        }, new CustomResourceOptions
-        {
-            Provider = provider,
-        });
         // Create a persistent volume for Flink data
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
         {
@@ -56,7 +44,7 @@ public class Flink : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "flink-pvc",
-                Namespace = ns.Metadata.Apply(metadata => metadata.Name)
+                Namespace = Constants.Namespace
             },
             Spec = new PersistentVolumeClaimSpecArgs
             {
@@ -76,50 +64,7 @@ public class Flink : ComponentResource
             Provider = provider,
             DependsOn = new[] { flinkPv }
         });
-        
-        var flinkOperator = new Pulumi.Kubernetes.Helm.V3.Chart("flink-operator", new ChartArgs()
-        {
-            Namespace = ns.Metadata.Apply(metadata => metadata.Name),
-            Chart = "flink-kubernetes-operator",
-            Version = "1.12.1",
-            FetchOptions = new ChartFetchArgs()
-            {
-                Repo = "https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/",
-            },
-        }, new ComponentResourceOptions
-        {
-            DependsOn = new List<Pulumi.Resource> { certManager },
-            Provider = provider
-        });
-
-        // Create a ConfigMap for logging configuration
-        var loggingConfigMap = new ConfigMap("flink-logging-config", new ConfigMapArgs
-        {
-            Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
-            {
-                Name = "flink-logging-config",
-                Namespace = ns.Metadata.Apply(metadata => metadata.Name)
-            },
-            Data = new InputMap<string>
-            {
-                { "log4j-console.properties", @"
-        # Set root logger level to DEBUG and its only appender to A1.
-        rootLogger.level = INFO
-        rootLogger.appenderRef.console.ref = ConsoleAppender
-
-        # A1 is set to be a ConsoleAppender.
-        appender.console.name = ConsoleAppender
-        appender.console.type = CONSOLE
-        appender.console.layout.type = PatternLayout
-        appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
-        " }
-            }
-        }, new CustomResourceOptions
-        {
-            Provider = provider
-        });
-        
-        var flinkDeployment = new Kubernetes.ApiExtensions.CustomResource("flink-deployment", new FlinkDeploymentArgs()
+         var flinkDeployment = new Kubernetes.ApiExtensions.CustomResource("flink-deployment", new FlinkDeploymentArgs()
         {
             Metadata = new ObjectMetaArgs
             {
@@ -166,28 +111,6 @@ public class Flink : ComponentResource
                 {
                     ["spec"] = new Dictionary<string, object>
                     {
-                        ["initContainers"] = new List<Dictionary<string, object>>
-                        {
-                            new Dictionary<string, object>
-                            {
-                                ["name"] = "init-fs",
-                                ["image"] = "busybox:1.28",
-                                ["command"] = new List<string> { "sh", "-c", "mkdir -p /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod -R 777 /flink-data" },
-                                ["volumeMounts"] = new List<Dictionary<string, object>>
-                                {
-                                    new Dictionary<string, object>
-                                    {
-                                        ["mountPath"] = "/flink-data",
-                                        ["name"] = "flink-volume"
-                                    }
-                                },
-                                ["securityContext"] = new Dictionary<string, object>
-                                {
-                                    ["runAsUser"] = 0,  // Run as root
-                                    ["privileged"] = true
-                                }
-                            }
-                        },
                         ["containers"] = new List<Dictionary<string, object>>
                         {
                             new Dictionary<string, object>
@@ -213,11 +136,6 @@ public class Flink : ComponentResource
                                     ["claimName"] = flinkPvc.Metadata.Apply(metadata => metadata.Name)
                                 }
                             }
-                        },
-                        ["securityContext"] = new Dictionary<string, object>
-                        {
-                            ["fsGroup"] = 9999
-                            // Let containers decide their own user/group
                         }
                     }
                 },
@@ -232,12 +150,11 @@ public class Flink : ComponentResource
         }, new CustomResourceOptions
         {
             Provider = provider,
-            DependsOn = new List<Pulumi.Resource> { flinkPvc }
+            DependsOn = new List<Pulumi.Resource> { flinkPvc, flinkOperator }
         });
-        
     }
-
-    internal class FlinkDeploymentArgs : Kubernetes.ApiExtensions.CustomResourceArgs
+    
+    private class FlinkDeploymentArgs : Kubernetes.ApiExtensions.CustomResourceArgs
     {
         public FlinkDeploymentArgs() : base("flink.apache.org/v1beta1", "FlinkDeployment")
         {
