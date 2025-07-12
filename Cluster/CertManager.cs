@@ -10,7 +10,6 @@ public class CertManager : ComponentResource
 {
     public CertManager(Kubernetes.Provider? provider = null) : base("cert-manager-installation", "cert-manager-installation")
     {
-        var config = new Config();
 
         var certManagerCrds = new ConfigFile("cert-manager-crds", new ConfigFileArgs
         {
