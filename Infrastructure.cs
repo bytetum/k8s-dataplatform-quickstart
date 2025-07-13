@@ -9,6 +9,7 @@ internal class Infrastructure : Stack
     public Infrastructure()
         : base()
     {
+        
         var k8sProvider = new Kubernetes.Provider("k8s-provider", new()
         {
             // Use the current kubectl context (default)
