@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: pulumi
+  name: flink-operator-serving-cert
+  namespace: ns-flink
+spec:
+  commonName: FlinkDeployment Validator
+  dnsNames:
+  - flink-operator-webhook-service.ns-flink.svc
+  - flink-operator-webhook-service.ns-flink.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: flink-operator-selfsigned-issuer
+  keystores:
+    pkcs12:
+      create: true
+      passwordSecretRef:
+        key: password
+        name: flink-operator-webhook-secret
+  secretName: webhook-server-cert

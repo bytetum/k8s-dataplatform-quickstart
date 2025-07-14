@@ -1,0 +1,7 @@
+name: gitops
+description: gitops
+runtime: dotnet
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: kubernetes-csharp

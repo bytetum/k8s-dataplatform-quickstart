@@ -1,0 +1,7 @@
+name: Infrastructure
+description: cluster infra
+runtime: dotnet
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: kubernetes-csharp

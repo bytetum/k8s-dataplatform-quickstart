@@ -1,7 +1,0 @@
-name: pulumi-demo
-description: starting pulumi and wanted to deploy it locally
-runtime: dotnet
-config:
-  pulumi:tags:
-    value:
-      pulumi:template: kubernetes-csharp

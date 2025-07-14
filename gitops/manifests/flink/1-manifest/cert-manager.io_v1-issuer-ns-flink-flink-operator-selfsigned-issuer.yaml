@@ -1,0 +1,9 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: pulumi
+  name: flink-operator-selfsigned-issuer
+  namespace: ns-flink
+spec:
+  selfSigned: {}

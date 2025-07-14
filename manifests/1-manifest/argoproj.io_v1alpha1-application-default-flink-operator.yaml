@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: flink-operator
+  namespace: default
+spec:
+  destination:
+    namespace: flink-operator
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    directory:
+      recurse: true
+    path: gitops/manifests/flink-operator
+    repoURL: git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions: []
