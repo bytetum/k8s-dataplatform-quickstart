@@ -1,5 +1,6 @@
 using Pulumi.Kubernetes.Helm;
 using Pulumi.Kubernetes.Types.Inputs.Helm.V4;
+using ChartArgs = Pulumi.Kubernetes.Helm.ChartArgs;
 using Kubernetes = Pulumi.Kubernetes;
 
 namespace infrastructure.Cluster;
@@ -29,12 +30,12 @@ public class Flink : ComponentResource
         });
 
 
-        var flinkOperator = new Pulumi.Kubernetes.Helm.V4.Chart("flink-operator", new ()
+        var flinkOperator = new Pulumi.Kubernetes.Helm.V3.Chart("flink-operator", new ChartArgs()
         {
             Namespace = ns.Metadata.Apply(metadata => metadata.Name),
             Chart = "flink-kubernetes-operator",
             Version = "1.12.1",
-            RepositoryOpts = new RepositoryOptsArgs()
+            FetchOptions = new ChartFetchArgs()
             {
                 Repo = "https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/",
             },

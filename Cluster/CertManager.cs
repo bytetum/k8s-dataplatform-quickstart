@@ -1,3 +1,4 @@
+using Pulumi.Kubernetes.Helm;
 using Pulumi.Kubernetes.Types.Inputs.Yaml.V2;
 using Pulumi.Kubernetes.Yaml.V2;
 
@@ -11,14 +12,6 @@ public class CertManager : ComponentResource
     public CertManager(Kubernetes.Provider? provider = null) : base("cert-manager-installation", "cert-manager-installation")
     {
 
-        var certManagerCrds = new ConfigFile("cert-manager-crds", new ConfigFileArgs
-        {
-            File = "https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.crds.yaml"
-        }, new ComponentResourceOptions
-        {
-            Provider = provider
-        });
-
         var ns = new Namespace("ns-cert-manager", new()
         {
             Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
@@ -30,18 +23,22 @@ public class CertManager : ComponentResource
             Provider = provider
         });
         
-        var certManager = new Kubernetes.Helm.V4.Chart("cert-manager", new()
+        var certManager = new Kubernetes.Helm.V3.Chart("cert-manager", new ChartArgs()
         {
             Namespace = ns.Metadata.Apply(metadata => metadata.Name),
             Chart = "cert-manager",
             Version = "1.18.2",
-            RepositoryOpts = new Kubernetes.Types.Inputs.Helm.V4.RepositoryOptsArgs
+            FetchOptions = new ChartFetchArgs()
             {
                 Repo = "https://charts.jetstack.io",
+            },
+            Values = new Dictionary<string, object>
+            {
+                ["installCRDs"] = true
             }
         },  new ComponentResourceOptions
         {
-            DependsOn = new List<Pulumi.Resource> { certManagerCrds, ns },
+            DependsOn = new List<Pulumi.Resource> { ns },
             Provider = provider
         });
     }

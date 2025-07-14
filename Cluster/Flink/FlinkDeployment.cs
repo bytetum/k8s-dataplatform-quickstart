@@ -10,7 +10,8 @@ namespace infrastructure.Cluster;
 
 public class FlinkDeployment : ComponentResource
 {
-    public FlinkDeployment(Flink flinkOperator, Kubernetes.Provider? provider = null) : base("flink-deployment", "flink-deployment")
+    public FlinkDeployment(Flink flinkOperator, Kubernetes.Provider? provider = null) : base("flink-deployment",
+        "flink-deployment")
     {
         // Create a persistent volume for Flink data
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
@@ -64,7 +65,7 @@ public class FlinkDeployment : ComponentResource
             Provider = provider,
             DependsOn = new[] { flinkPv }
         });
-         var flinkDeployment = new Kubernetes.ApiExtensions.CustomResource("flink-deployment", new FlinkDeploymentArgs()
+        var flinkDeployment = new Kubernetes.ApiExtensions.CustomResource("flink-deployment", new FlinkDeploymentArgs()
         {
             Metadata = new ObjectMetaArgs
             {
@@ -109,6 +110,32 @@ public class FlinkDeployment : ComponentResource
                 {
                     ["spec"] = new Dictionary<string, object>
                     {
+                        ["initContainers"] = new List<Dictionary<string, object>>
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["name"] = "init-fs",
+                                ["image"] = "busybox:1.28",
+                                ["command"] = new List<string>
+                                {
+                                    "sh", "-c",
+                                    "mkdir -p /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod -R 777 /flink-data"
+                                },
+                                ["volumeMounts"] = new List<Dictionary<string, object>>
+                                {
+                                    new Dictionary<string, object>
+                                    {
+                                        ["mountPath"] = "/flink-data",
+                                        ["name"] = "flink-volume"
+                                    }
+                                },
+                                ["securityContext"] = new Dictionary<string, object>
+                                {
+                                    ["runAsUser"] = 0, // Run as root
+                                    ["privileged"] = true
+                                }
+                            }
+                        },
                         ["containers"] = new List<Dictionary<string, object>>
                         {
                             new Dictionary<string, object>
@@ -151,14 +178,13 @@ public class FlinkDeployment : ComponentResource
             DependsOn = new List<Pulumi.Resource> { flinkPvc, flinkOperator }
         });
     }
-    
+
     private class FlinkDeploymentArgs : Kubernetes.ApiExtensions.CustomResourceArgs
     {
         public FlinkDeploymentArgs() : base("flink.apache.org/v1beta1", "FlinkDeployment")
         {
-            
         }
-        [Input("spec")]
-        public Dictionary<string, object>? Spec { get; set; }
+
+        [Input("spec")] public Dictionary<string, object>? Spec { get; set; }
     }
 }

@@ -11,4 +11,8 @@
     <PackageReference Include="Pulumi.Kubernetes" Version="4.*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="manifests\" />
+  </ItemGroup>
+
 </Project>
