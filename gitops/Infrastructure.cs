@@ -1,4 +1,5 @@
-﻿using infrastructure.Cluster;
+﻿using gitops.Cluster;
+using gitops.Cluster.flink;
 using Pulumi;
 using Kubernetes = Pulumi.Kubernetes;
 
@@ -13,13 +14,11 @@ internal class Infrastructure : ComponentResource
         var k8sProviderCert = new Kubernetes.Provider("k8s-provider-cert", new()
         {
             RenderYamlToDirectory = "manifests/cert-manager",
-            EnableServerSideApply = false,
         });
         
         var k8sProviderFlink = new Kubernetes.Provider("k8s-provider-flink", new()
         {
             RenderYamlToDirectory = "manifests/flink",
-            EnableServerSideApply = false,
             
             // Use the current kubectl context (default)
         });
@@ -30,10 +29,9 @@ internal class Infrastructure : ComponentResource
             EnableServerSideApply = false,
             // Use the current kubectl context (default)
         });
-
+        
+        var flinkDeployment = new FlinkDeployment(k8sProviderDeployment);
         var certManager = new CertManager(k8sProviderCert);
-        var flink = new Flink(certManager, k8sProviderFlink);
-        var flinkDeployment = new FlinkDeployment(flink, k8sProviderDeployment);
     }
 }
 

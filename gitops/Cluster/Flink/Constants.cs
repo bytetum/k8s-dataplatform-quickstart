@@ -1,4 +1,4 @@
-namespace infrastructure.Cluster;
+namespace gitops.Cluster.flink;
 
 public class Constants
 {

@@ -61,7 +61,7 @@ internal class ArgoCD : ComponentResource
             Type = "Opaque",
             Data =
             {
-                { "url", ToBase64("git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence") },
+                { "url", ToBase64("git@github.com:bytetum/k8s-dataplatform-quickstart.git") },
                 { "sshPrivateKey",  config.RequireSecret("argo_secret_key").Apply(ToBase64) },
                 { "type", ToBase64("git") }
             },
@@ -85,7 +85,7 @@ internal class ArgoCD : ComponentResource
             Data =
             {
                 { "name", ToBase64("essence") },
-                { "url", ToBase64("git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence") },
+                { "url", ToBase64("git@github.com:bytetum/k8s-dataplatform-quickstart.git") },
                 { "insecure", ToBase64("true") },
                 { "type", ToBase64("git") },
             },
@@ -115,7 +115,7 @@ internal class ArgoCD : ComponentResource
                 Source = new ArgoApplicationSourceArgs
                 {
                     Path = "gitops/manifests/argocd",
-                    RepoUrl = "git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence",
+                    RepoUrl = "git@github.com:bytetum/k8s-dataplatform-quickstart.git",
                     Directory =
                     {
                         { "recurse", true }

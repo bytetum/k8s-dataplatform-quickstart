@@ -6,11 +6,11 @@ using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 using Kubernetes = Pulumi.Kubernetes;
 
-namespace infrastructure.Cluster;
+namespace gitops.Cluster.flink;
 
 public class FlinkDeployment : ComponentResource
 {
-    public FlinkDeployment(Flink flinkOperator, Kubernetes.Provider? provider = null) : base("flink-deployment",
+    public FlinkDeployment(Kubernetes.Provider? provider = null) : base("flink-deployment",
         "flink-deployment")
     {
         // Create a persistent volume for Flink data
@@ -175,7 +175,7 @@ public class FlinkDeployment : ComponentResource
         }, new CustomResourceOptions
         {
             Provider = provider,
-            DependsOn = new List<Pulumi.Resource> { flinkPvc, flinkOperator }
+            DependsOn = new List<Pulumi.Resource> { flinkPvc }
         });
     }
 
