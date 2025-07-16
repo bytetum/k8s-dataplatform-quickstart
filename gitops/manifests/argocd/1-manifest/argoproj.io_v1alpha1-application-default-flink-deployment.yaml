@@ -14,7 +14,7 @@ spec:
     directory:
       recurse: true
     path: gitops/manifests/flink-deployment
-    repoURL: https://github.com/bytetum/k8s-dataplatform-quickstart.git
+    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:
     automated:
