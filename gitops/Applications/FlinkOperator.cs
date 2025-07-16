@@ -8,7 +8,6 @@ internal class FlinkOperator
             .Type(ApplicationType.Helm)
             .SyncWave(1)
             .RepoUrl("https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/")
-            .Branch("1.12.1")
             .Build();
     }
 }

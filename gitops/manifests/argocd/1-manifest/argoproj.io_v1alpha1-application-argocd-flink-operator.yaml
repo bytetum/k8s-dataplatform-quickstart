@@ -16,7 +16,7 @@ spec:
     path: ""
     repoURL: https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/
     skipCrds: false
-    targetRevision: 1.12.1
+    targetRevision: HEAD
   syncPolicy:
     automated:
       prune: true
