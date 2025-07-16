@@ -14,7 +14,7 @@ spec:
     directory:
       recurse: true
     path: gitops/manifests/cert-manager
-    repoURL: git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence
+    repoURL: https://github.com/bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:
     automated:
