@@ -76,7 +76,7 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
             },
             ApplicationType.Helm => new ArgoHelmApplicationSourceArgs
             {
-                Chart = name,
+                Chart = "",
                 RepoUrl = repoURL,
                 Branch = branch,
                 SkipCrds = false,
