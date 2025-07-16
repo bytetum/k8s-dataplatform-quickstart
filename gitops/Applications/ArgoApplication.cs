@@ -69,34 +69,25 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
 
     public void Build()
     {
-        var source = applicationType switch
+        var sourceArgs = new ArgoApplicationSourceArgs()
         {
-            ApplicationType.Yaml => new ArgoApplicationSourceArgs
-            {
-                Path = path,
-                RepoUrl = repoURL,
-                Branch = branch,
-                Directory =
-                {
-                    { "recurse", true }
-                }
-            },
-            ApplicationType.Helm => new ArgoHelmApplicationSourceArgs
-            {
-                Chart = name,
-                RepoUrl = repoURL,
-                Branch = branch,
-                SkipCrds = false,
-            },
-            ApplicationType.Chart => new ArgoHelmApplicationSourceArgs
-            {
-                Chart = name,
-                RepoUrl = repoURL,
-                Helm = helmValues,
-                Branch = branch,
-                SkipCrds = false,
-            }
+            RepoUrl = repoURL,
+            TargetRevision = branch,
         };
+
+        if (applicationType == ApplicationType.Helm)
+        {
+            sourceArgs.Chart = name; // Assumes chart name is the same as the app name
+            if (!string.IsNullOrEmpty(helmValues))
+            {
+                sourceArgs.Helm = new ArgoHelmArgs { Values = helmValues };
+            }
+        }
+        else // Yaml type
+        {
+            sourceArgs.Path = path;
+            sourceArgs.Directory = new InputMap<bool> { { "recurse", true } };
+        }
 
         var syncPolicy = applicationType switch
         {
@@ -145,7 +136,7 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
             Spec = new ArgoApplicationSpecArgs
             {
                 Project = project,
-                Source = source,
+                Source = sourceArgs,
                 Destination = Destination,
                 SyncPolicy = syncPolicy,
             }
@@ -193,20 +184,20 @@ internal class ArgoApplicationSyncPolicyArgs : ResourceArgs
 
 internal class ArgoApplicationSourceArgs : ResourceArgs
 {
-    [Input("path")] public Input<string> Path { get; set; } = "";
-
     [Input("repoURL")] public required Input<string> RepoUrl { get; set; }
+    [Input("targetRevision")] public required Input<string> TargetRevision { get; set; }
 
-    [Input("targetRevision")] public Input<string> Branch = "HEAD";
+    // Helm-specific fields
+    [Input("chart")] public Input<string>? Chart { get; set; }
+    [Input("helm")] public Input<ArgoHelmArgs>? Helm { get; set; }
 
-    [Input("directory")] public InputMap<bool> Directory { get; set; } = [];
+    // Git-specific fields
+    [Input("path")] public Input<string>? Path { get; set; }
+    [Input("directory")] public InputMap<bool>? Directory { get; set; }
 }
 
-internal class ArgoHelmApplicationSourceArgs : ArgoApplicationSourceArgs
+internal class ArgoHelmArgs : ResourceArgs
 {
-    [Input("helm")] public Input<string>? Helm { get; set; }
-    
-    [Input("chart")] public required Input<string> Chart { get; set; }
-
-    [Input("skipCrds")] public required Input<bool> SkipCrds { get; set; }
+    [Input("values")]
+    public Input<string>? Values { get; set; }
 }

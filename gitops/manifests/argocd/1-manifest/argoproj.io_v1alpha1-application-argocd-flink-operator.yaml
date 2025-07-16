@@ -11,12 +11,10 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    chart: flink-operator
-    directory: {}
-    helm: https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/
-    path: ""
+    directory:
+      recurse: true
+    path: gitops/manifests/flink-operator
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
-    skipCrds: false
     targetRevision: HEAD
   syncPolicy:
     automated:
