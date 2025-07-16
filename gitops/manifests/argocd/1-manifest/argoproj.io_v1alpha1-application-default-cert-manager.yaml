@@ -1,10 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
   name: cert-manager
-  namespace: default
 spec:
   destination:
     namespace: cert-manager
@@ -14,7 +11,7 @@ spec:
     directory:
       recurse: true
     path: gitops/manifests/cert-manager
-    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    repoURL: git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence
     targetRevision: HEAD
   syncPolicy:
     automated:
