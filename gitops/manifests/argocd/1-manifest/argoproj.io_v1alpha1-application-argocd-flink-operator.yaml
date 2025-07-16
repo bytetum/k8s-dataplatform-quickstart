@@ -3,8 +3,6 @@ kind: Application
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-  finalizers:
-  - resources-finalizer.argoproj.io
   name: flink-operator
   namespace: argocd
 spec:
@@ -14,9 +12,10 @@ spec:
   project: default
   source:
     chart: flink-operator
-    helm:
-      values: https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/
+    directory: {}
+    path: ""
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    skipCrds: false
     targetRevision: HEAD
   syncPolicy:
     automated:
