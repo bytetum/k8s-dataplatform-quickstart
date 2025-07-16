@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using argocd.applications;
 using Pulumi;
 using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Helm.V3;

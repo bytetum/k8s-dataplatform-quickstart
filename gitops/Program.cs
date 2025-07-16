@@ -5,5 +5,5 @@ using Pulumi;
 return await Deployment.RunAsync(() =>
 {
     new Infrastructure();
-    new ArgoApplications("../manifests/argocd");
+    new ArgoApplications("./manifests/argocd");
 });
