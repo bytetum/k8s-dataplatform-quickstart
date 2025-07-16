@@ -11,10 +11,8 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    directory:
-      recurse: true
-    path: gitops/manifests/flink-operator
-    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    chart: flink-operator
+    repoURL: https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/
     targetRevision: HEAD
   syncPolicy:
     automated:
