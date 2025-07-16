@@ -7,7 +7,7 @@ metadata:
   namespace: default
 spec:
   destination:
-    namespace: ns-flink
+    namespace: flink-operator
     server: https://kubernetes.default.svc
   project: default
   source:

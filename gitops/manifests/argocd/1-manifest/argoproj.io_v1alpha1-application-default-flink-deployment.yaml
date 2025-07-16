@@ -3,17 +3,17 @@ kind: Application
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
-  name: flink-deployment-example
+  name: flink-deployment
   namespace: default
 spec:
   destination:
-    namespace: flink-deployment-example
+    namespace: flink-deployment
     server: https://kubernetes.default.svc
   project: default
   source:
     directory:
       recurse: true
-    path: gitops/manifests/flink-deployment-example
+    path: gitops/manifests/flink-deployment
     repoURL: git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence
     targetRevision: HEAD
   syncPolicy:
