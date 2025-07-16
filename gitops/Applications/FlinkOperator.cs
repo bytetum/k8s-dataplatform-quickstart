@@ -6,6 +6,7 @@ internal class FlinkOperator
     {
         new ArgoApplicationBuilder("flink-operator", provider)
             .Type(ApplicationType.Helm)
+            .SyncWave(1)
             .RepoUrl("https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/")
             .Branch("1.12.1")
             .Build();
