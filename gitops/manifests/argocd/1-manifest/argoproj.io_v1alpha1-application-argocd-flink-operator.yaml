@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: flink-operator
+  namespace: argocd
+spec:
+  destination:
+    namespace: flink-operator
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: flink-operator
+    directory: {}
+    path: ""
+    repoURL: https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/
+    skipCrds: false
+    targetRevision: 1.12.1
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

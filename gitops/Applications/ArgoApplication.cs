@@ -113,6 +113,7 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
             {
                 Annotations = Annotation,
                 Name = name,
+                Namespace = "argocd",
             },
             Spec = new ArgoApplicationSpecArgs
             {

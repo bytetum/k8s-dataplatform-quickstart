@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: flink-deployment
+  namespace: argocd
+spec:
+  destination:
+    namespace: flink-deployment
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    directory:
+      recurse: true
+    path: gitops/manifests/flink-deployment
+    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions: []
