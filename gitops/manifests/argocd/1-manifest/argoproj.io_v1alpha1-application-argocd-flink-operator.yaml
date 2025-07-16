@@ -13,6 +13,7 @@ spec:
   source:
     chart: flink-operator
     directory: {}
+    helm: https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/
     path: ""
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     skipCrds: false

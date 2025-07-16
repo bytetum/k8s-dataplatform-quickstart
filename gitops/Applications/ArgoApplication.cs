@@ -91,7 +91,7 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
             ApplicationType.Chart => new ArgoHelmApplicationSourceArgs
             {
                 Chart = name,
-                RepoUrl = "",
+                RepoUrl = repoURL,
                 Helm = helmValues,
                 Branch = branch,
                 SkipCrds = false,
@@ -109,6 +109,18 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
                 },
             },
             ApplicationType.Helm => new ArgoApplicationSyncPolicyArgs
+            {
+                Automated = new InputMap<bool>
+                {
+                    { "prune", true },
+                    { "selfHeal", true },
+                },
+                SyncOptions =
+                [
+                    "CreateNamespace=true",
+                ],
+            },
+            ApplicationType.Chart => new ArgoApplicationSyncPolicyArgs
             {
                 Automated = new InputMap<bool>
                 {
