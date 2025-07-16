@@ -115,8 +115,8 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
             {
                 Automated = new InputMap<bool>
                 {
-                    { "prune", true },
-                    { "selfHeal", true },
+                    { "prune", false },
+                    { "selfHeal", false },
                 },
                 SyncOptions =
                 [
