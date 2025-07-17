@@ -12,17 +12,10 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
     private string path = $"gitops/manifests/{name}";
     private string repoURL = "git@github.com:bytetum/k8s-dataplatform-quickstart.git";
     private int syncWave = 0;
-    private string helmValues;
-    
+
     public ArgoApplicationBuilder SyncWave(int syncWave)
     {
         this.syncWave = syncWave;
-        return this;
-    }
-    
-    public ArgoApplicationBuilder HelmValues(string values)
-    {
-        this.helmValues = values;
         return this;
     }
     
@@ -69,25 +62,26 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
 
     public void Build()
     {
-        var sourceArgs = new ArgoApplicationSourceArgs()
+        var source = applicationType switch
         {
-            RepoUrl = repoURL,
-            TargetRevision = branch,
-        };
-
-        if (applicationType == ApplicationType.Helm)
-        {
-            sourceArgs.Chart = name; // Assumes chart name is the same as the app name
-            if (!string.IsNullOrEmpty(helmValues))
+            ApplicationType.Yaml => new ArgoApplicationSourceArgs
             {
-                sourceArgs.Helm = new ArgoHelmArgs { Values = helmValues };
-            }
-        }
-        else // Yaml type
-        {
-            sourceArgs.Path = path;
-            sourceArgs.Directory = new InputMap<bool> { { "recurse", true } };
-        }
+                Path = path,
+                RepoUrl = repoURL,
+                Branch = branch,
+                Directory =
+                {
+                    { "recurse", true }
+                }
+            },
+            ApplicationType.Helm => new ArgoHelmApplicationSourceArgs
+            {
+                Chart = name,
+                RepoUrl = repoURL,
+                Branch = branch,
+                SkipCrds = false,
+            },
+        };
 
         var syncPolicy = applicationType switch
         {
@@ -111,18 +105,6 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
                     "CreateNamespace=true",
                 ],
             },
-            ApplicationType.Chart => new ArgoApplicationSyncPolicyArgs
-            {
-                Automated = new InputMap<bool>
-                {
-                    { "prune", false },
-                    { "selfHeal", false },
-                },
-                SyncOptions =
-                [
-                    "CreateNamespace=true",
-                ],
-            },
         };
 
         var application = new Pulumi.Kubernetes.ApiExtensions.CustomResource(name, new ArgoApplicationArgs
@@ -136,7 +118,7 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
             Spec = new ArgoApplicationSpecArgs
             {
                 Project = project,
-                Source = sourceArgs,
+                Source = source,
                 Destination = Destination,
                 SyncPolicy = syncPolicy,
             }
@@ -150,8 +132,7 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
 enum ApplicationType
 {
     Yaml,
-    Helm,
-    Chart,
+    Helm
 }
 
 internal class ArgoApplicationArgs : Pulumi.Kubernetes.ApiExtensions.CustomResourceArgs
@@ -184,20 +165,18 @@ internal class ArgoApplicationSyncPolicyArgs : ResourceArgs
 
 internal class ArgoApplicationSourceArgs : ResourceArgs
 {
+    [Input("path")] public Input<string> Path { get; set; } = "";
+
     [Input("repoURL")] public required Input<string> RepoUrl { get; set; }
-    [Input("targetRevision")] public required Input<string> TargetRevision { get; set; }
 
-    // Helm-specific fields
-    [Input("chart")] public Input<string>? Chart { get; set; }
-    [Input("helm")] public Input<ArgoHelmArgs>? Helm { get; set; }
+    [Input("targetRevision")] public Input<string> Branch = "HEAD";
 
-    // Git-specific fields
-    [Input("path")] public Input<string>? Path { get; set; }
-    [Input("directory")] public InputMap<bool>? Directory { get; set; }
+    [Input("directory")] public InputMap<bool> Directory { get; set; } = [];
 }
 
-internal class ArgoHelmArgs : ResourceArgs
+internal class ArgoHelmApplicationSourceArgs : ArgoApplicationSourceArgs
 {
-    [Input("values")]
-    public Input<string>? Values { get; set; }
+    [Input("chart")] public required Input<string> Chart { get; set; }
+
+    [Input("skipCrds")] public required Input<bool> SkipCrds { get; set; }
 }

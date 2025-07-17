@@ -11,14 +11,15 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    directory:
-      recurse: true
-    path: gitops/manifests/flink-operator
+    chart: flink-operator
+    directory: {}
+    path: ""
     repoURL: https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/
+    skipCrds: false
     targetRevision: HEAD
   syncPolicy:
     automated:
-      prune: false
-      selfHeal: false
+      prune: true
+      selfHeal: true
     syncOptions:
     - CreateNamespace=true
