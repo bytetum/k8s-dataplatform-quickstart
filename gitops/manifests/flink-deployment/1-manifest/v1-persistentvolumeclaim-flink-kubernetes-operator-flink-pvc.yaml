@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: pulumi
   name: flink-pvc
-  namespace: ns-flink
+  namespace: flink-kubernetes-operator
 spec:
   accessModes:
   - ReadWriteMany

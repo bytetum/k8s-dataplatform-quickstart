@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: pulumi
   name: basic-checkpoint-ha-example
-  namespace: flink-kebernetes-operator
+  namespace: flink-kubernetes-operator
 spec:
   flinkConfiguration:
     env.java.opts: -verbose:gc -XX:+PrintGCDetails
