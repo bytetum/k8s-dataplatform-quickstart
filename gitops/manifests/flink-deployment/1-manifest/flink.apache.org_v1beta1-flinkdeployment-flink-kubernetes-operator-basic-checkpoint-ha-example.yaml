@@ -1,6 +1,8 @@
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkDeployment
 metadata:
+  labels:
+    app.kubernetes.io/managed-by: pulumi
   name: basic-checkpoint-ha-example
   namespace: flink-kubernetes-operator
 spec:
