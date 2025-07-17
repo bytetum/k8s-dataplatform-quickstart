@@ -71,7 +71,7 @@ public class FlinkDeployment : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "basic-checkpoint-ha-example",
-                Namespace = "ns-flink",
+                Namespace = Constants.Namespace,
             },
             Spec = new Dictionary<string, object>
             {

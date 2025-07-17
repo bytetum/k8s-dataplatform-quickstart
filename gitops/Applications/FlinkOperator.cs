@@ -4,10 +4,11 @@ internal class FlinkOperator
 {
     public FlinkOperator(Pulumi.Kubernetes.Provider provider)
     {
-        new ArgoApplicationBuilder("flink-operator", provider)
+        new ArgoApplicationBuilder("flink-kubernetes-operator", provider)
             .Type(ApplicationType.Helm)
             .SyncWave(1)
-            .RepoUrl("https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/")
+            .Branch("1.12.0")
+            .RepoUrl("https://archive.apache.org/dist/flink/flink-kubernetes-operator-1.12.0/")
             .Build();
     }
 }
