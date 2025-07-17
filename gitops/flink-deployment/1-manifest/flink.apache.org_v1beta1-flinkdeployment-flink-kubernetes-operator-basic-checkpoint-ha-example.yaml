@@ -1,0 +1,59 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: pulumi
+  name: basic-checkpoint-ha-example
+  namespace: flink-kubernetes-operator
+spec:
+  flinkConfiguration:
+    env.java.opts: -verbose:gc -XX:+PrintGCDetails
+    high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
+    high-availability.storageDir: file:///flink-data/ha
+    jobmanager.archive.fs.dir: file:///flink-data/completed-jobs
+    jobmanager.scheduler: adaptive
+    jobstore.dir: file:///flink-data/job-store
+    state.checkpoints.dir: file:///flink-data/checkpoints
+    state.savepoints.dir: file:///flink-data/savepoints
+    taskmanager.numberOfTaskSlots: "2"
+  flinkVersion: v1_20
+  image: flink:1.20
+  job:
+    jarURI: local:///opt/flink/examples/streaming/StateMachineExample.jar
+    parallelism: 2
+    state: running
+    upgradeMode: last-state
+  jobManager:
+    resource:
+      cpu: 1
+      memory: 2048m
+  podTemplate:
+    spec:
+      containers:
+      - name: flink-main-container
+        volumeMounts:
+        - mountPath: /flink-data
+          name: flink-volume
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - mkdir -p /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs
+          /flink-data/job-store && chmod -R 777 /flink-data
+        image: busybox:1.28
+        name: init-fs
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /flink-data
+          name: flink-volume
+      volumes:
+      - name: flink-volume
+        persistentVolumeClaim:
+          claimName: flink-pvc
+  serviceAccount: flink
+  taskManager:
+    resource:
+      cpu: 1
+      memory: 2048m
