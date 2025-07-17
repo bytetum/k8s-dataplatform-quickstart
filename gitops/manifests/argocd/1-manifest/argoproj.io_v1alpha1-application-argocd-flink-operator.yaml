@@ -11,7 +11,7 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    chart: flink-operator
+    chart: ""
     directory: {}
     path: ""
     repoURL: https://downloads.apache.org/flink/flink-kubernetes-operator-1.12.1/
