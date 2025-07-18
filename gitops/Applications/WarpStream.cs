@@ -8,7 +8,6 @@ internal class WarpStream
             .Type(ApplicationType.Helm)
             .RepoUrl("https://warpstreamlabs.github.io/charts")
             .Branch("0.15.28")
-            .InNamespace("warpstream-poc")
             .Build();
     }
 }

@@ -17,6 +17,7 @@ internal class ArgoApplications : ComponentResource
         var externalSecrets = new ExternalSecrets(provider);
         var flinkOperator = new FlinkOperator(provider);
         var flinkDeployment = new FlinkDeployment(provider);
+        var warpStreamAgent = new WarpStream(provider);
     }
 }
 
