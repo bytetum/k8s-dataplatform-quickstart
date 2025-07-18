@@ -6,6 +6,7 @@ internal class WarpStream
     {
         new ArgoApplicationBuilder("warpstream-agent", provider)
             .Type(ApplicationType.Helm)
+            .SyncWave(2)
             .RepoUrl("https://warpstreamlabs.github.io/charts")
             .InNamespace("warpstream-poc")
             .Build();
