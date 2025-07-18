@@ -16,7 +16,7 @@ spec:
     path: ""
     repoURL: https://warpstreamlabs.github.io/charts
     skipCrds: false
-    targetRevision: HEAD
+    targetRevision: 0.15.28
   syncPolicy:
     automated:
       prune: true
