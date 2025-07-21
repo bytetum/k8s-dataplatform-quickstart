@@ -7,7 +7,7 @@ public class Polaris
         new ArgoApplicationBuilder("polaris", provider)
             .Type(ApplicationType.Helm)
             .SyncWave(2)
-            .RepoUrl("https://downloads.apache.org/incubator/polaris/helm-chart/")
+            .RepoUrl("https://downloads.apache.org/incubator/polaris/helm-chart/1.0.0-incubating/")
             .Build();
     }
 }

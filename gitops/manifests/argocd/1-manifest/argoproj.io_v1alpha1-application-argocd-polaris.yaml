@@ -14,7 +14,7 @@ spec:
     chart: polaris
     directory: {}
     path: ""
-    repoURL: https://downloads.apache.org/incubator/polaris/helm-chart/
+    repoURL: https://downloads.apache.org/incubator/polaris/helm-chart/1.0.0-incubating/
     skipCrds: false
     targetRevision: HEAD
   syncPolicy:
