@@ -18,6 +18,7 @@ internal class ArgoApplications : ComponentResource
         var flinkOperator = new FlinkOperator(provider);
         var flinkDeployment = new FlinkDeployment(provider);
         var warpStreamAgent = new WarpStream(provider);
+        var polaris = new Polaris(provider);
     }
 }
 
