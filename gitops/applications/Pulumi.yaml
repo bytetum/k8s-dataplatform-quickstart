@@ -1,0 +1,7 @@
+name: applications
+description: ArgoCD applications used to install software in the cluster.
+runtime: dotnet
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: csharp

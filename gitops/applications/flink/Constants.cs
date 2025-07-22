@@ -1,6 +1,6 @@
-namespace gitops.Cluster.flink;
+namespace applications.flink;
 
-public class Constants
+public static class Constants
 {
     public const string Namespace = "flink-kubernetes-operator";
 }

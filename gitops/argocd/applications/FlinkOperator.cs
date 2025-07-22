@@ -2,7 +2,7 @@ namespace argocd.applications;
 
 internal class FlinkOperator
 {
-    public FlinkOperator(Pulumi.Kubernetes.Provider provider)
+    public FlinkOperator(Kubernetes.Provider provider)
     {
         new ArgoApplicationBuilder("flink-kubernetes-operator", provider)
             .Type(ApplicationType.Helm)

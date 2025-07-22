@@ -2,7 +2,7 @@ namespace argocd.applications.flink_deployment;
 
 internal class FlinkDeployment
 {
-    public FlinkDeployment(Pulumi.Kubernetes.Provider provider)
+    public FlinkDeployment(Kubernetes.Provider provider)
     {
         new ArgoApplicationBuilder("flink-deployment", provider)
             .SyncWave(2)

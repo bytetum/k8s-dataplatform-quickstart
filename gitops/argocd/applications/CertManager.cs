@@ -2,7 +2,7 @@
 
 internal class CertManager
 {
-    public CertManager(Pulumi.Kubernetes.Provider provider)
+    public CertManager(Kubernetes.Provider provider)
     {
         new ArgoApplicationBuilder("cert-manager", provider)
             .SyncWave(-1)

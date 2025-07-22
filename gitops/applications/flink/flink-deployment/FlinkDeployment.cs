@@ -1,19 +1,24 @@
 using System.Collections.Generic;
-using argocd.applications;
-using Pulumi;
 using Pulumi.Kubernetes.Core.V1;
-using Pulumi.Kubernetes.Helm.V3;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
-using Kubernetes = Pulumi.Kubernetes;
 
-namespace gitops.Cluster.flink;
+namespace applications.flink.flink_deployment;
 
-public class FlinkDeployment : ComponentResource
+internal class FlinkDeployment : ComponentResource
 {
-    public FlinkDeployment(Kubernetes.Provider? provider = null) : base("flink-deployment",
+    public FlinkDeployment(string deploymentName, string manifestsRoot) : base(
+        "flink-deployment",
         "flink-deployment")
     {
+        var provider = new Kubernetes.Provider("yaml-provider", new()
+        {
+            RenderYamlToDirectory = $"{manifestsRoot}/{deploymentName}"
+        }, new CustomResourceOptions
+        {
+            Parent = this
+        });
+
         // Create a persistent volume for Flink data
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
         {
@@ -39,6 +44,7 @@ public class FlinkDeployment : ComponentResource
         }, new CustomResourceOptions
         {
             Provider = provider,
+            Parent = this
         });
         // Create a persistent volume claim for Flink data
         var flinkPvc = new PersistentVolumeClaim("flink-pvc", new PersistentVolumeClaimArgs
@@ -64,7 +70,8 @@ public class FlinkDeployment : ComponentResource
         }, new CustomResourceOptions
         {
             Provider = provider,
-            DependsOn = new[] { flinkPv }
+            DependsOn = new[] { flinkPv },
+            Parent = this
         });
         var flinkDeployment = new Kubernetes.ApiExtensions.CustomResource("flink-deployment", new FlinkDeploymentArgs()
         {
@@ -176,7 +183,8 @@ public class FlinkDeployment : ComponentResource
         }, new CustomResourceOptions
         {
             Provider = provider,
-            DependsOn = new List<Pulumi.Resource> { flinkPvc }
+            DependsOn = new List<Resource> { flinkPvc },
+            Parent = this
         });
     }
 

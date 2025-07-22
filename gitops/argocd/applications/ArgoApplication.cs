@@ -1,16 +1,13 @@
-﻿using Pulumi;
-using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
+﻿namespace argocd.applications;
 
-namespace argocd.applications;
-
-internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider provider)
+internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
 {
     private string project = "default";
     private string? destinationNamespace;
     private ApplicationType applicationType = ApplicationType.Yaml;
     private string branch = "HEAD";
     private string path = $"gitops/manifests/{name}";
-    private string repoURL = "git@github.com:bytetum/k8s-dataplatform-quickstart.git";
+    private string repoURL = "git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence";
     private int syncWave = 0;
 
     public ArgoApplicationBuilder SyncWave(int syncWave)
@@ -60,7 +57,7 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
         return this;
     }
 
-    public void Build()
+    public Kubernetes.ApiExtensions.CustomResource Build()
     {
         var source = applicationType switch
         {
@@ -107,9 +104,9 @@ internal class ArgoApplicationBuilder(string name, Pulumi.Kubernetes.Provider pr
             },
         };
 
-        var application = new Pulumi.Kubernetes.ApiExtensions.CustomResource(name, new ArgoApplicationArgs
+        return new Kubernetes.ApiExtensions.CustomResource(name, new ArgoApplicationArgs
         {
-            Metadata = new ObjectMetaArgs
+            Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
             {
                 Annotations = Annotation,
                 Name = name,
@@ -135,48 +132,60 @@ enum ApplicationType
     Helm
 }
 
-internal class ArgoApplicationArgs : Pulumi.Kubernetes.ApiExtensions.CustomResourceArgs
-{ 
-    [Input("spec")] public required Input<ArgoApplicationSpecArgs> Spec { get; set; }
+internal class ArgoApplicationArgs : Kubernetes.ApiExtensions.CustomResourceArgs
+{
+    [Input("spec")]
+    public required Input<ArgoApplicationSpecArgs> Spec { get; set; }
 
     public ArgoApplicationArgs()
         : base("argoproj.io/v1alpha1", "Application")
-    {
-    }
+    { }
 }
 
 internal class ArgoApplicationSpecArgs : ResourceArgs
 {
-    [Input("project")] public required Input<string> Project { get; set; }
+    [Input("project")]
+    public required Input<string> Project { get; set; }
 
-    [Input("source")] public required Input<ArgoApplicationSourceArgs> Source { get; set; }
+    [Input("source")]
+    public required Input<ArgoApplicationSourceArgs> Source { get; set; }
 
-    [Input("destination")] public InputMap<string> Destination { get; set; } = [];
+    [Input("destination")]
+    public InputMap<string> Destination { get; set; } = [];
 
-    [Input("syncPolicy")] public required Input<ArgoApplicationSyncPolicyArgs> SyncPolicy { get; set; }
+    [Input("syncPolicy")]
+    public required Input<ArgoApplicationSyncPolicyArgs> SyncPolicy { get; set; }
 }
 
 internal class ArgoApplicationSyncPolicyArgs : ResourceArgs
 {
-    [Input("automated")] public required InputMap<bool> Automated { get; set; }
+    [Input("automated")]
+    public required InputMap<bool> Automated { get; set; }
 
-    [Input("syncOptions")] public InputList<string> SyncOptions { get; set; } = [];
+    [Input("syncOptions")]
+    public InputList<string> SyncOptions { get; set; } = [];
 }
 
-internal class ArgoApplicationSourceArgs : ResourceArgs
+internal class ArgoApplicationSourceArgs: ResourceArgs
 {
-    [Input("path")] public Input<string> Path { get; set; } = "";
+    [Input("path")]
+    public Input<string> Path { get; set; } = "";
 
-    [Input("repoURL")] public required Input<string> RepoUrl { get; set; }
+    [Input("repoURL")]
+    public required Input<string> RepoUrl { get; set; }
 
-    [Input("targetRevision")] public Input<string> Branch = "HEAD";
+    [Input("targetRevision")]
+    public Input<string> Branch = "HEAD";
 
-    [Input("directory")] public InputMap<bool> Directory { get; set; } = [];
+    [Input("directory")]
+    public InputMap<bool> Directory { get; set; } = [];
 }
 
-internal class ArgoHelmApplicationSourceArgs : ArgoApplicationSourceArgs
+internal class ArgoHelmApplicationSourceArgs: ArgoApplicationSourceArgs
 {
-    [Input("chart")] public required Input<string> Chart { get; set; }
+    [Input("chart")]
+    public required Input<string> Chart { get; set; }
 
-    [Input("skipCrds")] public required Input<bool> SkipCrds { get; set; }
+    [Input("skipCrds")]
+    public required Input<bool> SkipCrds { get; set; }
 }
