@@ -7,7 +7,7 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
     private ApplicationType applicationType = ApplicationType.Yaml;
     private string branch = "HEAD";
     private string path = $"gitops/manifests/{name}";
-    private string repoURL = "git@ssh-source.netcompany.com:22/tfs/Netcompany/AOJHECOM/_git/essence";
+    private string repoURL = "git@github.com:bytetum/k8s-dataplatform-quickstart.git";
     private int syncWave = 0;
 
     public ArgoApplicationBuilder SyncWave(int syncWave)

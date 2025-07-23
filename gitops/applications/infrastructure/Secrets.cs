@@ -29,34 +29,22 @@ internal class Secrets : ComponentResource
             {
                 Provider = new ClusterSecretStoreSpecProviderArgs
                 {
-                    Scaleway =
-                    new ClusterSecretStoreSpecProviderScalewayArgs
+                    Fake = new ClusterSecretStoreSpecProviderFakeArgs
                     {
-                        Region = "nl-ams",
-                        ProjectId = config.Require("project_id"),
-                        AccessKey = new ClusterSecretStoreSpecProviderScalewayAceessKeyArgs
+                        Data = new InputList<ClusterSecretStoreProviderDataFakeArgs>()
                         {
-                            SecretRef = new SecretRefArgs
+                            new ClusterSecretStoreProviderDataFakeArgs
                             {
-                                Name = "secret-manager",
-                                Key = "access-key",
-                                Namespace = "external-secrets"
-                            }
-                        },
-                        SecretKey = new ClusterSecretStoreSpecProviderScalewaySecretKeyArgs
-                        {
-                            SecretRef = new SecretRefArgs
+                                Key = "bucket/access-key",
+                                Value = "local-app-user"
+                            },
+                            new ClusterSecretStoreProviderDataFakeArgs
                             {
-                                Name = "secret-manager",
-                                Key = "secret-key",
-                                Namespace = "external-secrets"
+                                Key = "bucket/secret-key",
+                                Value = "a-very-secure-password",
                             }
                         }
                     }
-                },
-                Conditions = new ClusterSecretStoreSpecConditionsArgs
-                {
-                    Namespaces = ["test"]
                 }
             }
         }, new()

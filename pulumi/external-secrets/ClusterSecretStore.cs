@@ -42,12 +42,32 @@ public class ClusterSecretStoreSpecConditionsArgs : Pulumi.ResourceArgs
     [Input("namespaces")]
     public InputList<string>? Namespaces { get; set; }
 }
-
 public class ClusterSecretStoreSpecProviderArgs : Pulumi.ResourceArgs
 {
     [Input("scaleway")]
     public Input<ClusterSecretStoreSpecProviderScalewayArgs>? Scaleway { get; set; }
+    
+    [Input("fake")]
+    public Input<ClusterSecretStoreSpecProviderFakeArgs>? Fake { get; set; }
 }
+
+public class ClusterSecretStoreSpecProviderFakeArgs : Pulumi.ResourceArgs
+{
+    [Input("data")]
+    public InputList<ClusterSecretStoreProviderDataFakeArgs>? Data { get; set; }
+}
+
+public class ClusterSecretStoreProviderDataFakeArgs : Pulumi.ResourceArgs
+{
+    [Input("key")]
+    public Input<string>? Key { get; set; }
+    [Input("value")]
+    public Input<string>? Value { get; set; }
+    [Input("version")]
+    public Input<string>? Version { get; set; }
+}
+
+
 
 public class ClusterSecretStoreSpecProviderScalewayArgs : Pulumi.ResourceArgs
 {
@@ -62,6 +82,12 @@ public class ClusterSecretStoreSpecProviderScalewayArgs : Pulumi.ResourceArgs
 
     [Input("secretKey")]
     public Input<ClusterSecretStoreSpecProviderScalewaySecretKeyArgs>? SecretKey { get; set; }
+}
+
+public class ClusterSecretStoreSpecProviderFakeSecretArgs : Pulumi.ResourceArgs
+{
+    [Input("key")]
+    public InputMap<string>? value { get; set; }
 }
 
 public class ClusterSecretStoreSpecProviderScalewayAceessKeyArgs : Pulumi.ResourceArgs
