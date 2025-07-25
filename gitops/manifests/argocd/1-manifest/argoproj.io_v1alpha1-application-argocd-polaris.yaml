@@ -12,10 +12,7 @@ spec:
   project: default
   source:
     chart: polaris
-    directory: {}
-    path: ""
     repoURL: https://downloads.apache.org/incubator/polaris/helm-chart
-    skipCrds: false
     targetRevision: 1.0.0-incubating
   syncPolicy:
     automated:

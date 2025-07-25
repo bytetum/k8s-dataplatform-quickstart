@@ -1,14 +1,15 @@
-﻿namespace argocd.applications;
+﻿using Pulumi.Crds.Argocd;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace argocd.applications;
 
 internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
 {
     private string project = "default";
-    private string? destinationNamespace;
-    private ApplicationType applicationType = ApplicationType.Yaml;
-    private string branch = "HEAD";
-    private string path = $"gitops/manifests/{name}";
-    private string repoURL = "git@github.com:bytetum/k8s-dataplatform-quickstart.git";
+    private string destinationNamespace = name;
     private int syncWave = 0;
+    private readonly List<ArgoApplicationSource> sources = [];
 
     public ArgoApplicationBuilder SyncWave(int syncWave)
     {
@@ -21,21 +22,9 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
         { "argocd.argoproj.io/sync-wave", syncWave.ToString() },
     };
 
-    private InputMap<string> Destination => new()
-    {
-        { "server", "https://kubernetes.default.svc" },
-        { "namespace", destinationNamespace ?? name }
-    };
-
     public ArgoApplicationBuilder Project(string project)
     {
         this.project = project;
-        return this;
-    }
-
-    public ArgoApplicationBuilder Type(ApplicationType applicationType)
-    {
-        this.applicationType = applicationType;
         return this;
     }
 
@@ -47,64 +36,75 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
 
     public ArgoApplicationBuilder Branch(string branch)
     {
-        this.branch = branch;
+        sources.Last().TargetRevision = branch;
         return this;
     }
 
     public ArgoApplicationBuilder RepoUrl(string repoURL)
     {
-        this.repoURL = repoURL;
+        sources.Last().RepoURL = repoURL;
+        return this;
+    }
+
+    public ArgoApplicationBuilder AddSource(ApplicationType applicationType)
+    {
+        sources.Add(new(applicationType, name));
+        return this;
+    }
+
+    public ArgoApplicationBuilder AddValueFile(string valueFile)
+    {
+        sources.Last().ValueFiles.Add(valueFile);
+        return this;
+    }
+
+    public ArgoApplicationBuilder AsValueSource(string refName)
+    {
+        sources.Last().Ref = refName;
         return this;
     }
 
     public Kubernetes.ApiExtensions.CustomResource Build()
     {
-        var source = applicationType switch
+        if (sources.Count == 0)
         {
-            ApplicationType.Yaml => new ArgoApplicationSourceArgs
+            AddSource(ApplicationType.Yaml);
+        }
+
+        var syncPolicy = new ApplicationSpecSyncPolicyArgs
+        {
+            Automated = new ApplicationSpecSyncPolicyAutomatedArgs
             {
-                Path = path,
-                RepoUrl = repoURL,
-                Branch = branch,
-                Directory =
-                {
-                    { "recurse", true }
-                }
-            },
-            ApplicationType.Helm => new ArgoHelmApplicationSourceArgs
-            {
-                Chart = name,
-                RepoUrl = repoURL,
-                Branch = branch,
-                SkipCrds = false,
+                Prune = true,
+                SelfHeal = true,
             },
         };
 
-        var syncPolicy = applicationType switch
+        if (sources.Any(source => source.applicationType == ApplicationType.Helm))
         {
-            ApplicationType.Yaml => new ArgoApplicationSyncPolicyArgs
+            syncPolicy.SyncOptions = ["CreateNamespace=true"];
+        }
+
+        var spec = new ApplicationSpecArgs
+        {
+            Project = project,
+            Destination = new ApplicationSpecDestinationArgs
             {
-                Automated = new InputMap<bool>
-                {
-                    { "prune", true },
-                    { "selfHeal", true },
-                },
+                Namespace = destinationNamespace,
             },
-            ApplicationType.Helm => new ArgoApplicationSyncPolicyArgs
-            {
-                Automated = new InputMap<bool>
-                {
-                    { "prune", true },
-                    { "selfHeal", true },
-                },
-                SyncOptions =
-                [
-                    "CreateNamespace=true",
-                ],
-            },
+            SyncPolicy = syncPolicy,
         };
 
-        return new Kubernetes.ApiExtensions.CustomResource(name, new ArgoApplicationArgs
+        if (sources.Count > 1)
+        {
+            spec.Sources = sources.Select(source => (ApplicationSpecSourceArgs)source).ToList();
+        }
+        else
+        {
+            spec.Source = (ApplicationSpecSourceArgs)sources.First();
+        }
+
+        return new Application(name, new()
         {
             Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
             {
@@ -112,13 +112,7 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
                 Name = name,
                 Namespace = "argocd",
             },
-            Spec = new ArgoApplicationSpecArgs
-            {
-                Project = project,
-                Source = source,
-                Destination = Destination,
-                SyncPolicy = syncPolicy,
-            }
+            Spec = spec,
         }, new()
         {
             Provider = provider,
@@ -132,60 +126,40 @@ enum ApplicationType
     Helm
 }
 
-internal class ArgoApplicationArgs : Kubernetes.ApiExtensions.CustomResourceArgs
+internal class ArgoApplicationSource(ApplicationType applicationType, string name)
 {
-    [Input("spec")]
-    public required Input<ArgoApplicationSpecArgs> Spec { get; set; }
+    public readonly ApplicationType applicationType = applicationType;
+    public string RepoURL { get; set; } = "git@github.com:bytetum/k8s-dataplatform-quickstart.git";
+    public string TargetRevision { get; set; } = "HEAD";
+    public string Path { get; set; } = $"gitops/manifests/{name}";
+    public bool SkipCrds { get; set; } = false;
+    public string Chart { get; set; } = name;
+    public List<string> ValueFiles { get; set; } = [];
+    public string? Ref { get; set; }
 
-    public ArgoApplicationArgs()
-        : base("argoproj.io/v1alpha1", "Application")
-    { }
-}
-
-internal class ArgoApplicationSpecArgs : ResourceArgs
-{
-    [Input("project")]
-    public required Input<string> Project { get; set; }
-
-    [Input("source")]
-    public required Input<ArgoApplicationSourceArgs> Source { get; set; }
-
-    [Input("destination")]
-    public InputMap<string> Destination { get; set; } = [];
-
-    [Input("syncPolicy")]
-    public required Input<ArgoApplicationSyncPolicyArgs> SyncPolicy { get; set; }
-}
-
-internal class ArgoApplicationSyncPolicyArgs : ResourceArgs
-{
-    [Input("automated")]
-    public required InputMap<bool> Automated { get; set; }
-
-    [Input("syncOptions")]
-    public InputList<string> SyncOptions { get; set; } = [];
-}
-
-internal class ArgoApplicationSourceArgs: ResourceArgs
-{
-    [Input("path")]
-    public Input<string> Path { get; set; } = "";
-
-    [Input("repoURL")]
-    public required Input<string> RepoUrl { get; set; }
-
-    [Input("targetRevision")]
-    public Input<string> Branch = "HEAD";
-
-    [Input("directory")]
-    public InputMap<bool> Directory { get; set; } = [];
-}
-
-internal class ArgoHelmApplicationSourceArgs: ArgoApplicationSourceArgs
-{
-    [Input("chart")]
-    public required Input<string> Chart { get; set; }
-
-    [Input("skipCrds")]
-    public required Input<bool> SkipCrds { get; set; }
+    public static explicit operator ApplicationSpecSourceArgs(ArgoApplicationSource source) => source.applicationType switch
+    {
+        ApplicationType.Yaml => new()
+        {
+            Path = source.Path,
+            RepoURL = source.RepoURL,
+            TargetRevision = source.TargetRevision,
+            Directory = new ApplicationSpecSourceDirectoryArgs
+            {
+                Recurse = true,
+            },
+            Ref = source.Ref!,
+        },
+        ApplicationType.Helm => new()
+        {
+            Chart = source.Chart,
+            RepoURL = source.RepoURL,
+            TargetRevision = source.TargetRevision,
+            Helm = source.SkipCrds || source.ValueFiles.Count > 0 ? new ApplicationSpecSourceHelmArgs
+            {
+                SkipCrds = source.SkipCrds ? true : null,
+                ValueFiles = source.ValueFiles.Count > 0 ? source.ValueFiles : null!,
+            } : null!,
+        }
+    };
 }

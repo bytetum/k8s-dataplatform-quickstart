@@ -12,10 +12,7 @@ spec:
   project: default
   source:
     chart: flink-kubernetes-operator
-    directory: {}
-    path: ""
     repoURL: https://archive.apache.org/dist/flink/flink-kubernetes-operator-1.12.0/
-    skipCrds: false
     targetRevision: 1.12.0
   syncPolicy:
     automated:
