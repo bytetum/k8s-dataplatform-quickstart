@@ -51,6 +51,7 @@ public class ClusterSecretStoreSpecProviderArgs : Pulumi.ResourceArgs
     public Input<ClusterSecretStoreSpecProviderFakeArgs>? Fake { get; set; }
 }
 
+//MARK: change
 public class ClusterSecretStoreSpecProviderFakeArgs : Pulumi.ResourceArgs
 {
     [Input("data")]
@@ -63,11 +64,15 @@ public class ClusterSecretStoreProviderDataFakeArgs : Pulumi.ResourceArgs
     public Input<string>? Key { get; set; }
     [Input("value")]
     public Input<string>? Value { get; set; }
+    
+    [Input("valueMap")]
+    public InputMap<string>? ValueMap { get; set; }
+
     [Input("version")]
     public Input<string>? Version { get; set; }
 }
 
-
+//MARK: endchange
 
 public class ClusterSecretStoreSpecProviderScalewayArgs : Pulumi.ResourceArgs
 {

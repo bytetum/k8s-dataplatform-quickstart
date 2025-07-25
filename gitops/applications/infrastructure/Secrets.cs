@@ -29,22 +29,23 @@ internal class Secrets : ComponentResource
             {
                 Provider = new ClusterSecretStoreSpecProviderArgs
                 {
+                    //MARK: change
                     Fake = new ClusterSecretStoreSpecProviderFakeArgs
                     {
                         Data = new InputList<ClusterSecretStoreProviderDataFakeArgs>()
                         {
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
-                                Key = "bucket/access-key",
-                                Value = "local-app-user"
-                            },
-                            new ClusterSecretStoreProviderDataFakeArgs
-                            {
-                                Key = "bucket/secret-key",
-                                Value = "a-very-secure-password",
+                                Key = "aws-secret",
+                                ValueMap = new InputMap<string>
+                                {
+                                    { "access_key_id", "" },
+                                    { "secret_access_key", "" }
+                                }
                             }
                         }
                     }
+                    //MARK: endchange
                 }
             }
         }, new()

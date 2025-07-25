@@ -12,6 +12,9 @@ spec:
   project: default
   source:
     chart: polaris
+    helm:
+      valueFiles:
+      - $values/gitops/manifests/polaris/values.yaml
     repoURL: https://downloads.apache.org/incubator/polaris/helm-chart
     targetRevision: 1.0.0-incubating
   syncPolicy:
