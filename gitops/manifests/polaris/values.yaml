@@ -11,21 +11,3 @@ extraEnvVars:
       secretKeyRef:
         name: aws-secret
         key: secret_access_key
-
-service:
-  type: ClusterIP
-  port: 9092
-
-resources:
-  requests:
-    cpu: "200m"
-    memory: "512Mi"
-  limits:
-    cpu: "500m"
-    memory: "1Gi"
-
-autoscaling:
-  enabled: false
-enforceProductionResourceRequirements: false
-tls:
-  enabled: false
