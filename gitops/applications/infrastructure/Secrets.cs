@@ -36,11 +36,11 @@ internal class Secrets : ComponentResource
                         {
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
-                                Key = "aws-secret",
+                                Key = "aws-secret-local",
                                 ValueMap = new InputMap<string>
                                 {
-                                    { "access_key_id", "" },
-                                    { "secret_access_key", "" }
+                                    { "access_key_id", "test" },
+                                    { "secret_access_key", "test" }
                                 }
                             }
                         }

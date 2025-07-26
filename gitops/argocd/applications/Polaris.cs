@@ -6,7 +6,8 @@ public class Polaris
     {
         new ArgoApplicationBuilder("polaris", provider)
             .AddSource(ApplicationType.Helm)
-            .AddValueFile("$values/gitops/manifests/polaris/default-values.yaml")
+            .AddValueFile("$values/gitops/manifests/polaris/values.yaml")
+            .AddSource(ApplicationType.Yaml)
             .SyncWave(2)
             .Branch("1.0.0-incubating")
             .RepoUrl("https://downloads.apache.org/incubator/polaris/helm-chart")
