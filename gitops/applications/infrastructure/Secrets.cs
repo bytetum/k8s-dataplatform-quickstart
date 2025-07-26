@@ -41,7 +41,7 @@ internal class Secrets : ComponentResource
                                 {
                                     { "access_key_id", "test" },
                                     { "secret_access_key", "test" }
-                                }
+                                },
                             }
                         }
                     }

@@ -24,7 +24,7 @@ public class ClusterSecretStoreArgs : Kubernetes.ApiExtensions.CustomResourceArg
     public Input<ClusterSecretStoreSpecArgs>? Spec { get; set; }
 
     public ClusterSecretStoreArgs()
-        : base("external-secrets.io/v1", "ClusterSecretStore")
+        : base("external-secrets.io/v1beta1", "ClusterSecretStore")
     { }
 }
 
