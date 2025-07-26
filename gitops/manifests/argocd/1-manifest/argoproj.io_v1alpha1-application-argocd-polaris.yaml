@@ -15,13 +15,13 @@ spec:
     helm:
       valueFiles:
       - $values/gitops/manifests/polaris/values.yaml
-    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
-    targetRevision: HEAD
+    repoURL: https://downloads.apache.org/incubator/polaris/helm-chart
+    targetRevision: 1.0.0-incubating
   - directory:
       recurse: true
     path: gitops/manifests/polaris
-    repoURL: https://downloads.apache.org/incubator/polaris/helm-chart
-    targetRevision: 1.0.0-incubating
+    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: HEAD
   syncPolicy:
     automated:
       prune: true
