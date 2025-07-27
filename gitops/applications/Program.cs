@@ -8,5 +8,5 @@ return await Deployment.RunAsync(() =>
 {
     var infrastructure = new Infrastructure("../manifests");
     var flinkDeployment = new FlinkDeployment("flink-deployment", "../manifests");
-    var bucketSecret = new BucketSecret("../manifests/polaris");
+    var bucketSecret = new BucketSecret("../manifests");
 });
