@@ -36,8 +36,8 @@ internal class Secrets : ComponentResource
                         {
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
-                                Key = "aws-secret-local",
-                                Value = "{\"access_key_id\": \"test\", \"secret_access_key\": \"test\"}"
+                                Key = "id: c2f85be8-7fd0-402d-8229-6de987bcbbb4",
+                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}"
                             }
                         }
                     }

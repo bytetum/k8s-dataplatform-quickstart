@@ -20,7 +20,7 @@ public class BucketSecret : ComponentResource
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = "aws-secret",
+                Name = "s3-credentials",
                 Namespace = "polaris",
             },
             Spec = new ExternalSecretSpecArgs
@@ -32,13 +32,13 @@ public class BucketSecret : ComponentResource
                 },
                 Target = new ExternalSecretSpecTargetArgs()
                 {
-                    Name = "aws-secret-local"
+                    Name = "s3-credentials"
                 },
                 DataFrom = new ExternalSecretSpecDataFromArgs()
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "aws-secret-local"
+                        Key = "id: c2f85be8-7fd0-402d-8229-6de987bcbbb4"
                     }
                 }
             }

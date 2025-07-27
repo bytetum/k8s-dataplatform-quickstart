@@ -4,10 +4,10 @@ extraEnv:
   - name: AWS_ACCESS_KEY_ID
     valueFrom:
       secretKeyRef:
-        name: aws-secret
-        key: access_key_id
+        name: s3-credentials
+        key: SCALEWAY_ACCESS_KEY
   - name: AWS_SECRET_ACCESS_KEY
     valueFrom:
       secretKeyRef:
-        name: aws-secret
-        key: secret_access_key
+        name: s3-credentials
+        key: SCALEWAY_SECRET_KEY
