@@ -2,11 +2,11 @@
 global using Kubernetes = Pulumi.Kubernetes;
 using applications.flink.flink_deployment;
 using applications.infrastructure;
-using applications.Polaris.external_secrets;
+using applications.Polaris;
 
 return await Deployment.RunAsync(() =>
 {
     var infrastructure = new Infrastructure("../manifests");
     var flinkDeployment = new FlinkDeployment("flink-deployment", "../manifests");
-    var bucketSecret = new BucketSecret("../manifests");
+    var bucketSecret = new Polaris("../manifests");
 });

@@ -11,3 +11,10 @@ extraEnv:
       secretKeyRef:
         name: s3-credentials
         key: SCALEWAY_SECRET_KEY
+        
+        
+authentication:
+  tokenBroker:
+    type: rsa-key-pair
+    secret:
+      name: polaris-key-pair

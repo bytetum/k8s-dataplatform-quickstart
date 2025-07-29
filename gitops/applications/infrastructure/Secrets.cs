@@ -36,8 +36,13 @@ internal class Secrets : ComponentResource
                         {
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
-                                Key = "id: c2f85be8-7fd0-402d-8229-6de987bcbbb4",
+                                Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4",
                                 Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}"
+                            },
+                            new ClusterSecretStoreProviderDataFakeArgs
+                            {
+                                Key = "id:polaris-key-pair",
+                                Value = "{\"public.pem\": \"value\", \"private.pem\": \"value\"}"
                             }
                         }
                     }
