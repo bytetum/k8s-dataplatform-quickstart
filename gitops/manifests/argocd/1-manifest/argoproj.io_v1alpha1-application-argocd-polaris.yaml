@@ -23,11 +23,6 @@ spec:
     ref: values
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
-  - directory:
-      recurse: true
-    path: gitops/manifests/polaris
-    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
-    targetRevision: HEAD
   syncPolicy:
     automated:
       prune: true

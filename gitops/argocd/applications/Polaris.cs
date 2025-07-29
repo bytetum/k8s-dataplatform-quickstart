@@ -11,7 +11,6 @@ public class Polaris
             .AddValueFile("$values/gitops/manifests/polaris/values.yaml")
             .AddSource(ApplicationType.Yaml)
             .AsValueSource("values")
-            .AddSource(ApplicationType.Yaml)
             .SyncWave(2)
             .Build();
     }
