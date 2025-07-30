@@ -43,6 +43,11 @@ internal class Secrets : ComponentResource
                             {
                                 Key = "id:polaris-key-pair",
                                 Value = "{\"public.pem\": \"value\", \"private.pem\": \"value\"}"
+                            },
+                            new ClusterSecretStoreProviderDataFakeArgs
+                            {
+                                Key = "id:842cb98e-9786-4cc6-9af7-424f9278d808",
+                                Value = "{\"db_address\": \"value\", \"username\": \"user-test\", \"password\": \"6i]ZUhERU-U)0Gq}\"}"
                             }
                         }
                     }
