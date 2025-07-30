@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: postgres
+  name: postgres-deployment
+  namespace: polaris
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - env:
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              key: db_address
+              name: polaris-postgres-credentials
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: polaris-postgres-credentials
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: polaris-postgres-credentials
+        image: postgres:14
+        name: postgres-container
+        ports:
+        - containerPort: 5432

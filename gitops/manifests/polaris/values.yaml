@@ -12,6 +12,32 @@ extraEnv:
         name: s3-credentials
         key: SCALEWAY_SECRET_KEY
         
+  - name: POSTGRES_HOST
+    valueFrom:
+      secretKeyRef:
+        name: polaris-postgres-credentials
+        key: db_address
+    
+    # Define how to get the username from the secret
+  - name: QUARKUS_DATASOURCE_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: polaris-postgres-credentials
+        key: username
+      
+      # Define how to get the password from the secret
+  - name: QUARKUS_DATASOURCE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: polaris-postgres-credentials
+        key: password
+  
+  # The final JDBC URL is constructed from the other environment variables
+  # The container will substitute $(POSTGRES_HOST) with "postgres-db" at runtime.
+  - name: QUARKUS_DATASOURCE_JDBC_URL
+    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/your-database?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"        
+  
+        
 authentication:
   tokenBroker:
     type: rsa-key-pair

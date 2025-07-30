@@ -7,6 +7,7 @@ using applications.Polaris;
 return await Deployment.RunAsync(() =>
 {
     var infrastructure = new Infrastructure("../manifests");
-    var flinkDeployment = new FlinkDeployment("flink-deployment", "../manifests");
-    var bucketSecret = new Polaris("../manifests");
+    var flinkDeployment = new FlinkDeployment("flink-deployment", "../manifests"); 
+    var polaris = new Polaris("../manifests");
+    var postgres = new Postgres("../manifests");
 });
