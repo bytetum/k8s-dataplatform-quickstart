@@ -72,7 +72,7 @@ public class Polaris : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:polaris-key-pair"
+                        Key = "id:842cb98e-9786-4cc6-9af7-424f9278d802"
                     }
                 }
             }
