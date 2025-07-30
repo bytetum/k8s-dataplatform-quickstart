@@ -17,8 +17,8 @@ public class Postgres : ComponentResource
         {
             Parent = this
         });
-        
-        var postgresCred = new ExternalSecret("polaris-postgres-credentials", new ()
+
+        var postgresCred = new ExternalSecret("polaris-postgres-credentials", new()
         {
             Metadata = new ObjectMetaArgs
             {
@@ -49,7 +49,7 @@ public class Postgres : ComponentResource
             Parent = this,
             Provider = provider
         });
-        
+
         // Replace Pod with Deployment
         var postgresDeployment = new Pulumi.Kubernetes.Apps.V1.Deployment("postgres-deployment", new DeploymentArgs
         {
@@ -98,6 +98,11 @@ public class Postgres : ComponentResource
                                 },
                                 Env =
                                 {
+                                    new EnvVarArgs
+                                    {
+                                        Name = "POSTGRES_DB",
+                                        Value = "polaris"
+                                    },
                                     new EnvVarArgs
                                     {
                                         Name = "POSTGRES_HOST",
@@ -157,11 +162,11 @@ public class Postgres : ComponentResource
             Spec = new ServiceSpecArgs
             {
                 Type = "ClusterIP",
-                Selector = 
+                Selector =
                 {
                     { "app", "postgres" }
                 },
-                Ports = 
+                Ports =
                 {
                     new ServicePortArgs
                     {
@@ -178,4 +183,3 @@ public class Postgres : ComponentResource
         });
     }
 }
-

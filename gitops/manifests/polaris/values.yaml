@@ -35,7 +35,7 @@ extraEnv:
   # The final JDBC URL is constructed from the other environment variables
   # The container will substitute $(POSTGRES_HOST) with "postgres-db" at runtime.
   - name: QUARKUS_DATASOURCE_JDBC_URL
-    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/your-database?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"        
+    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/polaris?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"        
   
         
 authentication:

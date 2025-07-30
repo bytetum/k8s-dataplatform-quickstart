@@ -17,6 +17,8 @@ spec:
     spec:
       containers:
       - env:
+        - name: POSTGRES_DB
+          value: polaris
         - name: POSTGRES_HOST
           valueFrom:
             secretKeyRef:
