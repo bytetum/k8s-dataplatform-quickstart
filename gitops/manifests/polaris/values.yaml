@@ -11,7 +11,10 @@ extraEnv:
       secretKeyRef:
         name: s3-credentials
         key: SCALEWAY_SECRET_KEY
-        
+              
+  - name: POLARIS_PERSISTENCE_TYPE
+    value: relational-jdbc
+    
   - name: POSTGRES_HOST
     valueFrom:
       secretKeyRef:
