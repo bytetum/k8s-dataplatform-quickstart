@@ -48,7 +48,7 @@ internal class Secrets : ComponentResource
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:842cb98e-9786-4cc6-9af7-424f9278d808",
-                                Value = "{\"db_address\": postgres-service\"\", \"username\": \"value\", \"password\": \"value\"}"
+                                Value = "{\"db_address\": \"postgres-service\", \"username\": \"value\", \"password\": \"value\"}"
                             }
                         }
                     }
