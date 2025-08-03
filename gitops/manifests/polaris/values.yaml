@@ -1,5 +1,3 @@
-replicaCount: 2
-
 extraEnv:
   - name: AWS_STORAGE_BUCKET
     value: s3://k8s-essence/
