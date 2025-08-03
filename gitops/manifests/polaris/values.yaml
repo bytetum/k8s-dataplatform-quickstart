@@ -34,7 +34,7 @@ extraEnv:
         key: db-address
 
   - name: QUARKUS_DATASOURCE_JDBC_URL
-    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/polaris?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
     
 extraInitContainers: 
    - name: polaris-boostrap
