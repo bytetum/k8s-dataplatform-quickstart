@@ -37,23 +37,27 @@ internal class Secrets : ComponentResource
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4",
-                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}"
+                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}",
+                                Version = "latest_enabled"
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 //wait for PE to generate
                                 Key = "id:842cb98e-9786-4cc6-9af7-424f9278d802",
-                                Value = "{\"public.pem\": \"value\", \"private.pem\": \"value\"}"
+                                Value = "{\"public.pem\": \"value\", \"private.pem\": \"value\"}",
+                                Version = "latest_enabled",
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:842cb98e-9786-4cc6-9af7-424f9278d808",
-                                Value = "{\"db-address\": \"postgres-service\", \"username\": \"value\", \"password\": \"value\"}"
+                                Value = "{\"db-address\": \"postgres-service\", \"username\": \"value\", \"password\": \"value\"}",
+                                Version = "latest_enabled",
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:polaris-root-password",
-                                Value = "{\"polaris-root-password\": \"s3cr3t\"}"
+                                Value = "{\"polaris-root-password\": \"s3cr3t\"}",
+                                Version = "latest_enabled",
                             }
                         }
                     }

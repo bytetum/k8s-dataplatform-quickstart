@@ -18,11 +18,11 @@ spec:
       containers:
       - env:
         - name: POSTGRES_DB
-          value: polaris
+          value: database-test
         - name: POSTGRES_HOST
           valueFrom:
             secretKeyRef:
-              key: db_address
+              key: db-address
               name: polaris-postgres-credentials
         - name: POSTGRES_USER
           valueFrom:
