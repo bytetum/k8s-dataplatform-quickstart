@@ -1,0 +1,49 @@
+replicas: 1
+config:
+  gracefulShutdownDuration: "30s"
+  heartbeatEvery: "10s"
+  agentKeySecretKeyRef:
+    name: warpstream-agent-apikey
+    key: agent_key
+  bucketURL: "s3://ao-warpstream-test?region=nl-ams&endpoint=https://s3.nl-ams.scw.cloud"
+  virtualClusterID: "vci_642b3fa5_9f94_48d0_9006_8e050aa7fbb0"
+  region: "eu-central-1"
+
+extraEnv:
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: warpstream-bucket-credentials
+        key: SCALEWAY_ACCESS_KEY
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: warpstream-bucket-credentials
+        key: SCALEWAY_SECRET_KEY
+
+  - name: WARPSTREAM_TEST_MODE
+    value: "true"
+
+  - name: WARPSTREAM_IS_DEMO_OR_PLAYGROUND
+    value: "true"
+
+  - name: WARPSTREAM_AVAILABILITY_ZONE
+    value: "eu-central-1a"
+
+service:
+  type: ClusterIP
+  port: 9092
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
+  limits:
+    cpu: "500m"
+    memory: "1Gi"
+
+autoscaling:
+  enabled: false
+enforceProductionResourceRequirements: false
+tls:
+  enabled: false

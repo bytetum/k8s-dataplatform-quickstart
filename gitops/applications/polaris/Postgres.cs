@@ -101,7 +101,7 @@ public class Postgres : ComponentResource
                                     new EnvVarArgs
                                     {
                                         Name = "POSTGRES_DB",
-                                        Value = "polaris"
+                                        Value = "database-test"
                                     },
                                     new EnvVarArgs
                                     {
@@ -111,7 +111,7 @@ public class Postgres : ComponentResource
                                             SecretKeyRef = new SecretKeySelectorArgs
                                             {
                                                 Name = postgresCred.Metadata.Apply(m => m.Name),
-                                                Key = "db_address"
+                                                Key = "db-address"
                                             }
                                         }
                                     },

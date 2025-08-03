@@ -3,11 +3,13 @@ global using Kubernetes = Pulumi.Kubernetes;
 using applications.flink.flink_deployment;
 using applications.infrastructure;
 using applications.Polaris;
+using applications.warpstream;
 
 return await Deployment.RunAsync(() =>
 {
     var infrastructure = new Infrastructure("../manifests");
-    var flinkDeployment = new FlinkDeployment("flink-deployment", "../manifests"); 
+    var flinkDeployment = new FlinkDeployment("flink-deployment", "../manifests");
+    var warpstream = new Warpstream("../manifests");
     var polaris = new Polaris("../manifests");
     var postgres = new Postgres("../manifests");
 });

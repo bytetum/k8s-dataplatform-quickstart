@@ -16,8 +16,8 @@ public class Polaris : ComponentResource
         {
             Parent = this
         });
-            
-            
+
+
         var bucketSecret = new ExternalSecret("bucket-secret", new()
         {
             Metadata = new ObjectMetaArgs
@@ -49,7 +49,7 @@ public class Polaris : ComponentResource
             Parent = this,
             Provider = provider
         });
-        
+
         var polarisKeyPair = new ExternalSecret("polaris-key-pair", new()
         {
             Metadata = new ObjectMetaArgs
@@ -81,6 +81,37 @@ public class Polaris : ComponentResource
             Parent = this,
             Provider = provider
         });
+
+        var polarisRootPassword = new ExternalSecret("polaris-root-password", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "polaris-root-password",
+                Namespace = "polaris",
+            },
+            Spec = new ExternalSecretSpecArgs
+            {
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                {
+                    Name = "secret-store",
+                    Kind = "ClusterSecretStore"
+                },
+                Target = new ExternalSecretSpecTargetArgs()
+                {
+                    Name = "polaris-root-password"
+                },
+                DataFrom = new ExternalSecretSpecDataFromArgs()
+                {
+                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    {
+                        Key = "id:polaris-root-password"
+                    }
+                }
+            }
+        }, new()
+        {
+            Parent = this,
+            Provider = provider
+        });
     }
 }
-
