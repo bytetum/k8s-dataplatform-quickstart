@@ -72,6 +72,9 @@ extraInitContainers:
          value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
        
      command:
+       - "java"
+       - "-jar"
+       - "/deployments/polaris-admin-tool.jar"
        - "bootstrap"
        - "--realm=database-test"
        - "--credential=database-test,root,${POLARIS_ROOT_PASSWORD}"
