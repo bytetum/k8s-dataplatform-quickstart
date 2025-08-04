@@ -18,7 +18,6 @@ internal class ArgoApplications : ComponentResource
         var flinkOperator = new FlinkOperator(provider);
         var flinkDeployment = new FlinkDeployment(provider);
         var polaris = new Polaris(provider);
-        var polarisSetup = new PolarisSetup(provider);
         // var monitoring = new KubePrometheus(provider);
     }
 }

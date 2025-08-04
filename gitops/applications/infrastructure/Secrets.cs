@@ -37,7 +37,7 @@ internal class Secrets : ComponentResource
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4",
-                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\", \"SCALEWAY_SECRET_ROLE_ARN\": \"ROLE_ID\"}",
+                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\", \"SCALEWAY_ROLE_ARN\": \"ROLE_ID\"}",
                                 Version = "latest_enabled"
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
