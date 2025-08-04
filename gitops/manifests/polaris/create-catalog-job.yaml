@@ -89,6 +89,7 @@ spec:
                   else
                       echo "Warning: AWS_ROLE_ARN not set for S3 storage"
                   fi
+              fi
               echo
               echo Creating a catalog named quickstart_catalog...
               PAYLOAD='{
