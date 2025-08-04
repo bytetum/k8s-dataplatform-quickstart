@@ -4,29 +4,29 @@ extraEnv:
   - name: AWS_ACCESS_KEY_ID
     valueFrom:
       secretKeyRef:
-        name: s3-credentials
+        name: iceberg-bucket-credentials
         key: SCALEWAY_ACCESS_KEY
   - name: AWS_SECRET_ACCESS_KEY
     valueFrom:
       secretKeyRef:
-        name: s3-credentials
+        name: iceberg-bucket-credentials
         key: SCALEWAY_SECRET_KEY
-              
+
   - name: POLARIS_PERSISTENCE_TYPE
     value: relational-jdbc
-    
+
   - name: QUARKUS_DATASOURCE_USERNAME
     valueFrom:
       secretKeyRef:
         name: polaris-postgres-credentials
         key: username
-      
+
   - name: QUARKUS_DATASOURCE_PASSWORD
     valueFrom:
       secretKeyRef:
         name: polaris-postgres-credentials
         key: password
-        
+
   - name: POSTGRES_HOST
     valueFrom:
       secretKeyRef:

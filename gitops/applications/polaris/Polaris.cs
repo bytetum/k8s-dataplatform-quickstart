@@ -3,7 +3,7 @@ using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
-namespace applications.Polaris;
+namespace applications.polaris;
 
 public class Polaris : ComponentResource
 {
@@ -22,7 +22,7 @@ public class Polaris : ComponentResource
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = "s3-credentials",
+                Name = "iceberg-bucket-credentials",
                 Namespace = "polaris",
             },
             Spec = new ExternalSecretSpecArgs
@@ -34,7 +34,7 @@ public class Polaris : ComponentResource
                 },
                 Target = new ExternalSecretSpecTargetArgs()
                 {
-                    Name = "s3-credentials"
+                    Name = "iceberg-bucket-credentials"
                 },
                 DataFrom = new ExternalSecretSpecDataFromArgs()
                 {
