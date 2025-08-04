@@ -1,0 +1,107 @@
+# In your custom resources git repo (e.g., /resources/create-catalog-job.yaml)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: polaris-catalog-creator
+  namespace: polaris # Ensure this job is in the same namespace as Polaris
+  annotations:
+    # Argo CD Hook: Run this job after a successful sync
+    argocd.argoproj.io/hook: PostSync
+    # Clean up the Job resource once it completes successfully
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      # This initContainer waits for the Polaris API to be online
+      initContainers:
+        - name: wait-for-polaris-api
+          image: alpine/curl
+          # The command polls the Polaris health endpoint. Adjust the service name if needed.
+          # The service name is typically <helm-release-name>-polaris-api
+          command: ['sh', '-c', 'until curl --fail --silent --output /dev/null http://polaris-helm-polaris-api:8181/q/health; do echo "Waiting for Polaris API..."; sleep 5; done;']
+      # This main container runs only after the initContainer succeeds
+      containers:
+        - name: create-catalog
+          image: alpine/curl
+          env:
+            - name: STORAGE_LOCATION
+              value: s3://k8s-essence/
+            - name: CLIENT_ID
+              value: root
+            - name: AZURE_TENANT_ID
+              value: empty
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: polaris-root-password
+                  key: polaris-root-password
+            - name: AWS_ROLE_ARN
+              valueFrom:
+                secretKeyRef:
+                  name: iceberg-bucket-credentials
+                  key: SCALEWAY_SECRET_ROLE_ARN
+            
+          command: [sh, -c]
+          args:
+            - |
+              set -e
+              apk add --no-cache jq curl
+              token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \
+                --user ${CLIENT_ID}:${CLIENT_SECRET} \
+                -d grant_type=client_credentials \
+                -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+              if [ -z "${token}" ]; then
+                echo "Failed to obtain access token."
+                exit 1
+              fi
+              echo
+              echo "Obtained access token: ${token}"
+              STORAGE_TYPE="FILE"
+              if [ -z "${STORAGE_LOCATION}" ]; then
+                  echo "STORAGE_LOCATION is not set, using FILE storage type"
+                  STORAGE_LOCATION="file:///var/tmp/quickstart_catalog/"
+              else
+                  echo "STORAGE_LOCATION is set to '$STORAGE_LOCATION'"
+                  if [[ "$STORAGE_LOCATION" == s3* ]]; then
+                      STORAGE_TYPE="S3"
+                  elif [[ "$STORAGE_LOCATION" == gs* ]]; then
+                      STORAGE_TYPE="GCS"
+                  else
+                      STORAGE_TYPE="AZURE"
+                  fi
+                  echo "Using StorageType: $STORAGE_TYPE"
+              fi
+              STORAGE_CONFIG_INFO="{\"storageType\": \"$STORAGE_TYPE\", \"allowedLocations\": [\"$STORAGE_LOCATION\"]}"
+              if [[ "$STORAGE_TYPE" == "S3" ]]; then
+                  if [ -n "${AWS_ROLE_ARN}" ]; then
+                      STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg roleArn "$AWS_ROLE_ARN" '. + {roleArn: $roleArn}')
+                  else
+                      echo "Warning: AWS_ROLE_ARN not set for S3 storage"
+                  fi
+              elif [[ "$STORAGE_TYPE" == "AZURE" ]]; then
+                  if [ -n "${AZURE_TENANT_ID}" ]; then
+                      STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg tenantId "$AZURE_TENANT_ID" '. + {tenantId: $tenantId}')
+                  fi
+              fi
+              echo
+              echo Creating a catalog named quickstart_catalog...
+              PAYLOAD='{
+                 "catalog": {
+                   "name": "quickstart_catalog",
+                   "type": "INTERNAL",
+                   "readOnly": false,
+                   "properties": {
+                     "default-base-location": "'$STORAGE_LOCATION'"
+                   },
+                   "storageConfigInfo": '$STORAGE_CONFIG_INFO'
+                 }
+               }'
+              echo $PAYLOAD
+              curl -s -H "Authorization: Bearer ${token}" \
+                 -H 'Accept: application/json' \
+                 -H 'Content-Type: application/json' \
+                 http://polaris:8181/api/management/v1/catalogs \
+                 -d "$PAYLOAD" -v
+              echo
+              echo Done.
