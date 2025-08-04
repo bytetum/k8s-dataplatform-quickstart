@@ -14,13 +14,29 @@ spec:
     spec:
       restartPolicy: OnFailure
       # This initContainer waits for the Polaris API to be online
-#      initContainers:
-#        - name: wait-for-polaris-api
-#          image: alpine/curl
-#          # The command polls the Polaris health endpoint. Adjust the service name if needed.
-#          # The service name is typically <helm-release-name>-polaris-api
-#          command: ['sh', '-c', 'until curl --fail --silent --output /dev/null http://polaris-mgmt:8182/q/health/live; do echo "Waiting for Polaris API..."; sleep 5; done;']
-#      # This main container runs only after the initContainer succeeds
+      initContainers:
+        - name: wait-for-polaris-api
+          image: alpine/curl
+          # The command polls the Polaris health endpoint. Adjust the service name if needed.
+          # The service name is typically <helm-release-name>-polaris-api
+          command:
+            - sh
+            - -c
+            - |
+              max_attempts=20
+              attempt=1
+              while [ $attempt -le $max_attempts ]; do
+                echo "Attempt $attempt: Checking Polaris API health..."
+                if curl --fail --silent --output /dev/null http://polaris-mgmt:8182/q/health/live; then
+                  echo "Polaris API is healthy!"
+                  exit 0
+                fi
+                echo "Waiting for Polaris API... (attempt $attempt of $max_attempts)"
+                attempt=$((attempt + 1))
+                sleep 5
+              done
+              echo "Polaris API did not become healthy after $max_attempts attempts."
+              exit 1
       containers:
         - name: create-catalog
           image: alpine/curl
