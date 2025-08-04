@@ -4,6 +4,7 @@ using applications.flink.flink_deployment;
 using applications.infrastructure;
 using applications.warpstream;
 using applications.polaris;
+using applications.Polaris;
 
 return await Deployment.RunAsync(() =>
 {
