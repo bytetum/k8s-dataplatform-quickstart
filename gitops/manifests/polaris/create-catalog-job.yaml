@@ -19,7 +19,7 @@ spec:
           image: alpine/curl
           # The command polls the Polaris health endpoint. Adjust the service name if needed.
           # The service name is typically <helm-release-name>-polaris-api
-          command: ['sh', '-c', 'until curl --fail --silent --output /dev/null http://polaris:8181/q/health; do echo "Waiting for Polaris API..."; sleep 5; done;']
+          command: ['sh', '-c', 'until curl --fail --silent --output /dev/null http://polaris-mgmt:8182/q/health/live; do echo "Waiting for Polaris API..."; sleep 5; done;']
       # This main container runs only after the initContainer succeeds
       containers:
         - name: create-catalog
