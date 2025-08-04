@@ -35,6 +35,10 @@ extraEnv:
 
   - name: QUARKUS_DATASOURCE_JDBC_URL
     value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+
+realmContext:
+  realms:
+    - database-test
     
 extraInitContainers: 
    - name: polaris-boostrap
