@@ -23,7 +23,7 @@ spec:
             - sh
             - -c
             - |
-              max_attempts=20
+              max_attempts=15
               attempt=1
               while [ $attempt -le $max_attempts ]; do
                 echo "Attempt $attempt: Checking Polaris API health..."
