@@ -18,7 +18,7 @@ public class Polaris : ComponentResource
             Parent = this
         });
 
-        var polarisPostSyncHook = new Job("polaris-post-sync-hoock", new()
+        var polarisPostSyncHook = new Job("polaris-post-sync-hook", new()
         {
             Metadata = new ObjectMetaArgs
             {
