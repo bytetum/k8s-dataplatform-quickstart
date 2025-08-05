@@ -10,51 +10,50 @@ spec:
   template:
     spec:
       containers:
-      - args:
-        - "\r\n                                    set -e\r\n                                    apk
-          add --no-cache jq curl\r\n                                    token=$(curl
-          -s http://polaris:8181/api/catalog/v1/oauth/tokens \\\r\n                                      --user
-          ${CLIENT_ID}:${CLIENT_SECRET} \\\r\n                                      -d
-          grant_type=client_credentials \\\r\n                                      -d
-          scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\"access_token\":\"\\([^\\\"]*\\)\".*/\\1/p')\r\n
-          \                                   if [ -z \"${token}\" ]; then\r\n                                      echo
-          \"Failed to obtain access token.\"\r\n                                      exit
-          1\r\n                                    fi\r\n                                    echo\r\n
-          \                                   echo \"Obtained access token: ${token}\"\r\n
-          \                                   STORAGE_TYPE=\"FILE\"\r\n                                    if
-          [ -z \"${STORAGE_LOCATION}\" ]; then\r\n                                        echo
-          \"STORAGE_LOCATION is not set, using FILE storage type\"\r\n                                        STORAGE_LOCATION=\"file:///var/tmp/quickstart_catalog/\"\r\n
-          \                                   else\r\n                                        echo
-          \"STORAGE_LOCATION is set to '$STORAGE_LOCATION'\"\r\n                                        if
-          [[ \"$STORAGE_LOCATION\" == s3* ]]; then\r\n                                            STORAGE_TYPE=\"S3\"\r\n
-          \                                       fi\r\n                                        echo
-          \"Using StorageType: $STORAGE_TYPE\"\r\n                                    fi\r\n
-          \                                   STORAGE_CONFIG_INFO=\"{\\\"storageType\\\":
-          \\\"$STORAGE_TYPE\\\", \\\"allowedLocations\\\": [\\\"$STORAGE_LOCATION\\\"]}\"\r\n
-          \                                   if [[ \"$STORAGE_TYPE\" == \"S3\" ]];
-          then\r\n                                        if [ -n \"${AWS_ROLE_ARN}\"
-          ]; then\r\n                                            STORAGE_CONFIG_INFO=$(echo
-          \"$STORAGE_CONFIG_INFO\" | jq --arg roleArn \"$AWS_ROLE_ARN\" '. + {roleArn:
-          $roleArn}')\r\n                                        else\r\n                                            echo
-          \"Warning: AWS_ROLE_ARN not set for S3 storage\"\r\n                                        fi\r\n
-          \                                   fi\r\n                                    echo\r\n
-          \                                   echo Creating a catalog named quickstart_catalog...\r\n
-          \                                   PAYLOAD='{\r\n                                       \"catalog\":
-          {\r\n                                         \"name\": \"quickstart_catalog\",\r\n
-          \                                        \"type\": \"INTERNAL\",\r\n                                         \"readOnly\":
-          false,\r\n                                         \"properties\": {\r\n
-          \                                          \"default-base-location\": \"'$STORAGE_LOCATION'\"\r\n
-          \                                        },\r\n                                         \"storageConfigInfo\":
-          '$STORAGE_CONFIG_INFO'\r\n                                       }\r\n                                    }'\r\n
-          \                                   echo $PAYLOAD\r\n                                    curl
-          -s -H \"Authorization: Bearer ${token}\" \\\r\n                                       -H
-          'Accept: application/json' \\\r\n                                       -H
-          'Content-Type: application/json' \\\r\n                                       http://polaris:8181/api/management/v1/catalogs
-          \\\r\n                                       -d \"$PAYLOAD\" -v\r\n                                    echo\r\n
-          \                                   echo Done.\r\n                                    "
-        command:
+      - command:
         - sh
         - -c
+        - "\r\n                                set -e\r\n                                apk
+          add --no-cache jq curl\r\n                                token=$(curl -s
+          http://polaris:8181/api/catalog/v1/oauth/tokens \\\r\n                                  --user
+          ${CLIENT_ID}:${CLIENT_SECRET} \\\r\n                                  -d
+          grant_type=client_credentials \\\r\n                                  -d
+          scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\"access_token\":\"\\([^\\\"]*\\)\"
+          .*/\\1/p')\r\n                                if [ -z \"${token}\" ]; then\r\n
+          \                                 echo \"Failed to obtain access token.\"\r\n
+          \                                 exit 1\r\n                                fi\r\n
+          \                               echo\r\n                                echo
+          \"Obtained access token: ${token}\"\r\n                                STORAGE_TYPE=\"FILE\"\r\n
+          \                               if [ -z \"${STORAGE_LOCATION}\" ]; then\r\n
+          \                                   echo \"STORAGE_LOCATION is not set,
+          using FILE storage type\"\r\n                                    STORAGE_LOCATION=\"file:///var/tmp/quickstart_catalog/\"\r\n
+          \                               else\r\n                                    echo
+          \"STORAGE_LOCATION is set to '$STORAGE_LOCATION'\"\r\n                                    if
+          [[ \"$STORAGE_LOCATION\" == s3* ]]; then\r\n                                        STORAGE_TYPE=\"S3\"\r\n
+          \                                   fi\r\n                                    echo
+          \"Using StorageType: $STORAGE_TYPE\"\r\n                                fi\r\n
+          \                               STORAGE_CONFIG_INFO=\"{\\\"storageType\\\":
+          \\\"$STORAGE_TYPE\\\", \\\"allowedLocations\\\": [\\\"$STORAGE_LOCATION\\\"]}\"\r\n
+          \                               if [[ \"$STORAGE_TYPE\" == \"S3\" ]]; then\r\n
+          \                                   if [ -n \"${AWS_ROLE_ARN}\" ]; then\r\n
+          \                                       STORAGE_CONFIG_INFO=$(echo \"$STORAGE_CONFIG_INFO\"
+          | jq --arg roleArn \"$AWS_ROLE_ARN\" '. + {roleArn: $roleArn}')\r\n                                    else\r\n
+          \                                       echo \"Warning: AWS_ROLE_ARN not
+          set for S3 storage\"\r\n                                    fi\r\n                                fi\r\n
+          \                               echo\r\n                                echo
+          Creating a catalog named quickstart_catalog...\r\n                                PAYLOAD='{\r\n
+          \                                  \"catalog\": {\r\n                                     \"name\":
+          \"quickstart_catalog\",\r\n                                     \"type\":
+          \"INTERNAL\",\r\n                                     \"readOnly\": false,\r\n
+          \                                    \"properties\": {\r\n                                       \"default-base-location\":
+          \"'$STORAGE_LOCATION'\"\r\n                                     },\r\n                                     \"storageConfigInfo\":
+          '$STORAGE_CONFIG_INFO'\r\n                                   }\r\n                                }'\r\n
+          \                               echo $PAYLOAD\r\n                                curl
+          -s -H \"Authorization: Bearer ${token}\" \\\r\n                                   -H
+          'Accept: application/json' \\\r\n                                   -H 'Content-Type:
+          application/json' \\\r\n                                   http://polaris:8181/api/management/v1/catalogs
+          \\\r\n                                   -d \"$PAYLOAD\" -v\r\n                                echo\r\n
+          \                               echo Done.\r\n                                "
         env:
         - name: STORAGE_LOCATION
           value: s3://k8s-essence/
@@ -76,19 +75,18 @@ spec:
       - command:
         - sh
         - -c
-        - "\r\n                                    max_attempts=15\r\n                                    attempt=1\r\n
-          \                                   while [ $attempt -le $max_attempts ];
-          do\r\n                                      echo \"Attempt $attempt: Checking
-          Polaris API health...\"\r\n                                      if curl
-          --fail --silent --output /dev/null http://polaris-mgmt:8182/q/health/live;
-          then\r\n                                        echo \"Polaris API is healthy!\"\r\n
-          \                                       exit 0\r\n                                      fi\r\n
-          \                                     echo \"Waiting for Polaris API...
-          (attempt $attempt of $max_attempts)\"\r\n                                      attempt=$((attempt
-          + 1))\r\n                                      sleep 5\r\n                                    done\r\n
-          \                                   echo \"Polaris API did not become healthy
-          after $max_attempts attempts.\"\r\n                                    exit
-          1\r\n                                    "
+        - "\r\n                                max_attempts=15\r\n                                attempt=1\r\n
+          \                               while [ $attempt -le $max_attempts ]; do\r\n
+          \                                 echo \"Attempt $attempt: Checking Polaris
+          API health...\"\r\n                                  if curl --fail --silent
+          --output /dev/null http://polaris-mgmt:8182/q/health/live; then\r\n                                    echo
+          \"Polaris API is healthy!\"\r\n                                    exit
+          0\r\n                                  fi\r\n                                  echo
+          \"Waiting for Polaris API... (attempt $attempt of $max_attempts)\"\r\n                                  attempt=$((attempt
+          + 1))\r\n                                  sleep 5\r\n                                done\r\n
+          \                               echo \"Polaris API did not become healthy
+          after $max_attempts attempts.\"\r\n                                exit
+          1\r\n                                "
         image: alpine/curl
         name: wait-for-polaris-api
       restartPolicy: OnFailure
