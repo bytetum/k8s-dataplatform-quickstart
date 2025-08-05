@@ -1,10 +1,7 @@
-using Humanizer;
 using Pulumi.Crds.ExternalSecrets;
-using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Batch.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
-using Pulumi.Kubernetes.Types.Outputs.Batch.V1;
 using Job = Pulumi.Kubernetes.Batch.V1.Job;
 
 namespace applications.polaris;
@@ -145,9 +142,7 @@ public class Polaris : ComponentResource
                                     @"    fi",
                                     @"    echo ""Using StorageType: $STORAGE_TYPE""",
                                     "fi",
-                                    "",
-                                    // Use a Heredoc for the payload. It's much cleaner than escaping quotes.
-                                    "PAYLOAD=$(cat <<EOF",
+                                    "PAYLOAD=",
                                     @"{",
                                     @"  ""catalog"": {",
                                     @"    ""name"": ""quickstart_catalog"",",
@@ -159,8 +154,6 @@ public class Polaris : ComponentResource
                                     @"    ""storageConfigInfo"": ${STORAGE_CONFIG_INFO}",
                                     @"  }",
                                     @"}",
-                                    "EOF",
-                                    ")",
                                     "",
                                     "echo 'Creating catalog...'",
                                     @"curl -s -f -v -H ""Authorization: Bearer ${token}"" \",

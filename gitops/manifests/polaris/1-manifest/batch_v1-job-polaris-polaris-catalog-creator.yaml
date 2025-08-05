@@ -40,8 +40,7 @@ spec:
               fi
               echo "Using StorageType: $STORAGE_TYPE"
           fi
-
-          PAYLOAD=$(cat <<EOF
+          PAYLOAD=
           {
             "catalog": {
               "name": "quickstart_catalog",
@@ -53,8 +52,6 @@ spec:
               "storageConfigInfo": ${STORAGE_CONFIG_INFO}
             }
           }
-          EOF
-          )
 
           echo 'Creating catalog...'
           curl -s -f -v -H "Authorization: Bearer ${token}" \
