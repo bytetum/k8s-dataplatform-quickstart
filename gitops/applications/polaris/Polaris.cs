@@ -1,8 +1,8 @@
 using Pulumi.Crds.ExternalSecrets;
+using Pulumi.Kubernetes.Batch.V1;
 using Pulumi.Kubernetes.Types.Inputs.Batch.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
-using Job = Pulumi.Kubernetes.Batch.V1.Job;
 
 namespace applications.polaris;
 
@@ -171,8 +171,6 @@ public class Polaris : ComponentResource
                                 echo
                                 echo Done.
                                 """.Replace("\r\n", "\n")
-                                // This is the key part: build the script from an array of strings.
-                                
                             }
                         }
                     }
