@@ -59,7 +59,7 @@ public class Polaris : ComponentResource
                                   sleep 5
                                 done
                                 echo "Polaris API did not become healthy after $max_attempts attempts."
-                                exit 1      
+                                exit 1
                                 """.Replace("\r\n", "\n")
                             }
                         },
@@ -113,11 +113,11 @@ public class Polaris : ComponentResource
                                 apk add --no-cache jq curl
 
                                 token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \
-                                --user ${CLIENT_ID}:${CLIENT_SECRET} \
-                                -d grant_type=client_credentials \
-                                -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\"access_token\":\"\([^\"]*\)\".*/\1/p')
+                                    --user ${CLIENT_ID}:${CLIENT_SECRET} \
+                                    -d grant_type=client_credentials \
+                                    -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\"access_token\":\"\([^\"]*\)\".*/\1/p')
+                                    if [ -z "${token}" ]; then
 
-                                if [ -z "${token}" ]; then
                                 echo "Failed to obtain access token."
                                 exit 1
                                 fi
