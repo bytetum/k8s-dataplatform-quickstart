@@ -45,24 +45,22 @@ public class Polaris : ComponentResource
                             {
                                 "sh",
                                 "-c",
-                                // Use string.Join to build a clean, multi-line script
-                                string.Join("\n", new[]
-                                {
-                                    "max_attempts=15",
-                                    "attempt=1",
-                                    "while [ $attempt -le $max_attempts ]; do",
-                                    "  echo \"Attempt $attempt: Checking Polaris API health...\"",
-                                    "  if curl --fail --silent --output /dev/null http://polaris-mgmt:8182/q/health/live; then",
-                                    "    echo \"Polaris API is healthy!\"",
-                                    "    exit 0",
-                                    "  fi",
-                                    "  echo \"Waiting for Polaris API... (attempt $attempt of $max_attempts)\"",
-                                    "  attempt=$((attempt + 1))",
-                                    "  sleep 5",
-                                    "done",
-                                    "echo \"Polaris API did not become healthy after $max_attempts attempts.\"",
-                                    "exit 1"
-                                })
+                                """
+                                max_attempts=15
+                                attempt=1
+                                while [ $attempt -le $max_attempts ]; do
+                                  echo "Attempt $attempt: Checking Polaris API health..."
+                                  if curl --fail --silent --output /dev/null http://polaris-mgmt:8182/q/health/live; then
+                                    echo "Polaris API is healthy!"
+                                    exit 0
+                                  fi
+                                  echo "Waiting for Polaris API... (attempt $attempt of $max_attempts)"
+                                  attempt=$((attempt + 1))
+                                  sleep 5
+                                done
+                                echo "Polaris API did not become healthy after $max_attempts attempts."
+                                exit 1      
+                                """.Replace("\r\n", "\n")
                             }
                         },
                         Containers = new ContainerArgs
@@ -110,71 +108,71 @@ public class Polaris : ComponentResource
                             {
                                 "sh",
                                 "-c",
+                                """
+                                set -e
+                                apk add --no-cache jq curl
+
+                                token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \
+                                --user ${CLIENT_ID}:${CLIENT_SECRET} \
+                                -d grant_type=client_credentials \
+                                -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\"access_token\":\"\([^\"]*\)\".*/\1/p')
+
+                                if [ -z "${token}" ]; then
+                                echo "Failed to obtain access token."
+                                exit 1
+                                fi
+                                echo
+                                echo "Obtained access token: ${token}"
+
+                                STORAGE_TYPE="FILE"
+                                if [ -z "${STORAGE_LOCATION}" ]; then
+                                echo "STORAGE_LOCATION is not set, using FILE storage type"
+                                STORAGE_LOCATION="file:///var/tmp/quickstart_catalog/"
+                                else
+                                echo "STORAGE_LOCATION is set to '${STORAGE_LOCATION}'"
+                                if [[ "${STORAGE_LOCATION}" == s3* ]]; then
+                                STORAGE_TYPE="S3"
+                                fi
+                                echo "Using StorageType: $STORAGE_TYPE"
+                                fi
+
+                                STORAGE_CONFIG_INFO="{\"storageType\": \"$STORAGE_TYPE\", \"allowedLocations\": [\"$STORAGE_LOCATION\"]}"
+                                if [[ "$STORAGE_TYPE" == "S3" ]]; then
+                                if [ -n "${AWS_ROLE_ARN}" ]; then
+                                STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg roleArn "$AWS_ROLE_ARN" '. + {roleArn: $roleArn}')
+                                else
+                                echo "Warning: AWS_ROLE_ARN not set for S3 storage"
+                                fi
+                                fi
+
+                                echo
+                                echo Creating a catalog named quickstart_catalog...
+
+                                PAYLOAD='{
+                                "catalog": {
+                                "name": "quickstart_catalog",
+                                "type": "INTERNAL",
+                                "readOnly": false,
+                                "properties": {
+                                "default-base-location": "'"$STORAGE_LOCATION"'"
+                                },
+                                "storageConfigInfo": '$STORAGE_CONFIG_INFO'
+                                }
+                                }'
+
+                                echo $PAYLOAD
+
+                                curl -s -H "Authorization: Bearer ${token}" \
+                                -H 'Accept: application/json' \
+                                -H 'Content-Type: application/json' \
+                                http://polaris:8181/api/management/v1/catalogs \
+                                -d "$PAYLOAD" -v
+
+                                echo
+                                echo Done.
+                                """.Replace("\r\n", "\n")
                                 // This is the key part: build the script from an array of strings.
-                                string.Join("\n", new[]
-{
-    "set -e",
-    "apk add --no-cache jq curl",
-    "",
-    @"token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \",
-    @"  --user ${CLIENT_ID}:${CLIENT_SECRET} \",
-    @"  -d grant_type=client_credentials \",
-    @"  -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\""access_token\"":\""\([^\""]*\)\"".*/\1/p')",
-    "",
-    @"if [ -z ""${token}"" ]; then",
-    "  echo \"Failed to obtain access token.\"",
-    "  exit 1",
-    "fi",
-    "echo",
-    "echo \"Obtained access token: ${token}\"",
-    "",
-    @"STORAGE_TYPE=""FILE""",
-    @"if [ -z ""${STORAGE_LOCATION}"" ]; then",
-    @"    echo ""STORAGE_LOCATION is not set, using FILE storage type""",
-    @"    STORAGE_LOCATION=""file:///var/tmp/quickstart_catalog/""",
-    @"else",
-    @"    echo ""STORAGE_LOCATION is set to '${STORAGE_LOCATION}'""",
-    @"    if [[ ""${STORAGE_LOCATION}"" == s3* ]]; then",
-    @"        STORAGE_TYPE=""S3""",
-    @"    fi",
-    @"    echo ""Using StorageType: $STORAGE_TYPE""",
-    "fi",
-    "",
-    @"STORAGE_CONFIG_INFO=""{\""storageType\"": \""$STORAGE_TYPE\"", \""allowedLocations\"": [\""$STORAGE_LOCATION\""]}""",
-    @"if [[ ""$STORAGE_TYPE"" == ""S3"" ]]; then",
-    @"    if [ -n ""${AWS_ROLE_ARN}"" ]; then",
-    @"        STORAGE_CONFIG_INFO=$(echo ""$STORAGE_CONFIG_INFO"" | jq --arg roleArn ""$AWS_ROLE_ARN"" '. + {roleArn: $roleArn}')",
-    @"    else",
-    @"        echo ""Warning: AWS_ROLE_ARN not set for S3 storage""",
-    @"    fi",
-    "fi",
-    "",
-    "echo",
-    "echo Creating a catalog named quickstart_catalog...",
-    "",
-    "PAYLOAD='{",
-    @"  ""catalog"": {",
-    @"    ""name"": ""quickstart_catalog"",",
-    @"    ""type"": ""INTERNAL"",",
-    @"    ""readOnly"": false,",
-    @"    ""properties"": {",
-    @"      ""default-base-location"": ""'""$STORAGE_LOCATION""'""",
-    @"    },",
-    @"    ""storageConfigInfo"": '$STORAGE_CONFIG_INFO'",
-    @"  }",
-    @"}'",
-    "",
-    "echo $PAYLOAD",
-    "",
-    @"curl -s -H ""Authorization: Bearer ${token}"" \",
-    @"   -H 'Accept: application/json' \",
-    @"   -H 'Content-Type: application/json' \",
-    @"   http://polaris:8181/api/management/v1/catalogs \",
-    @"   -d ""$PAYLOAD"" -v",
-    "",
-    "echo",
-    "echo Done."
-})
+                                
                             }
                         }
                     }
