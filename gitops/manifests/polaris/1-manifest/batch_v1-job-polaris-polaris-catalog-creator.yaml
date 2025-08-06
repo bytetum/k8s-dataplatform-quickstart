@@ -20,7 +20,7 @@ spec:
           token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \
               --user ${CLIENT_ID}:${CLIENT_SECRET} \
               -d grant_type=client_credentials \
-              -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\"access_token\":\"\([^\"]*\)\".*/\1/p')
+              -d scope=PRINCIPAL_ROLE:ALL | jq -r '.access_token')
 
           if [ -z "${token}" ]; then
               echo "Failed to obtain access token."
@@ -57,7 +57,7 @@ spec:
                   "type": "INTERNAL",
                   "readOnly": false,
                   "properties": {
-                  "default-base-location": "'"$STORAGE_LOCATION"'"
+                      "default-base-location": "'"$STORAGE_LOCATION"'"
                   },
                   "storageConfigInfo": '$STORAGE_CONFIG_INFO'
               }
@@ -65,11 +65,11 @@ spec:
 
           echo $PAYLOAD
 
-          curl -s -H "Authorization: Bearer ${token}" \
+          curl -s -f -H "Authorization: Bearer ${token}" \
               -H 'Accept: application/json' \
               -H 'Content-Type: application/json' \
               http://polaris:8181/api/management/v1/catalogs \
-              -d "$PAYLOAD" -v
+              -d "$PAYLOAD"
 
           echo Done.
         env:
