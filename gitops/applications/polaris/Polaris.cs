@@ -37,32 +37,6 @@ public class Polaris : ComponentResource
                     Spec = new PodSpecArgs
                     {
                         RestartPolicy = "OnFailure",
-                        InitContainers = new ContainerArgs
-                        {
-                            Name = "wait-for-polaris-api",
-                            Image = "alpine/curl",
-                            Command = new InputList<string>
-                            {
-                                "sh",
-                                "-c",
-                                """
-                                max_attempts=15
-                                attempt=1
-                                while [ $attempt -le $max_attempts ]; do
-                                  echo "Attempt $attempt: Checking Polaris API health..."
-                                  if curl --fail --silent --output /dev/null http://polaris-mgmt:8182/q/health/live; then
-                                    echo "Polaris API is healthy!"
-                                    exit 0
-                                  fi
-                                  echo "Waiting for Polaris API... (attempt $attempt of $max_attempts)"
-                                  attempt=$((attempt + 1))
-                                  sleep 5
-                                done
-                                echo "Polaris API did not become healthy after $max_attempts attempts."
-                                exit 1
-                                """.Replace("\r\n", "\n")
-                            }
-                        },
                         Containers = new ContainerArgs
                         {
                             Name = "create-catalog",
