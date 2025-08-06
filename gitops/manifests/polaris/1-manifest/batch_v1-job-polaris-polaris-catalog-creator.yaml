@@ -66,11 +66,11 @@ spec:
 
           echo $PAYLOAD
 
-          curl -s -f -H "Authorization: Bearer ${token}" \
+          curl -s -H "Authorization: Bearer ${token}" \
               -H 'Accept: application/json' \
               -H 'Content-Type: application/json' \
               http://polaris:8181/api/management/v1/catalogs \
-              -d "$PAYLOAD"
+              -d "$PAYLOAD" -v
 
           echo Done.
         env:
