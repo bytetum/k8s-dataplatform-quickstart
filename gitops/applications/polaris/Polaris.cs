@@ -145,20 +145,20 @@ public class Polaris : ComponentResource
                                 echo Creating a catalog named '$CATALOG_NAME'...
 
                                 PAYLOAD='{
-                                    "catalog": {
-                                        "name": "'$CATALOG_NAME'",
-                                        "type": "INTERNAL",
-                                        "readOnly": false,
-                                        "properties": {
-                                            "default-base-location": "'$STORAGE_LOCATION'"
-                                        },
-                                        "storageConfigInfo": '$STORAGE_CONFIG_INFO'
-                                    }
-                                }'
+                                            "catalog": {
+                                                "name": "'$CATALOG_NAME'",
+                                                "type": "INTERNAL",
+                                                "readOnly": false,
+                                                "properties": {
+                                                    "default-base-location": "'$STORAGE_LOCATION'"
+                                                },
+                                                "storageConfigInfo": '$STORAGE_CONFIG_INFO'
+                                            }
+                                        }'
 
                                 echo $PAYLOAD
 
-                                curl -s -f -H "Authorization: Bearer ${token}" \
+                                curl -s -H "Authorization: Bearer ${token}" \
                                     -H 'Accept: application/json' \
                                     -H 'Content-Type: application/json' \
                                     http://polaris:8181/api/management/v1/catalogs \
