@@ -32,6 +32,7 @@ public class Polaris : ComponentResource
             },
             Spec = new JobSpecArgs
             {
+                BackoffLimit = 2,
                 Template = new PodTemplateSpecArgs
                 {
                     Spec = new PodSpecArgs
@@ -89,7 +90,7 @@ public class Polaris : ComponentResource
                                 token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \
                                     --user ${CLIENT_ID}:${CLIENT_SECRET} \
                                     -d grant_type=client_credentials \
-                                    -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\"access_token\":\"\([^\"]*\)\".*/\1/p')
+                                    -d scope=PRINCIPAL_ROLE:ALL | jq -r '.access_token')
                                 
                                 if [ -z "${token}" ]; then
                                     echo "Failed to obtain access token."
@@ -126,7 +127,7 @@ public class Polaris : ComponentResource
                                         "type": "INTERNAL",
                                         "readOnly": false,
                                         "properties": {
-                                        "default-base-location": "'"$STORAGE_LOCATION"'"
+                                            "default-base-location": "'"$STORAGE_LOCATION"'"
                                         },
                                         "storageConfigInfo": '$STORAGE_CONFIG_INFO'
                                     }
