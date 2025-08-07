@@ -142,11 +142,11 @@ public class Polaris : ComponentResource
                                 fi
 
                                 echo
-                                echo Creating a catalog named $CATALOG_NAME...
+                                echo Creating a catalog named '$CATALOG_NAME'...
 
                                 PAYLOAD='{
                                     "catalog": {
-                                        "name": "${CATALOG_NAME}",
+                                        "name": "'$CATALOG_NAME'",
                                         "type": "INTERNAL",
                                         "readOnly": false,
                                         "properties": {
