@@ -1,11 +1,6 @@
 extraEnv:
   - name: AWS_STORAGE_BUCKET
     value: s3://k8s-essence/
-  - name: AWS_REGION
-    valueFrom:
-      secretKeyRef:
-        name: iceberg-bucket-credentials
-        key: SCALEWAY_REGION
   - name: AWS_ACCESS_KEY_ID
     valueFrom:
       secretKeyRef:
