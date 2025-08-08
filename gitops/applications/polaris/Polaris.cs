@@ -90,36 +90,49 @@ public class Polaris : ComponentResource
                                 "-c",
                                 """
                                 set -e
-                                apk add --no-cache jq curl
+
+                                apk add --no-cache jq
 
                                 token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \
-                                    --user ${CLIENT_ID}:${CLIENT_SECRET} \
-                                    -d grant_type=client_credentials \
-                                    -d scope=PRINCIPAL_ROLE:ALL | jq -r '.access_token')
-                                
+                                --user ${CLIENT_ID}:${CLIENT_SECRET} \
+                                -d grant_type=client_credentials \
+                                -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+
                                 if [ -z "${token}" ]; then
-                                    echo "Failed to obtain access token."
-                                    exit 1
+                                echo "Failed to obtain access token."
+                                exit 1
                                 fi
-                                
+
                                 echo
                                 echo "Obtained access token: ${token}"
 
-                                if [[ "$STORAGE_LOCATION" == s3* ]]; then
-                                    STORAGE_TYPE="S3"
+                                STORAGE_TYPE="FILE"
+                                if [ -z "${STORAGE_LOCATION}" ]; then
+                                    echo "STORAGE_LOCATION is not set, using FILE storage type"
+                                    STORAGE_LOCATION="file:///var/tmp/quickstart_catalog/"
                                 else
-                                    echo "Error: Only S3 storage is supported. STORAGE_LOCATION must start with 's3'."
-                                    exit 1
+                                    echo "STORAGE_LOCATION is set to '$STORAGE_LOCATION'"
+                                    if [[ "$STORAGE_LOCATION" == s3* ]]; then
+                                        STORAGE_TYPE="S3"
+                                    elif [[ "$STORAGE_LOCATION" == gs* ]]; then
+                                        STORAGE_TYPE="GCS"
+                                    else
+                                        STORAGE_TYPE="AZURE"
+                                    fi
+                                    echo "Using StorageType: $STORAGE_TYPE"
                                 fi
-                                
-                                echo "Using StorageType: $STORAGE_TYPE"
 
                                 STORAGE_CONFIG_INFO="{\"storageType\": \"$STORAGE_TYPE\", \"allowedLocations\": [\"$STORAGE_LOCATION\"]}"
+
                                 if [[ "$STORAGE_TYPE" == "S3" ]]; then
                                     if [ -n "${AWS_ROLE_ARN}" ]; then
                                         STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg roleArn "$AWS_ROLE_ARN" '. + {roleArn: $roleArn}')
                                     else
                                         echo "Warning: AWS_ROLE_ARN not set for S3 storage"
+                                    fi
+                                elif [[ "$STORAGE_TYPE" == "AZURE" ]]; then
+                                    if [ -n "${AZURE_TENANT_ID}" ]; then
+                                        STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg tenantId "$AZURE_TENANT_ID" '. + {tenantId: $tenantId}')
                                     fi
                                 fi
 
@@ -132,41 +145,39 @@ public class Polaris : ComponentResource
                                 status_code=$(echo "$response" | tail -n1)
 
                                 if [ "$status_code" -eq 200 ]; then
-                                    echo "Catalog already exists, skipping creation..."
-                                    exit 0
+                                echo "Catalog already exists, skipping creation..."
+                                exit 0
                                 elif [ "$status_code" -eq 404 ]; then
-                                    echo "Catalog does not exist, proceeding..."
+                                echo "Catalog does not exist, proceeding..."
                                 else
-                                    echo "$response"
-                                    exit 1
+                                echo "$response"
+                                exit 1
                                 fi
 
                                 echo
-                                echo "Creating a catalog named $CATALOG_NAME..."
+                                echo Creating a catalog named $CATALOG_NAME...
 
-                                PAYLOAD=$(cat <<EOF
-                                {
-                                    "catalog": {
-                                        "name": "${CATALOG_NAME}",
-                                        "type": "INTERNAL",
-                                        "readOnly": false,
-                                        "properties": {
-                                            "default-base-location": "${STORAGE_LOCATION}"
-                                        },
-                                        "storageConfigInfo": ${STORAGE_CONFIG_INFO}
-                                    }
+                                PAYLOAD='{
+                                "catalog": {
+                                    "name": "'$CATALOG_NAME'",
+                                    "type": "INTERNAL",
+                                    "readOnly": false,
+                                    "properties": {
+                                    "default-base-location": "'$STORAGE_LOCATION'"
+                                    },
+                                    "storageConfigInfo": '$STORAGE_CONFIG_INFO'
                                 }
-                                EOF
-                                )
+                                }'
 
-                                echo "${PAYLOAD}"
+                                echo $PAYLOAD
 
-                                curl -s -H "Authorization: Bearer ${token}" \
-                                    -H 'Accept: application/json' \
-                                    -H 'Content-Type: application/json' \
-                                    http://polaris:8181/api/management/v1/catalogs \
-                                    -d "$PAYLOAD" -v
-                                
+                                curl -s -f -H "Authorization: Bearer ${token}" \
+                                -H 'Accept: application/json' \
+                                -H 'Content-Type: application/json' \
+                                http://polaris:8181/api/management/v1/catalogs \
+                                -d "$PAYLOAD" -v
+
+                                echo
                                 echo Done.
                                 """.Replace("\r\n", "\n")
                             }
