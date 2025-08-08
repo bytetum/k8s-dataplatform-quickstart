@@ -144,21 +144,22 @@ public class Polaris : ComponentResource
                                 echo
                                 echo "Creating a catalog named $CATALOG_NAME..."
 
-                                read -r -d '' PAYLOAD << EOF
+                                PAYLOAD=$(cat <<EOF
                                 {
                                     "catalog": {
-                                        "name": "$CATALOG_NAME",
+                                        "name": "${CATALOG_NAME}",
                                         "type": "INTERNAL",
                                         "readOnly": false,
                                         "properties": {
-                                            "default-base-location": "$STORAGE_LOCATION"
+                                            "default-base-location": "${STORAGE_LOCATION}"
                                         },
-                                        "storageConfigInfo": $STORAGE_CONFIG_INFO
+                                        "storageConfigInfo": ${STORAGE_CONFIG_INFO}
                                     }
                                 }
                                 EOF
+                                )
 
-                                echo $PAYLOAD
+                                echo "${PAYLOAD}"
 
                                 curl -s -H "Authorization: Bearer ${token}" \
                                     -H 'Accept: application/json' \
