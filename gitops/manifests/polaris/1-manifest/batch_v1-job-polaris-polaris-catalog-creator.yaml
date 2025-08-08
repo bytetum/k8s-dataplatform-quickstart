@@ -21,7 +21,7 @@ spec:
           token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \
               --user ${CLIENT_ID}:${CLIENT_SECRET} \
               -d grant_type=client_credentials \
-              -d scope=PRINCIPAL_ROLE:ALL | jq -r '.access_token')
+              -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*\"access_token\":\"\([^\"]*\)\".*/\1/p')
 
           if [ -z "${token}" ]; then
               echo "Failed to obtain access token."
@@ -49,38 +49,20 @@ spec:
               fi
           fi
 
-          response=$(curl -s -w "\n%{http_code}" \
-              -H "Authorization: Bearer ${token}" \
-              -H "Accept: application/json" \
-              -H "Content-Type: application/json" \
-              "http://polaris:8181/api/management/v1/catalogs/${CATALOG_NAME}")
-
-          status_code=$(echo "$response" | tail -n1)
-
-          if [ "$status_code" -eq 200 ]; then
-              echo "Catalog already exists, skipping creation..."
-              exit 0
-          elif [ "$status_code" -eq 404 ]; then
-              echo "Catalog does not exist, proceeding..."
-          else
-              echo "$response"
-              exit 1
-          fi
-
           echo
-          echo "Creating a catalog named $CATALOG_NAME..."
+          echo Creating a catalog named quickstart_catalog...
 
           PAYLOAD='{
-                      "catalog": {
-                          "name": "'"$CATALOG_NAME"'",
-                          "type": "INTERNAL",
-                          "readOnly": false,
-                          "properties": {
-                              "default-base-location": "'"$STORAGE_LOCATION"'"
-                          },
-                          "storageConfigInfo": '"$STORAGE_CONFIG_INFO"'
-                      }
-                  }'
+              "catalog": {
+                  "name": "quickstart_catalog",
+                  "type": "INTERNAL",
+                  "readOnly": false,
+                  "properties": {
+                  "default-base-location": "'"$STORAGE_LOCATION"'"
+                  },
+                  "storageConfigInfo": '$STORAGE_CONFIG_INFO'
+              }
+          }'
 
           echo $PAYLOAD
 
