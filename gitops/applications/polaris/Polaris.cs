@@ -46,6 +46,11 @@ public class Polaris : ComponentResource
                             {
                                 new EnvVarArgs
                                 {
+                                    Name = "CATALOG_NAME",
+                                    Value = "ao_catalog"
+                                },
+                                new EnvVarArgs
+                                {
                                     Name = "STORAGE_LOCATION",
                                     Value = "s3://k8s-essence/"
                                 },
@@ -79,7 +84,7 @@ public class Polaris : ComponentResource
                                     }
                                 }
                             },
-                            Command = new InputList<string>
+                                                        Command = new InputList<string>
                             {
                                 "sh",
                                 "-c",
@@ -118,12 +123,30 @@ public class Polaris : ComponentResource
                                     fi
                                 fi
 
+                                response=$(curl -s -w "\n%{http_code}" \
+                                    -H "Authorization: Bearer ${token}" \
+                                    -H "Accept: application/json" \
+                                    -H "Content-Type: application/json" \
+                                    "http://polaris:8181/api/management/v1/catalogs/${CATALOG_NAME}")
+
+                                status_code=$(echo "$response" | tail -n1)
+
+                                if [ "$status_code" -eq 200 ]; then
+                                    echo "Catalog already exists, skipping creation..."
+                                    exit 0
+                                elif [ "$status_code" -eq 404 ]; then
+                                    echo "Catalog does not exist, proceeding..."
+                                else
+                                    echo "$response"
+                                    exit 1
+                                fi
+
                                 echo
-                                echo Creating a catalog named quickstart_catalog...
+                                echo Creating a catalog named $CATALOG_NAME...
 
                                 PAYLOAD='{
                                     "catalog": {
-                                        "name": "quickstart_catalog",
+                                        "name": "'$CATALOG_NAME'",
                                         "type": "INTERNAL",
                                         "readOnly": false,
                                         "properties": {
