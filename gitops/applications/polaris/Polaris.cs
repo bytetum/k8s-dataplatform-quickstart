@@ -146,13 +146,13 @@ public class Polaris : ComponentResource
 
                                 PAYLOAD='{
                                             "catalog": {
-                                                "name": "'$CATALOG_NAME'",
+                                                "name": "'"$CATALOG_NAME"'",
                                                 "type": "INTERNAL",
                                                 "readOnly": false,
                                                 "properties": {
                                                     "default-base-location": "'"$STORAGE_LOCATION"'"
                                                 },
-                                                "storageConfigInfo": '$STORAGE_CONFIG_INFO'
+                                                "storageConfigInfo": '"$STORAGE_CONFIG_INFO"'
                                             }
                                         }'
 
