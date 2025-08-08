@@ -10,6 +10,7 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
     private string destinationNamespace = name;
     private int syncWave = 0;
     private readonly List<ArgoApplicationSource> sources = [];
+    private readonly List<string> syncOptions = [];
 
     public ArgoApplicationBuilder SyncWave(int syncWave)
     {
@@ -34,6 +35,12 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
         return this;
     }
 
+    public ArgoApplicationBuilder ServerSide()
+    {
+        syncOptions.Add("ServerSideApply=true");
+        return this;
+    }
+
     public ArgoApplicationBuilder Branch(string branch)
     {
         sources.Last().TargetRevision = branch;
@@ -43,6 +50,12 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
     public ArgoApplicationBuilder RepoUrl(string repoURL)
     {
         sources.Last().RepoURL = repoURL;
+        return this;
+    }
+
+    public ArgoApplicationBuilder Path(string path)
+    {
+        sources.Last().Path = path;
         return this;
     }
 
@@ -82,7 +95,12 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
 
         if (sources.Any(source => source.applicationType == ApplicationType.Helm))
         {
-            syncPolicy.SyncOptions = ["CreateNamespace=true"];
+            syncOptions.Add("CreateNamespace=true");
+        }
+
+        if (syncOptions.Any())
+        {
+            syncPolicy.SyncOptions = syncOptions;
         }
 
         var spec = new ApplicationSpecArgs
