@@ -52,7 +52,7 @@ public class Polaris : ComponentResource
                                 new EnvVarArgs
                                 {
                                     Name = "STORAGE_LOCATION",
-                                    Value = "s3://k8s-essence/"
+                                    Value = "s3://local-iceberg-test/"
                                 },
                                 new EnvVarArgs
                                 {
@@ -84,7 +84,7 @@ public class Polaris : ComponentResource
                                     }
                                 }
                             },
-                                                        Command = new InputList<string>
+                            Command = new InputList<string>
                             {
                                 "sh",
                                 "-c",

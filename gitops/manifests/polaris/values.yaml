@@ -1,6 +1,6 @@
 extraEnv:
   - name: AWS_STORAGE_BUCKET
-    value: s3://k8s-essence/
+    value: s3://local-iceberg-test/
   - name: AWS_REGION
     valueFrom:
       secretKeyRef:

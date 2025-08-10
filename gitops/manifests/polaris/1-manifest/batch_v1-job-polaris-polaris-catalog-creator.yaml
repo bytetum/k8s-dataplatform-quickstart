@@ -95,7 +95,7 @@ spec:
         - name: CATALOG_NAME
           value: ao_catalog
         - name: STORAGE_LOCATION
-          value: s3://k8s-essence/
+          value: s3://local-iceberg-test/
         - name: CLIENT_ID
           value: root
         - name: CLIENT_SECRET
