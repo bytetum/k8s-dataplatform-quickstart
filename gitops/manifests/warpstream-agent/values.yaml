@@ -5,7 +5,7 @@ config:
   agentKeySecretKeyRef:
     name: warpstream-agent-apikey
     key: agent_key
-  bucketURL: "s3://local-iceberg-test/"
+  bucketURL: "s3://local-iceberg-test?region=us-east-1&endpoint=https://local-iceberg-test.s3-website-us-east-1.amazonaws.com"
   virtualClusterID: "vci_6a0d7057_e98d_4c8d_8fd1_c8aff07c88cb"
   region: "us-east-1"
 
@@ -28,7 +28,7 @@ extraEnv:
     value: "true"
 
   - name: WARPSTREAM_AVAILABILITY_ZONE
-    value: "ap-southeast-1"
+    value: "us-east-1"
 
 service:
   type: ClusterIP
