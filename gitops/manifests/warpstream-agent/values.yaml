@@ -5,9 +5,9 @@ config:
   agentKeySecretKeyRef:
     name: warpstream-agent-apikey
     key: agent_key
-  bucketURL: "s3://ao-warpstream-test?region=nl-ams&endpoint=https://s3.nl-ams.scw.cloud"
-  virtualClusterID: "vci_642b3fa5_9f94_48d0_9006_8e050aa7fbb0"
-  region: "eu-central-1"
+  bucketURL: "s3://local-warpstream-test"
+  virtualClusterID: "vci_6a0d7057_e98d_4c8d_8fd1_c8aff07c88cb"
+  region: "us-east-1"
 
 extraEnv:
   - name: AWS_ACCESS_KEY_ID
