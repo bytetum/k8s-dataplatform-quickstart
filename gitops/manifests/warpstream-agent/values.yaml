@@ -7,7 +7,7 @@ config:
     key: agent_key
   bucketURL: "s3://local-warpstream-test?region=ap-southeast-1"
   virtualClusterID: "vci_6a0d7057_e98d_4c8d_8fd1_c8aff07c88cb"
-  region: "ap-southeast-1"
+  region: "us-east-1"
 
 extraEnv:
   - name: AWS_ACCESS_KEY_ID
