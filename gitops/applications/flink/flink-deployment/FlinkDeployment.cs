@@ -106,6 +106,12 @@ internal class FlinkDeployment : ComponentResource
                         ["cpu"] = 1
                     }
                 },
+                ["service"] = new Dictionary<string, object>
+                {
+                    ["type"] = "ClusterIP",
+                    ["port"] = 8081,
+                    ["targetPort"] = 8081
+                },
                 ["taskManager"] = new Dictionary<string, object>
                 {
                     ["resource"] = new Dictionary<string, object>
