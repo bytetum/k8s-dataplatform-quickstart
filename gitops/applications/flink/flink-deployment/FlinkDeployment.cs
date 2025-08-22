@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
@@ -73,6 +74,24 @@ internal class FlinkDeployment : ComponentResource
             DependsOn = new[] { flinkPv },
             Parent = this
         });
+        
+        var sqlFileContent = File.ReadAllText("./flink/flink-deployment/test_job.sql");
+        var sqlScriptConfigMap = new ConfigMap("flink-sql-script-cm", new ConfigMapArgs
+        {
+            Metadata = new ObjectMetaArgs
+                {
+                    Name = "flink-sql-script"
+                },
+                Data =
+                {
+                    { "test_job.sql", sqlFileContent }
+                }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this
+        });
+
         var flinkDeployment = new Kubernetes.ApiExtensions.CustomResource("flink-deployment", new FlinkDeploymentArgs()
         {
             Metadata = new ObjectMetaArgs
@@ -192,6 +211,7 @@ internal class FlinkDeployment : ComponentResource
             DependsOn = new List<Resource> { flinkPvc },
             Parent = this
         });
+        
     }
 
     private class FlinkDeploymentArgs : Kubernetes.ApiExtensions.CustomResourceArgs
