@@ -227,7 +227,7 @@ internal class FlinkDeployment : ComponentResource
                     // Add the job configuration
                     ["job"] = new Dictionary<string, object>
                     {
-                        ["jarURI"] = "local:///opt/flink/opt/flink-sql-client-1.20.2.jar",
+                        ["jarURI"] = "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar",
                         ["args"] = new[]
                         {
                             "-f",
