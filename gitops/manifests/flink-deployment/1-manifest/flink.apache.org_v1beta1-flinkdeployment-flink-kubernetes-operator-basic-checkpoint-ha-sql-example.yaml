@@ -1,0 +1,56 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: basic-checkpoint-ha-sql-example
+  namespace: flink-kubernetes-operator
+spec:
+  flinkConfiguration:
+    env.java.opts: -verbose:gc -XX:+PrintGCDetails
+    high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
+    high-availability.storageDir: file:///flink-data/ha
+    jobmanager.archive.fs.dir: file:///flink-data/completed-jobs
+    jobmanager.scheduler: adaptive
+    jobstore.dir: file:///flink-data/job-store
+    kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
+    kafka.input.topic: input-topic
+    kafka.output.topic: output-topic
+    state.checkpoints.dir: file:///flink-data/checkpoints
+    state.savepoints.dir: file:///flink-data/savepoints
+    taskmanager.numberOfTaskSlots: "2"
+  flinkVersion: v1_20
+  image: flink:1.20
+  job:
+    args:
+    - -f
+    - /opt/flink/sql/job.sql
+    entryPoint: sql-client
+    parallelism: 1
+    upgradeMode: stateless
+  jobManager:
+    podTemplate:
+      spec:
+        containers:
+        - envFrom:
+          - secretRef:
+              name: flink-warpstream-credentials-secret
+          name: flink-main-container
+          volumeMounts:
+          - mountPath: /opt/flink/sql/job.sql
+            name: flink-sql-script-volume
+            subPath: job.sql
+        volumes:
+        - configMap:
+            name: flink-sql-script
+          name: flink-sql-script-volume
+    resource:
+      cpu: 1
+      memory: 2048m
+  service:
+    port: 8081
+    targetPort: 8081
+    type: ClusterIP
+  serviceAccount: flink
+  taskManager:
+    resource:
+      cpu: 1
+      memory: 2048m
