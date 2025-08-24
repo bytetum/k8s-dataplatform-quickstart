@@ -72,6 +72,12 @@ internal class Secrets : ComponentResource
 								Value = "{\"agent_key\": \"AGENT_KEY\"}",
 								Version = "latest_enabled"
 							},
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:flink-warpstream-credentials-secret",
+								Value = "{\"USERNAME\": \"USERNAME\", \"PASSWORD\": \"PASSWORD\"}",
+								Version = "latest_enabled"
+							},
                         }
                     }
                     //MARK: endchange

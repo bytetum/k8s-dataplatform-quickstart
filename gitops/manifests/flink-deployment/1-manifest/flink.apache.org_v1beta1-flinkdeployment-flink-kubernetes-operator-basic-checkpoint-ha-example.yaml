@@ -32,6 +32,9 @@ spec:
         volumeMounts:
         - mountPath: /flink-data
           name: flink-volume
+        - mountPath: /etc/flink/secrets
+          name: kafka-secret-volume
+          readOnly: true
       initContainers:
       - command:
         - sh
