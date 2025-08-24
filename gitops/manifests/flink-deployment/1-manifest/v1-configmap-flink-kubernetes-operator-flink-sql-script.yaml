@@ -16,4 +16,4 @@ data:
 kind: ConfigMap
 metadata:
   name: flink-sql-script
-  namespace: default
+  namespace: flink-kubernetes-operator

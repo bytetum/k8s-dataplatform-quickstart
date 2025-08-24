@@ -81,7 +81,8 @@ internal class FlinkDeployment : ComponentResource
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = "flink-sql-script"
+                Name = "flink-sql-script",
+                Namespace = Constants.Namespace,
             },
             Data =
             {
