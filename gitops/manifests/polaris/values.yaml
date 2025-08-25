@@ -39,76 +39,71 @@ extraEnv:
         key: db-address
 
   - name: QUARKUS_DATASOURCE_JDBC_URL
-    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/$(POLARIS_REALM)?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
-    
-  - name: POLARIS_REALM
-    value: "database-test"
+    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
 
 realmContext:
   realms:
-    - $(POLARIS_REALM)
-    
-extraInitContainers: 
-   - name: polaris-boostrap
-     image: apache/polaris-admin-tool:latest
-     imagePullPolicy: Always
-     env:
-       - name: POLARIS_ROOT_PASSWORD
-         valueFrom:
-           secretKeyRef:
-             name: polaris-root-password
-             key:  polaris-root-password
-         
-       - name: POLARIS_PERSISTENCE_TYPE
-         value: relational-jdbc
-         
-       - name: POSTGRES_HOST
-         valueFrom:
-           secretKeyRef:
-             name: polaris-postgres-credentials
-             key: db-address  
-             
-       - name: QUARKUS_DATASOURCE_USERNAME
-         valueFrom:
-           secretKeyRef:
-             name: polaris-postgres-credentials
-             key: username
-             
-       - name: QUARKUS_DATASOURCE_PASSWORD
-         valueFrom:
-           secretKeyRef:
-             name: polaris-postgres-credentials
-             key: password
-             
-       - name: QUARKUS_DATASOURCE_JDBC_URL
-         value: "jdbc:postgresql://$(POSTGRES_HOST):5432/$(POLARIS_REALM)?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+    - database-test
 
-       - name: POLARIS_REALM
-         value: "database-test"
-     command:
-       - "/bin/bash"
-       - "-c"
-       - |
-         set -x
-         ACCEPTABLE_ERROR="already been bootstrapped"
-         
-         # Execute the command, redirecting stderr to stdout to capture all output
-         OUTPUT=$(java -jar /deployments/polaris-admin-tool.jar bootstrap --realm=$(POLARIS_REALM) --credential=$(POLARIS_REALM),root,${POLARIS_ROOT_PASSWORD} 2>&1)
-         EXIT_CODE=$?
-         
-         echo "--- Polaris Bootstrap Output ---"
-         echo "${OUTPUT}"
-         echo "------------------------------"
-         
-         if [ ${EXIT_CODE} -eq 0 ]; then
-           echo "Bootstrap successful on the first run."
-           exit 0
-         fi
-         
-         if [[ "${OUTPUT}" == *"${ACCEPTABLE_ERROR}"* ]]; then
-           echo "Ignoring acceptable error: Metastore is already bootstrapped."
-           exit 0
-         else
-           echo "Bootstrap failed with an unexpected error (Exit Code: ${EXIT_CODE})." >&2
-           exit 1
-         fi
+extraInitContainers:
+  - name: polaris-boostrap
+    image: apache/polaris-admin-tool:latest
+    imagePullPolicy: Always
+    env:
+      - name: POLARIS_ROOT_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: polaris-root-password
+            key:  polaris-root-password
+
+      - name: POLARIS_PERSISTENCE_TYPE
+        value: relational-jdbc
+
+      - name: POSTGRES_HOST
+        valueFrom:
+          secretKeyRef:
+            name: polaris-postgres-credentials
+            key: db-address
+
+      - name: QUARKUS_DATASOURCE_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: polaris-postgres-credentials
+            key: username
+
+      - name: QUARKUS_DATASOURCE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: polaris-postgres-credentials
+            key: password
+
+      - name: QUARKUS_DATASOURCE_JDBC_URL
+        value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+    
+    command:
+      - "/bin/bash"
+      - "-c"
+      - |
+        set -x
+        ACCEPTABLE_ERROR="already been bootstrapped"
+        
+        # Execute the command, redirecting stderr to stdout to capture all output
+        OUTPUT=$(java -jar /deployments/polaris-admin-tool.jar bootstrap --realm=database-test --credential=database-test,root,${POLARIS_ROOT_PASSWORD} 2>&1)
+        EXIT_CODE=$?
+        
+        echo "--- Polaris Bootstrap Output ---"
+        echo "${OUTPUT}"
+        echo "------------------------------"
+        
+        if [ ${EXIT_CODE} -eq 0 ]; then
+          echo "Bootstrap successful on the first run."
+          exit 0
+        fi
+        
+        if [[ "${OUTPUT}" == *"${ACCEPTABLE_ERROR}"* ]]; then
+          echo "Ignoring acceptable error: Metastore is already bootstrapped."
+          exit 0
+        else
+          echo "Bootstrap failed with an unexpected error (Exit Code: ${EXIT_CODE})." >&2
+          exit 1
+        fi
