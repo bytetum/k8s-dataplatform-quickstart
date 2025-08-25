@@ -6,16 +6,12 @@ metadata:
 spec:
   flinkConfiguration:
     env.java.opts: -verbose:gc -XX:+PrintGCDetails
-    high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
-    high-availability.storageDir: file:///flink-data/ha
     jobmanager.archive.fs.dir: file:///flink-data/completed-jobs
     jobmanager.scheduler: adaptive
     jobstore.dir: file:///flink-data/job-store
     kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
     kafka.input.topic: input-topic
     kafka.output.topic: output-topic
-    state.checkpoints.dir: file:///flink-data/checkpoints
-    state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"
   flinkVersion: v1_20
   image: flink:1.20
