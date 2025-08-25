@@ -37,7 +37,7 @@ internal class Secrets : ComponentResource
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4",
-                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}",
+                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\", \"SCALEWAY_ROLE_ARN\": \"ROLE_ID\", \"SCALEWAY_REGION\": \"SCALEWAY_REGION\"}",
                                 Version = "latest_enabled"
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
@@ -59,6 +59,25 @@ internal class Secrets : ComponentResource
                                 Value = "{\"polaris-root-password\": \"s3cr3t\"}",
                                 Version = "latest_enabled",
                             }
+							,
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:827b85c8-babe-4a43-8af2-dce1dd530081",
+								Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}",
+								Version = "latest_enabled"
+							},
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:ae402e70-87ee-435a-8ecc-f6c91c57ae9c",
+								Value = "{\"agent_key\": \"AGENT_KEY\"}",
+								Version = "latest_enabled"
+							},
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:flink-warpstream-credentials-secret",
+								Value = "{\"USERNAME\": \"USERNAME\", \"PASSWORD\": \"PASSWORD\"}",
+								Version = "latest_enabled"
+							},
                         }
                     }
                     //MARK: endchange
