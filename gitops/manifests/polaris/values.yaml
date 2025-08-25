@@ -39,11 +39,14 @@ extraEnv:
         key: db-address
 
   - name: QUARKUS_DATASOURCE_JDBC_URL
-    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/$(POLARIS_REALM)?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+    
+  - name: POLARIS_REALM
+    value: "database-test"
 
 realmContext:
   realms:
-    - database-test
+    - $(POLARIS_REALM)
     
 extraInitContainers: 
    - name: polaris-boostrap
@@ -78,8 +81,10 @@ extraInitContainers:
              key: password
              
        - name: QUARKUS_DATASOURCE_JDBC_URL
-         value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
-       
+         value: "jdbc:postgresql://$(POSTGRES_HOST):5432/$(POLARIS_REALM)?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+
+       - name: POLARIS_REALM
+         value: "database-test"
      command:
        - "/bin/bash"
        - "-c"
@@ -88,7 +93,7 @@ extraInitContainers:
          ACCEPTABLE_ERROR="already been bootstrapped"
          
          # Execute the command, redirecting stderr to stdout to capture all output
-         OUTPUT=$(java -jar /deployments/polaris-admin-tool.jar bootstrap --realm=database-test --credential=database-test,root,${POLARIS_ROOT_PASSWORD} 2>&1)
+         OUTPUT=$(java -jar /deployments/polaris-admin-tool.jar bootstrap --realm=$(POLARIS_REALM) --credential=$(POLARIS_REALM),root,${POLARIS_ROOT_PASSWORD} 2>&1)
          EXIT_CODE=$?
          
          echo "--- Polaris Bootstrap Output ---"
