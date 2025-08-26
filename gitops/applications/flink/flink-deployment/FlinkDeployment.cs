@@ -118,7 +118,7 @@ internal class FlinkDeployment : ComponentResource
                     {
                         Key = "id:flink-warpstream-credentials-secret"
                     }
-                }    
+                }
             }
         }, new CustomResourceOptions
         {
@@ -140,19 +140,24 @@ internal class FlinkDeployment : ComponentResource
                     ["flinkVersion"] = "v1_20",
                     ["flinkConfiguration"] = new Dictionary<string, object>
                     {
-    ["taskmanager.numberOfTaskSlots"] = "2",
-    ["jobmanager.archive.fs.dir"] = "file:///flink-data/completed-jobs",
-    ["jobstore.dir"] = "file:///flink-data/job-store",
-    ["jobmanager.scheduler"] = "adaptive",
-    // Add additional debug/logging configuration
-    ["env.java.opts"] = "-verbose:gc -XX:+PrintGCDetails",
-    // Kafka configuration
-    ["kafka.bootstrap.servers"] = "warpstream-agent.default.svc.cluster.local:9092",
-    ["kafka.input.topic"] = "input-topic",
-    ["kafka.output.topic"] = "output-topic",
-    // IMPORTANT: Define your credentials here, not in the SQL script
-    //              ["kafka.sasl.jaas.config"] = org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${env.USERNAME}\" password=\"${env.PASSWORD}\";,
-},	
+                        ["taskmanager.numberOfTaskSlots"] = "2",
+                        ["state.savepoints.dir"] = "file:///flink-data/savepoints",
+                        ["state.checkpoints.dir"] = "file:///flink-data/checkpoints",
+                        ["high-availability"] =
+                            "org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory",
+                        ["high-availability.storageDir"] = "file:///flink-data/ha",
+                        ["jobmanager.archive.fs.dir"] = "file:///flink-data/completed-jobs",
+                        ["jobstore.dir"] = "file:///flink-data/job-store",
+                        ["jobmanager.scheduler"] = "adaptive",
+                        // Add additional debug/logging configuration
+                        ["env.java.opts"] = "-verbose:gc -XX:+PrintGCDetails",
+                        // Kafka configuration
+                        ["kafka.bootstrap.servers"] = "warpstream-agent.default.svc.cluster.local:9092",
+                        ["kafka.input.topic"] = "input-topic",
+                        ["kafka.output.topic"] = "output-topic",
+                        // IMPORTANT: Define your credentials here, not in the SQL script
+                        //              ["kafka.sasl.jaas.config"] = org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${env.USERNAME}\" password=\"${env.PASSWORD}\";,
+                    },
                     ["serviceAccount"] = "flink",
                     ["jobManager"] = new Dictionary<string, object>
                     {
@@ -187,6 +192,18 @@ internal class FlinkDeployment : ComponentResource
                                                 ["mountPath"] = "/opt/flink/sql/job.sql",
                                                 ["name"] = "flink-sql-script-volume",
                                                 ["subPath"] = "job.sql"
+                                            },
+                                            // 2. [FIX] Add a writable volume for the Flink conf directory
+                                            new Dictionary<string, object>
+                                            {
+                                                ["name"] = "flink-conf-volume",
+                                                ["mountPath"] = "/opt/flink/conf"
+                                            },
+                                            // 3. [FIX] Add a persistent volume for High-Availability storage
+                                            new Dictionary<string, object>
+                                            {
+                                                ["name"] = "flink-ha-storage",
+                                                ["mountPath"] = "/flink-data"
                                             }
                                         }
                                     }
@@ -200,8 +217,22 @@ internal class FlinkDeployment : ComponentResource
                                         {
                                             ["name"] = "flink-sql-script"
                                         }
+                                    },
+                                     new Dictionary<string, object>
+                                    {
+                                        ["name"] = "flink-conf-volume",
+                                        ["emptyDir"] = new Dictionary<string, object>() // Represents an empty {} object
+                                    },
+                                     new Dictionary<string, object>
+                                    {
+                                        ["name"] = "flink-ha-storage",
+                                        ["persistentVolumeClaim"] = new Dictionary<string, object>
+                                        {
+                                            // IMPORTANT: Make sure a PVC with this name exists in your namespace
+                                            ["claimName"] = "flink-ha-pvc"
+                                        }
                                     }
-                                }
+                                },
                             }
                         }
                     },
@@ -223,7 +254,7 @@ internal class FlinkDeployment : ComponentResource
                     ["job"] = new Dictionary<string, object>
                     {
                         ["jarURI"] = "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar",
-						["entryClass"] = "org.apache.flink.table.client.SqlClient",
+                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
                         ["args"] = new[]
                         {
                             "-f",
