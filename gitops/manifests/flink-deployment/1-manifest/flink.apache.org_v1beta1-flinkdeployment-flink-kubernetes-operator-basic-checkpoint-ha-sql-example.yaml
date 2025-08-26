@@ -49,16 +49,15 @@ spec:
           - -c
           - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints
             /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod
-            -R 777 /flink-data /opt/flink/conf
-          image: busybox:1.35
-          name: init-flink-filesystem
+            -R 777 /flink-data
+          image: busybox:1.28
+          name: init-fs
           securityContext:
+            privileged: true
             runAsUser: 0
           volumeMounts:
           - mountPath: /flink-data
-            name: flink-ha-storage
-          - mountPath: /opt/flink/conf
-            name: flink-conf-volume
+            name: flink-volume
         volumes:
         - name: flink-volume
           persistentVolumeClaim:
