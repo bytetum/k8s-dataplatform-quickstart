@@ -28,48 +28,48 @@ spec:
     parallelism: 1
     upgradeMode: stateless
   jobManager:
-    podTemplate:
-      spec:
-        containers:
-        - name: flink-main-container
-          volumeMounts:
-          - mountPath: /flink-data
-            name: flink-volume
-        - envFrom:
-          - secretRef:
-              name: flink-warpstream-credentials-secret
-          name: flink-main-container
-          volumeMounts:
-          - mountPath: /opt/flink/sql/job.sql
-            name: flink-sql-script-volume
-            subPath: job.sql
-        initContainers:
-        - command:
-          - sh
-          - -c
-          - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints
-            /flink-data/ha /flink-data/completed-jobs /flink-data/job-result-store/basic-checkpoint-ha-sql-example
-            /flink-data/job-store && chmod -R 777 /flink-data
-          image: busybox:1.28
-          name: init-fs
-          securityContext:
-            privileged: true
-            runAsUser: 0
-          volumeMounts:
-          - mountPath: /flink-data
-            name: flink-volume
-        securityContext:
-          fsGroup: 1001
-        volumes:
-        - name: flink-volume
-          persistentVolumeClaim:
-            claimName: flink-pvc
-        - configMap:
-            name: flink-sql-script
-          name: flink-sql-script-volume
     resource:
       cpu: 1
       memory: 2048m
+  podTemplate:
+    spec:
+      containers:
+      - name: flink-main-container
+        volumeMounts:
+        - mountPath: /flink-data
+          name: flink-volume
+      - envFrom:
+        - secretRef:
+            name: flink-warpstream-credentials-secret
+        name: flink-main-container
+        volumeMounts:
+        - mountPath: /opt/flink/sql/job.sql
+          name: flink-sql-script-volume
+          subPath: job.sql
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
+          /flink-data/completed-jobs /flink-data/job-result-store/basic-checkpoint-ha-sql-example
+          /flink-data/job-store && chmod -R 777 /flink-data
+        image: busybox:1.28
+        name: init-fs
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /flink-data
+          name: flink-volume
+      securityContext:
+        fsGroup: 1001
+      volumes:
+      - name: flink-volume
+        persistentVolumeClaim:
+          claimName: flink-pvc
+      - configMap:
+          name: flink-sql-script
+        name: flink-sql-script-volume
   service:
     port: 8081
     targetPort: 8081

@@ -86,7 +86,7 @@ internal class FlinkDeployment : ComponentResource
             },
             Data =
             {
-                { "test_job.sql", sqlFileContent }
+                { "job.sql", sqlFileContent }
             }
         }, new CustomResourceOptions
         {
@@ -94,37 +94,38 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
 
-        var flinkKafkaCredentialsSecret = new ExternalSecret("flink-warpstream-credentials-secret", new ExternalSecretArgs()
-        {
-            Metadata = new ObjectMetaArgs
+        var flinkKafkaCredentialsSecret = new ExternalSecret("flink-warpstream-credentials-secret",
+            new ExternalSecretArgs()
             {
-                Name = "flink-warpstream-credentials-secret",
-                Namespace = Constants.Namespace
-            },
-            Spec = new ExternalSecretSpecArgs
-            {
-                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                Metadata = new ObjectMetaArgs
                 {
-                    Name = "secret-store",
-                    Kind = "ClusterSecretStore"
+                    Name = "flink-warpstream-credentials-secret",
+                    Namespace = Constants.Namespace
                 },
-                Target = new ExternalSecretSpecTargetArgs()
+                Spec = new ExternalSecretSpecArgs
                 {
-                    Name = "flink-warpstream-credentials-secret"
-                },
-                DataFrom = new ExternalSecretSpecDataFromArgs()
-                {
-                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                     {
-                        Key = "id:flink-warpstream-credentials-secret"
+                        Name = "secret-store",
+                        Kind = "ClusterSecretStore"
+                    },
+                    Target = new ExternalSecretSpecTargetArgs()
+                    {
+                        Name = "flink-warpstream-credentials-secret"
+                    },
+                    DataFrom = new ExternalSecretSpecDataFromArgs()
+                    {
+                        Extract = new ExternalSecretSpecDataFromExtractArgs()
+                        {
+                            Key = "id:flink-warpstream-credentials-secret"
+                        }
                     }
-                }    
-            }
-        }, new CustomResourceOptions
-        {
-            Provider = provider,
-            Parent = this
-        });
+                }
+            }, new CustomResourceOptions
+            {
+                Provider = provider,
+                Parent = this
+            });
 
         var flinkDeploymentSql = new Kubernetes.ApiExtensions.CustomResource("flink-deployment-sql",
             new FlinkDeploymentArgs()
@@ -166,95 +167,95 @@ internal class FlinkDeployment : ComponentResource
                             ["memory"] = "2048m",
                             ["cpu"] = 1,
                         },
-                        ["podTemplate"] = new Dictionary<string, object>
+                    },
+                    ["podTemplate"] = new Dictionary<string, object>
+                    {
+                        ["spec"] = new Dictionary<string, object>
                         {
-                            ["spec"] = new Dictionary<string, object>
+                            ["securityContext"] = new Dictionary<string, object>
                             {
-                                ["securityContext"] = new Dictionary<string, object>
+                                ["fsGroup"] = 1001,
+                            },
+                            ["initContainers"] = new List<Dictionary<string, object>>
+                            {
+                                new Dictionary<string, object>
                                 {
-                                    ["fsGroup"] = 1001,
-                                },
-								["initContainers"] = new List<Dictionary<string, object>>
-                                {
-                                    new Dictionary<string, object>
+                                    ["name"] = "init-fs",
+                                    ["image"] = "busybox:1.28",
+                                    ["command"] = new List<string>
                                     {
-                                        ["name"] = "init-fs",
-                                        ["image"] = "busybox:1.28",
-                                        ["command"] = new List<string>
+                                        "sh", "-c",
+                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-result-store/basic-checkpoint-ha-sql-example /flink-data/job-store && chmod -R 777 /flink-data"
+                                    },
+                                    ["volumeMounts"] = new List<Dictionary<string, object>>
+                                    {
+                                        new Dictionary<string, object>
                                         {
-                                            "sh", "-c",
-                                            "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-result-store/basic-checkpoint-ha-sql-example /flink-data/job-store && chmod -R 777 /flink-data"
-                                        },
-                                        ["volumeMounts"] = new List<Dictionary<string, object>>
+                                            ["mountPath"] = "/flink-data",
+                                            ["name"] = "flink-volume"
+                                        }
+                                    },
+                                    ["securityContext"] = new Dictionary<string, object>
+                                    {
+                                        ["runAsUser"] = 0, // Run as root
+                                        ["privileged"] = true
+                                    }
+                                }
+                            },
+                            ["containers"] = new[]
+                            {
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "flink-main-container",
+                                    ["volumeMounts"] = new List<Dictionary<string, object>>
+                                    {
+                                        new Dictionary<string, object>
                                         {
-                                            new Dictionary<string, object>
-                                            {
-                                                ["mountPath"] = "/flink-data",
-                                                ["name"] = "flink-volume"
-                                            }
-                                        },
-                                        ["securityContext"] = new Dictionary<string, object>
-                                        {
-                                            ["runAsUser"] = 0, // Run as root
-                                            ["privileged"] = true
+                                            ["mountPath"] = "/flink-data",
+                                            ["name"] = "flink-volume"
                                         }
                                     }
                                 },
-                                ["containers"] = new[]
+                                new Dictionary<string, object>
                                 {
-                                    new Dictionary<string, object>
+                                    ["name"] = "flink-main-container",
+                                    ["envFrom"] = new[]
                                     {
-                                        ["name"] = "flink-main-container",
-                                        ["volumeMounts"] = new List<Dictionary<string, object>>
+                                        new Dictionary<string, object>
                                         {
-                                            new Dictionary<string, object>
+                                            ["secretRef"] = new Dictionary<string, object>
                                             {
-                                                ["mountPath"] = "/flink-data",
-                                                ["name"] = "flink-volume"
+                                                ["name"] = "flink-warpstream-credentials-secret"
                                             }
                                         }
                                     },
-                                    new Dictionary<string, object>
+                                    ["volumeMounts"] = new[]
                                     {
-                                        ["name"] = "flink-main-container",
-                                        ["envFrom"] = new[]
+                                        new Dictionary<string, object>
                                         {
-                                            new Dictionary<string, object>
-                                            {
-                                                ["secretRef"] = new Dictionary<string, object>
-                                                {
-                                                    ["name"] = "flink-warpstream-credentials-secret"
-                                                }
-                                            }
-                                        },
-                                        ["volumeMounts"] = new[]
-                                        {
-                                            new Dictionary<string, object>
-                                            {
-                                                ["mountPath"] = "/opt/flink/sql/job.sql",
-                                                ["name"] = "flink-sql-script-volume",
-                                                ["subPath"] = "job.sql"
-                                            }
+                                            ["mountPath"] = "/opt/flink/sql/job.sql",
+                                            ["name"] = "flink-sql-script-volume",
+                                            ["subPath"] = "job.sql"
                                         }
                                     }
-                                },
-                                ["volumes"] = new[]
+                                }
+                            },
+                            ["volumes"] = new[]
+                            {
+                                new Dictionary<string, object>
                                 {
-                                    new Dictionary<string, object>
+                                    ["name"] = "flink-volume",
+                                    ["persistentVolumeClaim"] = new Dictionary<string, object>
                                     {
-                                        ["name"] = "flink-volume",
-                                        ["persistentVolumeClaim"] = new Dictionary<string, object>
-                                        {
-                                            ["claimName"] = flinkPvc.Metadata.Apply(metadata => metadata.Name)
-                                        }
-                                    },
-                                    new Dictionary<string, object>
+                                        ["claimName"] = flinkPvc.Metadata.Apply(metadata => metadata.Name)
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "flink-sql-script-volume",
+                                    ["configMap"] = new Dictionary<string, object>
                                     {
-                                        ["name"] = "flink-sql-script-volume",
-                                        ["configMap"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "flink-sql-script"
-                                        }
+                                        ["name"] = "flink-sql-script"
                                     }
                                 }
                             }
@@ -277,8 +278,9 @@ internal class FlinkDeployment : ComponentResource
                     // Add the job configuration
                     ["job"] = new Dictionary<string, object>
                     {
-                        ["jarURI"] = "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar",
-						["entryClass"] = "org.apache.flink.table.client.SqlClient",
+                        ["jarURI"] =
+                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar",
+                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
                         ["args"] = new[]
                         {
                             "-f",
@@ -304,4 +306,3 @@ internal class FlinkDeployment : ComponentResource
         [Input("spec")] public Dictionary<string, object>? Spec { get; set; }
     }
 }
-

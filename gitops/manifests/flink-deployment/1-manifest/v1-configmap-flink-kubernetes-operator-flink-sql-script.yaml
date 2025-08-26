@@ -1,6 +1,6 @@
 apiVersion: v1
 data:
-  test_job.sql: "-- This script is a template. Values are injected by Flink's configuration.\r\n\r\nCREATE
+  job.sql: "-- This script is a template. Values are injected by Flink's configuration.\r\n\r\nCREATE
     TABLE input_source (\r\n    `message` STRING\r\n) WITH (\r\n    'connector' =
     'kafka',\r\n    'topic' = '${kafka.input.topic}',\r\n    'properties.bootstrap.servers'
     = '${kafka.bootstrap.servers}',\r\n    'scan.startup.mode' = 'latest-offset',\r\n
