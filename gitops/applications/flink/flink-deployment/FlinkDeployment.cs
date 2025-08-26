@@ -21,64 +21,6 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
 
-        var flinkServiceAccount = new ServiceAccount("flink-service-account", new ServiceAccountArgs
-        {
-            Metadata = new ObjectMetaArgs
-            {
-                Name = "flink-service-account",
-                Namespace = Constants.Namespace
-            }
-        }, new CustomResourceOptions { Provider = provider, Parent = this });
-
-        var flinkRole = new Pulumi.Kubernetes.Rbac.V1.Role("flink-role", new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleArgs
-        {
-            Metadata = new ObjectMetaArgs
-            {
-                Name = "flink-role",
-                Namespace = Constants.Namespace
-            },
-            Rules = new[]
-            {
-                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
-                {
-                    ApiGroups = new[] { "" },
-                    Resources = new[] { "configmaps" },
-                    Verbs = new[] { "get", "list", "watch", "create", "update", "patch", "delete" }
-                },
-                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
-                {
-                    ApiGroups = new[] { "" },
-                    Resources = new[] { "pods" },
-                    Verbs = new[] { "list", "watch" }
-                }
-            }
-        }, new CustomResourceOptions { Provider = provider, Parent = this });
-
-        var flinkRoleBinding = new Pulumi.Kubernetes.Rbac.V1.RoleBinding("flink-role-binding",
-            new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleBindingArgs
-            {
-                Metadata = new ObjectMetaArgs
-                {
-                    Name = "flink-role-binding",
-                    Namespace = Constants.Namespace
-                },
-                Subjects = new[]
-                {
-                    new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.SubjectArgs
-                    {
-                        Kind = "ServiceAccount",
-                        Name = flinkServiceAccount.Metadata.Apply(m => m.Name),
-                        Namespace = flinkServiceAccount.Metadata.Apply(m => m.Namespace)
-                    }
-                },
-                RoleRef = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleRefArgs
-                {
-                    Kind = "Role",
-                    Name = flinkRole.Metadata.Apply(m => m.Name),
-                    ApiGroup = "rbac.authorization.k8s.io"
-                }
-            }, new CustomResourceOptions { Provider = provider, Parent = this });
-        
         // Create a persistent volume for Flink data
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
         {
@@ -216,7 +158,7 @@ internal class FlinkDeployment : ComponentResource
                         // IMPORTANT: Define your credentials here, not in the SQL script
                         //              ["kafka.sasl.jaas.config"] = org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${env.USERNAME}\" password=\"${env.PASSWORD}\";,
                     },
-                    ["serviceAccount"] = flinkServiceAccount.Metadata.Apply(m => m.Name),
+                    ["serviceAccount"] = "flink",
                     ["jobManager"] = new Dictionary<string, object>
                     {
                         ["resource"] = new Dictionary<string, object>
@@ -228,7 +170,6 @@ internal class FlinkDeployment : ComponentResource
                         {
                             ["spec"] = new Dictionary<string, object>
                             {
-                                ["serviceAccountName"] = "flink-service-account",
                                 ["securityContext"] = new Dictionary<string, object>
                                 {
                                     ["fsGroup"] = 1001,

@@ -60,7 +60,6 @@ spec:
             name: flink-volume
         securityContext:
           fsGroup: 1001
-        serviceAccountName: flink-service-account
         volumes:
         - name: flink-volume
           persistentVolumeClaim:
@@ -75,7 +74,7 @@ spec:
     port: 8081
     targetPort: 8081
     type: ClusterIP
-  serviceAccount: flink-service-account
+  serviceAccount: flink
   taskManager:
     resource:
       cpu: 1
