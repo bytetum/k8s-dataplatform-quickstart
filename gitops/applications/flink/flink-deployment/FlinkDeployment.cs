@@ -234,6 +234,36 @@ internal class FlinkDeployment : ComponentResource
                                         }
                                     }
                                 },
+                                ["initContainers"] = new[]
+                                {
+                                    new Dictionary<string, object>
+                                    {
+                                        ["name"] = "init-flink-filesystem",
+                                        ["image"] = "busybox:1.35",
+                                        ["command"] = new[]
+                                        {
+                                            "sh", "-c",
+                                            "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod -R 777 /flink-data /opt/flink/conf"
+                                        },
+                                        ["volumeMounts"] = new[]
+                                        {
+                                            new Dictionary<string, object>
+                                            {
+                                                ["name"] = "flink-ha-storage",
+                                                ["mountPath"] = "/flink-data"
+                                            },
+                                            new Dictionary<string, object>
+                                            {
+                                                ["name"] = "flink-conf-volume",
+                                                ["mountPath"] = "/opt/flink/conf"
+                                            }
+                                        },
+                                        ["securityContext"] = new Dictionary<string, object>
+                                        {
+                                            ["runAsUser"] = 0
+                                        }
+                                    }
+                                },
                                 ["volumes"] = new[]
                                 {
                                     new Dictionary<string, object>
