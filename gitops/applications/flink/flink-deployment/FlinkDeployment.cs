@@ -49,11 +49,11 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
         // Create a persistent volume claim for Flink data
-        var flinkPvc = new PersistentVolumeClaim("flink-pvc", new PersistentVolumeClaimArgs
+        var flinkPvc = new PersistentVolumeClaim("flink-ha-pvc", new PersistentVolumeClaimArgs
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = "flink-pvc",
+                Name = "flink-ha-pvc",
                 Namespace = Constants.Namespace
             },
             Spec = new PersistentVolumeClaimSpecArgs
