@@ -31,6 +31,10 @@ spec:
     podTemplate:
       spec:
         containers:
+        - name: flink-main-container
+          volumeMounts:
+          - mountPath: /flink-data
+            name: flink-volume
         - envFrom:
           - secretRef:
               name: flink-warpstream-credentials-secret
@@ -39,19 +43,28 @@ spec:
           - mountPath: /opt/flink/sql/job.sql
             name: flink-sql-script-volume
             subPath: job.sql
-          - mountPath: /opt/flink/conf
-            name: flink-conf-volume
+        initContainers:
+        - command:
+          - sh
+          - -c
+          - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints
+            /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod
+            -R 777 /flink-data
+          image: busybox:1.28
+          name: init-fs
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          volumeMounts:
           - mountPath: /flink-data
-            name: flink-ha-storage
+            name: flink-volume
         volumes:
+        - name: flink-volume
+          persistentVolumeClaim:
+            claimName: flink-pvc
         - configMap:
             name: flink-sql-script
           name: flink-sql-script-volume
-        - emptyDir: {}
-          name: flink-conf-volume
-        - name: flink-ha-storage
-          persistentVolumeClaim:
-            claimName: flink-ha-pvc
     resource:
       cpu: 1
       memory: 2048m

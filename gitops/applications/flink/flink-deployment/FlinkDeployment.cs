@@ -49,11 +49,11 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
         // Create a persistent volume claim for Flink data
-        var flinkPvc = new PersistentVolumeClaim("flink-ha-pvc", new PersistentVolumeClaimArgs
+        var flinkPvc = new PersistentVolumeClaim("flink-pvc", new PersistentVolumeClaimArgs
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = "flink-ha-pvc",
+                Name = "flink-pvc",
                 Namespace = Constants.Namespace
             },
             Spec = new PersistentVolumeClaimSpecArgs
@@ -118,7 +118,7 @@ internal class FlinkDeployment : ComponentResource
                     {
                         Key = "id:flink-warpstream-credentials-secret"
                     }
-                }
+                }    
             }
         }, new CustomResourceOptions
         {
@@ -170,8 +170,46 @@ internal class FlinkDeployment : ComponentResource
                         {
                             ["spec"] = new Dictionary<string, object>
                             {
+								["initContainers"] = new List<Dictionary<string, object>>
+                                {
+                                    new Dictionary<string, object>
+                                    {
+                                        ["name"] = "init-fs",
+                                        ["image"] = "busybox:1.28",
+                                        ["command"] = new List<string>
+                                        {
+                                            "sh", "-c",
+                                            "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod -R 777 /flink-data"
+                                        },
+                                        ["volumeMounts"] = new List<Dictionary<string, object>>
+                                        {
+                                            new Dictionary<string, object>
+                                            {
+                                                ["mountPath"] = "/flink-data",
+                                                ["name"] = "flink-volume"
+                                            }
+                                        },
+                                        ["securityContext"] = new Dictionary<string, object>
+                                        {
+                                            ["runAsUser"] = 0, // Run as root
+                                            ["privileged"] = true
+                                        }
+                                    }
+                                },
                                 ["containers"] = new[]
                                 {
+                                    new Dictionary<string, object>
+                                    {
+                                        ["name"] = "flink-main-container",
+                                        ["volumeMounts"] = new List<Dictionary<string, object>>
+                                        {
+                                            new Dictionary<string, object>
+                                            {
+                                                ["mountPath"] = "/flink-data",
+                                                ["name"] = "flink-volume"
+                                            }
+                                        }
+                                    },
                                     new Dictionary<string, object>
                                     {
                                         ["name"] = "flink-main-container",
@@ -192,18 +230,6 @@ internal class FlinkDeployment : ComponentResource
                                                 ["mountPath"] = "/opt/flink/sql/job.sql",
                                                 ["name"] = "flink-sql-script-volume",
                                                 ["subPath"] = "job.sql"
-                                            },
-                                            // 2. [FIX] Add a writable volume for the Flink conf directory
-                                            new Dictionary<string, object>
-                                            {
-                                                ["name"] = "flink-conf-volume",
-                                                ["mountPath"] = "/opt/flink/conf"
-                                            },
-                                            // 3. [FIX] Add a persistent volume for High-Availability storage
-                                            new Dictionary<string, object>
-                                            {
-                                                ["name"] = "flink-ha-storage",
-                                                ["mountPath"] = "/flink-data"
                                             }
                                         }
                                     }
@@ -212,27 +238,21 @@ internal class FlinkDeployment : ComponentResource
                                 {
                                     new Dictionary<string, object>
                                     {
+                                        ["name"] = "flink-volume",
+                                        ["persistentVolumeClaim"] = new Dictionary<string, object>
+                                        {
+                                            ["claimName"] = flinkPvc.Metadata.Apply(metadata => metadata.Name)
+                                        }
+                                    },
+                                    new Dictionary<string, object>
+                                    {
                                         ["name"] = "flink-sql-script-volume",
                                         ["configMap"] = new Dictionary<string, object>
                                         {
                                             ["name"] = "flink-sql-script"
                                         }
-                                    },
-                                     new Dictionary<string, object>
-                                    {
-                                        ["name"] = "flink-conf-volume",
-                                        ["emptyDir"] = new Dictionary<string, object>() // Represents an empty {} object
-                                    },
-                                     new Dictionary<string, object>
-                                    {
-                                        ["name"] = "flink-ha-storage",
-                                        ["persistentVolumeClaim"] = new Dictionary<string, object>
-                                        {
-                                            // IMPORTANT: Make sure a PVC with this name exists in your namespace
-                                            ["claimName"] = "flink-ha-pvc"
-                                        }
                                     }
-                                },
+                                }
                             }
                         }
                     },
@@ -254,7 +274,7 @@ internal class FlinkDeployment : ComponentResource
                     ["job"] = new Dictionary<string, object>
                     {
                         ["jarURI"] = "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar",
-                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
+						["entryClass"] = "org.apache.flink.table.client.SqlClient",
                         ["args"] = new[]
                         {
                             "-f",
