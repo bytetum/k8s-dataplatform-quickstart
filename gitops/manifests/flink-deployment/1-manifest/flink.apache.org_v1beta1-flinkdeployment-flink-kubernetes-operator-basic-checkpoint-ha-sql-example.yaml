@@ -34,10 +34,6 @@ spec:
   podTemplate:
     spec:
       containers:
-      - name: flink-main-container
-        volumeMounts:
-        - mountPath: /flink-data
-          name: flink-volume
       - envFrom:
         - secretRef:
             name: flink-warpstream-credentials-secret

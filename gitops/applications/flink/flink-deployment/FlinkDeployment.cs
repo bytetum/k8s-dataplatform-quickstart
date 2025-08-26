@@ -214,11 +214,7 @@ internal class FlinkDeployment : ComponentResource
                                             ["mountPath"] = "/flink-data",
                                             ["name"] = "flink-volume"
                                         }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "flink-main-container",
+                                    },
                                     ["envFrom"] = new[]
                                     {
                                         new Dictionary<string, object>
@@ -238,7 +234,7 @@ internal class FlinkDeployment : ComponentResource
                                             ["subPath"] = "job.sql"
                                         }
                                     }
-                                }
+                                },
                             },
                             ["volumes"] = new[]
                             {
