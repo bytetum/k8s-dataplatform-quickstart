@@ -79,7 +79,7 @@ public class Polaris : ComponentResource
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "iceberg-bucket-credentials",
-                                            Key = "SCALEWAY_ROLE_ARN"
+                                            Key = "AWS_ROLE_ARN"
                                         }
                                     }
                                 }

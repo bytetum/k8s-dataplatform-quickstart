@@ -5,17 +5,17 @@ extraEnv:
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: SCALEWAY_REGION
+        key: AWS_REGION
   - name: AWS_ACCESS_KEY_ID
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: SCALEWAY_ACCESS_KEY
+        key: AWS_ACCESS_KEY
   - name: AWS_SECRET_ACCESS_KEY
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: SCALEWAY_SECRET_KEY
+        key: AWS_SECRET_KEY
 
   - name: POLARIS_PERSISTENCE_TYPE
     value: relational-jdbc
