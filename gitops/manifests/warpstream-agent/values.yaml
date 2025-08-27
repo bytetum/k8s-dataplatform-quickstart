@@ -14,12 +14,12 @@ extraEnv:
     valueFrom:
       secretKeyRef:
         name: warpstream-bucket-credentials
-        key: AWS_ACCESS_KEY
+        key: SCALEWAY_ACCESS_KEY
   - name: AWS_SECRET_ACCESS_KEY
     valueFrom:
       secretKeyRef:
         name: warpstream-bucket-credentials
-        key: AWS_SECRET_KEY
+        key: SCALEWAY_SECRET_KEY
 
   - name: WARPSTREAM_TEST_MODE
     value: "true"

@@ -63,7 +63,7 @@ internal class Secrets : ComponentResource
 							new ClusterSecretStoreProviderDataFakeArgs
 							{
 								Key = "id:827b85c8-babe-4a43-8af2-dce1dd530081",
-								Value = "{\"AWS_ACCESS_KEY\": \"AWS_ACCESS_KEY\", \"AWS_SECRET_KEY\": \"AWS_SECRET_KEY\"}",
+                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}",
 								Version = "latest_enabled"
 							},
 							new ClusterSecretStoreProviderDataFakeArgs
