@@ -2,8 +2,9 @@
 global using Kubernetes = Pulumi.Kubernetes;
 using applications.flink.flink_deployment;
 using applications.infrastructure;
-using applications.Polaris;
 using applications.warpstream;
+using applications.polaris;
+using applications.postgres;
 
 return await Deployment.RunAsync(() =>
 {

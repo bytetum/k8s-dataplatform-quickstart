@@ -1,7 +1,7 @@
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkDeployment
 metadata:
-  name: basic-checkpoint-ha-example
+  name: basic-checkpoint-ha-sql-example
   namespace: flink-kubernetes-operator
 spec:
   flinkConfiguration:
@@ -11,16 +11,22 @@ spec:
     jobmanager.archive.fs.dir: file:///flink-data/completed-jobs
     jobmanager.scheduler: adaptive
     jobstore.dir: file:///flink-data/job-store
+    kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
+    kafka.input.topic: input-topic
+    kafka.output.topic: output-topic
     state.checkpoints.dir: file:///flink-data/checkpoints
     state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"
   flinkVersion: v1_20
   image: flink:1.20
   job:
-    jarURI: local:///opt/flink/examples/streaming/StateMachineExample.jar
-    parallelism: 2
-    state: running
-    upgradeMode: last-state
+    args:
+    - -f
+    - /opt/flink/sql/job.sql
+    entryClass: org.apache.flink.table.client.SqlClient
+    jarURI: https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar
+    parallelism: 1
+    upgradeMode: stateless
   jobManager:
     resource:
       cpu: 1
@@ -28,15 +34,20 @@ spec:
   podTemplate:
     spec:
       containers:
-      - name: flink-main-container
+      - envFrom:
+        - secretRef:
+            name: flink-warpstream-credentials-secret
+        name: flink-main-container
         volumeMounts:
-        - mountPath: /flink-data
-          name: flink-volume
+        - mountPath: /opt/flink/sql/job.sql
+          name: flink-sql-script-volume
+          subPath: job.sql
       initContainers:
       - command:
         - sh
         - -c
-        - mkdir -p /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs
+        - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
+          /flink-data/completed-jobs /flink-data/job-result-store/basic-checkpoint-ha-sql-example
           /flink-data/job-store && chmod -R 777 /flink-data
         image: busybox:1.28
         name: init-fs
@@ -46,10 +57,19 @@ spec:
         volumeMounts:
         - mountPath: /flink-data
           name: flink-volume
+      securityContext:
+        fsGroup: 1001
       volumes:
       - name: flink-volume
         persistentVolumeClaim:
           claimName: flink-pvc
+      - configMap:
+          name: flink-sql-script
+        name: flink-sql-script-volume
+  service:
+    port: 8081
+    targetPort: 8081
+    type: ClusterIP
   serviceAccount: flink
   taskManager:
     resource:
