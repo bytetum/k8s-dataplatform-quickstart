@@ -21,12 +21,29 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
 
-        var flinkServiceAccount = new ServiceAccount("flink-service-account", new ServiceAccountArgs
+        var flinkOperatorRole = new Pulumi.Kubernetes.Rbac.V1.ClusterRole("flink-operator-role", new()
         {
-            Metadata = new ObjectMetaArgs
+            Metadata = new ObjectMetaArgs { Name = "flink-operator-role" },
+            Rules = new[]
             {
-                Name = "flink",
-                Namespace = Constants.Namespace
+                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
+                {
+                    ApiGroups = new[] { "" },
+                    Resources = new[] { "pods", "services", "configmaps", "events" },
+                    Verbs = new[] { "get", "list", "watch", "create", "delete", "patch", "update" }
+                },
+                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
+                {
+                    ApiGroups = new[] { "apps" },
+                    Resources = new[] { "deployments" },
+                    Verbs = new[] { "get", "list", "watch", "create", "delete", "patch", "update" }
+                },
+                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
+                {
+                    ApiGroups = new[] { "flink.apache.org" },
+                    Resources = new[] { "flinkdeployments", "flinkdeployments/status", "flinksessionjobs", "flinksessionjobs/status" },
+                    Verbs = new[] { "get", "list", "watch", "create", "delete", "patch", "update" }
+                }
             }
         }, new CustomResourceOptions
         {
@@ -34,49 +51,28 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
 
-        var flinkRole = new Pulumi.Kubernetes.Rbac.V1.Role("flink-role", new()
+        var flinkOperatorRoleBinding = new Pulumi.Kubernetes.Rbac.V1.ClusterRoleBinding("flink-operator-role-binding", new()
         {
-            Metadata = new ObjectMetaArgs
+            Metadata = new ObjectMetaArgs { Name = "flink-operator-role-binding" },
+            Subjects = new[]
             {
-                Name = "flink-role",
-                Namespace = Constants.Namespace
-            },
-            Rules = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
-            {
-                ApiGroups = new[] { "" },
-                Resources = new[] { "configmaps" },
-                Verbs = new[] { "get", "list", "watch" }
-            }
-        }, new CustomResourceOptions
-        {
-            Provider = provider,
-            Parent = this
-        });
-
-        var flinkRoleBinding = new Pulumi.Kubernetes.Rbac.V1.RoleBinding("flink-role-binding", new()
-        {
-            Metadata = new ObjectMetaArgs
-            {
-                Name = "flink-role-binding",
-                Namespace = Constants.Namespace
-            },
-            Subjects = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.SubjectArgs
-            {
-                Kind = "ServiceAccount",
-                Name = "flink",
-                Namespace = Constants.Namespace
+                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.SubjectArgs
+                {
+                    Kind = "ServiceAccount",
+                    Name = "flink-operator",
+                    Namespace = "flink-kubernetes-operator"
+                }
             },
             RoleRef = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleRefArgs
             {
-                Kind = "Role",
-                Name = flinkRole.Metadata.Apply(m => m.Name),
+                Kind = "ClusterRole",
+                Name = flinkOperatorRole.Metadata.Apply(m => m.Name),
                 ApiGroup = "rbac.authorization.k8s.io"
             }
         }, new CustomResourceOptions
         {
             Provider = provider,
-            Parent = this,
-            DependsOn = new Pulumi.Resource[] { flinkServiceAccount, flinkRole }
+            Parent = this
         });
         // Create a persistent volume for Flink data
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
@@ -111,7 +107,7 @@ internal class FlinkDeployment : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "flink-pvc",
-                Namespace = Constants.Namespace
+                Namespace = "flink-kubernetes-operator"
             },
             Spec = new PersistentVolumeClaimSpecArgs
             {
@@ -139,7 +135,7 @@ internal class FlinkDeployment : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "flink-sql-script",
-                Namespace = Constants.Namespace,
+                Namespace = "flink-kubernetes-operator",
             },
             Data =
             {
@@ -157,7 +153,7 @@ internal class FlinkDeployment : ComponentResource
                 Metadata = new ObjectMetaArgs
                 {
                     Name = "flink-warpstream-credentials-secret",
-                    Namespace = Constants.Namespace
+                    Namespace = "flink-kubernetes-operator"
                 },
                 Spec = new ExternalSecretSpecArgs
                 {
@@ -190,7 +186,7 @@ internal class FlinkDeployment : ComponentResource
                 Metadata = new ObjectMetaArgs
                 {
                     Name = "basic-checkpoint-ha-sql-example",
-                    Namespace = Constants.Namespace,
+                    Namespace = "flink-kubernetes-operator",
                 },
                 Spec = new Dictionary<string, object>
                 {
@@ -347,7 +343,7 @@ internal class FlinkDeployment : ComponentResource
             {
                 Provider = provider,
                 Parent = this,
-                DependsOn = new[] { flinkRoleBinding }
+                DependsOn = new[] { flinkOperatorRoleBinding }
             });
     }
 
