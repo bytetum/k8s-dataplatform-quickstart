@@ -21,7 +21,39 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
 
-        // Create a persistent volume for Flink data
+        var flinkImpersonateRole = new Pulumi.Kubernetes.Rbac.V1.ClusterRole("flink-impersonate-role", new()
+        {
+            Metadata = new ObjectMetaArgs { Name = "flink-impersonate" },
+            Rules = new[]
+            {
+                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
+                {
+                    ApiGroups = new[] { "" },
+                    Resources = new[] { "serviceaccounts" },
+                    Verbs = new[] { "impersonate" }
+                }
+            }
+        });
+
+        var flinkImpersonateRoleBinding = new Pulumi.Kubernetes.Rbac.V1.ClusterRoleBinding("flink-impersonate-rb", new()
+        {
+            Metadata = new ObjectMetaArgs { Name = "flink-impersonate-binding" },
+            Subjects = new[]
+            {
+                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.SubjectArgs
+                {
+                    Kind = "ServiceAccount",
+                    Name = "flink-operator",
+                    Namespace = "flink-kubernetes-operator"
+                }
+            },
+            RoleRef = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleRefArgs
+            {
+                Kind = "ClusterRole",
+                Name = flinkImpersonateRole.Metadata.Apply(m => m.Name),
+                ApiGroup = "rbac.authorization.k8s.io"
+            }
+        });
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
         {
             Metadata = new ObjectMetaArgs
@@ -162,7 +194,6 @@ internal class FlinkDeployment : ComponentResource
                     ["serviceAccount"] = "flink",
                     ["jobManager"] = new Dictionary<string, object>
                     {
-                        ["serviceAccount"] = "flink", 
                         ["resource"] = new Dictionary<string, object>
                         {
                             ["memory"] = "2048m",
@@ -171,7 +202,6 @@ internal class FlinkDeployment : ComponentResource
                     },
                     ["podTemplate"] = new Dictionary<string, object>
                     {
-                        ["serviceAccount"] = "flink",     
                         ["spec"] = new Dictionary<string, object>
                         {
                             ["securityContext"] = new Dictionary<string, object>
@@ -267,7 +297,6 @@ internal class FlinkDeployment : ComponentResource
                     },
                     ["taskManager"] = new Dictionary<string, object>
                     {
-                        ["serviceAccount"] = "flink",
                         ["resource"] = new Dictionary<string, object>
                         {
                             ["memory"] = "2048m",
@@ -292,7 +321,8 @@ internal class FlinkDeployment : ComponentResource
             }, new CustomResourceOptions
             {
                 Provider = provider,
-                Parent = this
+                Parent = this,
+                DependsOn = new[] { flinkImpersonateRoleBinding }
             });
     }
 

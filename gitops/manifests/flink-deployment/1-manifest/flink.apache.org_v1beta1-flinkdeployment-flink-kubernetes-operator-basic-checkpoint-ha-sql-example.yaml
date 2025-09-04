@@ -31,9 +31,7 @@ spec:
     resource:
       cpu: 1
       memory: 2048m
-    serviceAccount: flink
   podTemplate:
-    serviceAccount: flink
     spec:
       containers:
       - envFrom:
@@ -77,4 +75,3 @@ spec:
     resource:
       cpu: 1
       memory: 2048m
-    serviceAccount: flink
