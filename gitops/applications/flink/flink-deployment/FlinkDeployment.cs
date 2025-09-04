@@ -26,7 +26,7 @@ internal class FlinkDeployment : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "flink",
-                Namespace = Constants.Namespace
+                Namespace = "flink-kubernetes-operator"
             }
         }, new CustomResourceOptions { Provider = provider, Parent = this });
 
@@ -52,8 +52,8 @@ internal class FlinkDeployment : ComponentResource
                 new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.SubjectArgs
                 {
                     Kind = "ServiceAccount",
-                    Name = flinkServiceAccount.Metadata.Apply(m => m.Name),
-                    Namespace = Constants.Namespace
+                    Name = "flink",
+                    Namespace = "flink-kubernetes-operator"
                 }
             },
             RoleRef = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleRefArgs
@@ -203,6 +203,7 @@ internal class FlinkDeployment : ComponentResource
                     ["serviceAccount"] = "flink",
                     ["jobManager"] = new Dictionary<string, object>
                     {
+                        ["serviceAccount"] = "flink",
                         ["resource"] = new Dictionary<string, object>
                         {
                             ["memory"] = "2048m",
@@ -213,6 +214,7 @@ internal class FlinkDeployment : ComponentResource
                     {
                         ["spec"] = new Dictionary<string, object>
                         {
+                            ["serviceAccount"] = "flink",
                             ["securityContext"] = new Dictionary<string, object>
                             {
                                 ["fsGroup"] = 1001,
@@ -306,6 +308,7 @@ internal class FlinkDeployment : ComponentResource
                     },
                     ["taskManager"] = new Dictionary<string, object>
                     {
+                        ["serviceAccount"] = "flink",
                         ["resource"] = new Dictionary<string, object>
                         {
                             ["memory"] = "2048m",

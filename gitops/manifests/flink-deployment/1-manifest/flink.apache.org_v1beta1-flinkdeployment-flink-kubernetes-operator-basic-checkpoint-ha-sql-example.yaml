@@ -31,6 +31,7 @@ spec:
     resource:
       cpu: 1
       memory: 2048m
+    serviceAccount: flink
   podTemplate:
     spec:
       containers:
@@ -59,6 +60,7 @@ spec:
           name: flink-volume
       securityContext:
         fsGroup: 1001
+      serviceAccount: flink
       volumes:
       - name: flink-volume
         persistentVolumeClaim:
@@ -75,3 +77,4 @@ spec:
     resource:
       cpu: 1
       memory: 2048m
+    serviceAccount: flink
