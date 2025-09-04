@@ -21,7 +21,48 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
 
-        // Create a persistent volume for Flink data
+        var flinkServiceAccount = new ServiceAccount("flink-sa", new ServiceAccountArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink",
+                Namespace = Constants.Namespace
+            }
+        }, new CustomResourceOptions { Provider = provider, Parent = this });
+
+        var flinkConfigMapRole = new Pulumi.Kubernetes.Rbac.V1.ClusterRole("flink-cm-role", new()
+        {
+            Metadata = new ObjectMetaArgs { Name = "flink-configmap-manager" },
+            Rules = new[]
+            {
+                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
+                {
+                    ApiGroups = new[] { "" },
+                    Resources = new[] { "configmaps" },
+                    Verbs = new[] { "get", "list", "watch", "create", "delete", "patch", "update" }
+                }
+            }
+        }, new CustomResourceOptions { Provider = provider, Parent = this });
+
+        var flinkConfigMapRoleBinding = new Pulumi.Kubernetes.Rbac.V1.ClusterRoleBinding("flink-cm-rb", new()
+        {
+            Metadata = new ObjectMetaArgs { Name = "flink-configmap-manager-binding" },
+            Subjects = new[]
+            {
+                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.SubjectArgs
+                {
+                    Kind = "ServiceAccount",
+                    Name = flinkServiceAccount.Metadata.Apply(m => m.Name),
+                    Namespace = Constants.Namespace
+                }
+            },
+            RoleRef = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleRefArgs
+            {
+                Kind = "ClusterRole",
+                Name = flinkConfigMapRole.Metadata.Apply(m => m.Name),
+                ApiGroup = "rbac.authorization.k8s.io"
+            }
+        }, new CustomResourceOptions { Provider = provider, Parent = this });
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
         {
             Metadata = new ObjectMetaArgs
@@ -289,7 +330,8 @@ internal class FlinkDeployment : ComponentResource
             }, new CustomResourceOptions
             {
                 Provider = provider,
-                Parent = this
+                Parent = this,
+                DependsOn = new[] { flinkConfigMapRoleBinding }
             });
     }
 
