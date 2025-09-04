@@ -21,59 +21,6 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
 
-        var flinkOperatorRole = new Pulumi.Kubernetes.Rbac.V1.ClusterRole("flink-operator-role", new()
-        {
-            Metadata = new ObjectMetaArgs { Name = "flink-operator-role" },
-            Rules = new[]
-            {
-                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
-                {
-                    ApiGroups = new[] { "" },
-                    Resources = new[] { "pods", "services", "configmaps", "events" },
-                    Verbs = new[] { "get", "list", "watch", "create", "delete", "patch", "update" }
-                },
-                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
-                {
-                    ApiGroups = new[] { "apps" },
-                    Resources = new[] { "deployments" },
-                    Verbs = new[] { "get", "list", "watch", "create", "delete", "patch", "update" }
-                },
-                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
-                {
-                    ApiGroups = new[] { "flink.apache.org" },
-                    Resources = new[] { "flinkdeployments", "flinkdeployments/status", "flinksessionjobs", "flinksessionjobs/status" },
-                    Verbs = new[] { "get", "list", "watch", "create", "delete", "patch", "update" }
-                }
-            }
-        }, new CustomResourceOptions
-        {
-            Provider = provider,
-            Parent = this
-        });
-
-        var flinkOperatorRoleBinding = new Pulumi.Kubernetes.Rbac.V1.ClusterRoleBinding("flink-operator-role-binding", new()
-        {
-            Metadata = new ObjectMetaArgs { Name = "flink-operator-role-binding" },
-            Subjects = new[]
-            {
-                new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.SubjectArgs
-                {
-                    Kind = "ServiceAccount",
-                    Name = "flink-operator",
-                    Namespace = "flink-kubernetes-operator"
-                }
-            },
-            RoleRef = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleRefArgs
-            {
-                Kind = "ClusterRole",
-                Name = flinkOperatorRole.Metadata.Apply(m => m.Name),
-                ApiGroup = "rbac.authorization.k8s.io"
-            }
-        }, new CustomResourceOptions
-        {
-            Provider = provider,
-            Parent = this
-        });
         // Create a persistent volume for Flink data
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
         {
@@ -107,7 +54,7 @@ internal class FlinkDeployment : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "flink-pvc",
-                Namespace = "flink-kubernetes-operator"
+                Namespace = Constants.Namespace
             },
             Spec = new PersistentVolumeClaimSpecArgs
             {
@@ -135,7 +82,7 @@ internal class FlinkDeployment : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "flink-sql-script",
-                Namespace = "flink-kubernetes-operator",
+                Namespace = Constants.Namespace,
             },
             Data =
             {
@@ -153,7 +100,7 @@ internal class FlinkDeployment : ComponentResource
                 Metadata = new ObjectMetaArgs
                 {
                     Name = "flink-warpstream-credentials-secret",
-                    Namespace = "flink-kubernetes-operator"
+                    Namespace = Constants.Namespace
                 },
                 Spec = new ExternalSecretSpecArgs
                 {
@@ -186,7 +133,7 @@ internal class FlinkDeployment : ComponentResource
                 Metadata = new ObjectMetaArgs
                 {
                     Name = "basic-checkpoint-ha-sql-example",
-                    Namespace = "flink-kubernetes-operator",
+                    Namespace = Constants.Namespace,
                 },
                 Spec = new Dictionary<string, object>
                 {
@@ -342,8 +289,7 @@ internal class FlinkDeployment : ComponentResource
             }, new CustomResourceOptions
             {
                 Provider = provider,
-                Parent = this,
-                DependsOn = new[] { flinkOperatorRoleBinding }
+                Parent = this
             });
     }
 
