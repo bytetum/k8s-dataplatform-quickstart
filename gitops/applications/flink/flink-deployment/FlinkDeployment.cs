@@ -162,6 +162,7 @@ internal class FlinkDeployment : ComponentResource
                     ["serviceAccount"] = "flink",
                     ["jobManager"] = new Dictionary<string, object>
                     {
+                        ["serviceAccount"] = "flink", 
                         ["resource"] = new Dictionary<string, object>
                         {
                             ["memory"] = "2048m",
