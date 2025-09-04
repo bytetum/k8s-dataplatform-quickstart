@@ -6,21 +6,30 @@ metadata:
 spec:
   flinkConfiguration:
     env.java.opts: -verbose:gc -XX:+PrintGCDetails
-    jobmanager.archive.fs.dir: file:///flink-data/completed-jobs
     jobmanager.scheduler: adaptive
-    jobstore.dir: file:///flink-data/job-store
     kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
     kafka.input.topic: input-topic
     kafka.output.topic: output-topic
-    state.checkpoints.dir: file:///flink-data/checkpoints
-    state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"
   flinkVersion: v1_20
   image: flink:1.20
   job:
     args:
-    - -f
-    - /opt/flink/sql/job.sql
+    - -i
+    - -e
+    - "-- This script is a template. Values are injected by Flink's configuration.\r\n\r\nCREATE
+      TABLE input_source (\r\n    `message` STRING\r\n) WITH (\r\n    'connector'
+      = 'kafka',\r\n    'topic' = '${kafka.input.topic}',\r\n    'properties.bootstrap.servers'
+      = '${kafka.bootstrap.servers}',\r\n    'scan.startup.mode' = 'latest-offset',\r\n
+      \   'format' = 'raw',\r\n    'properties.security.protocol' = 'SASL_PLAINTEXT',\r\n
+      \   'properties.sasl.mechanism' = 'PLAIN',\r\n    'properties.sasl.jaas.config'
+      = '${kafka.sasl.jaas.config}'\r\n);\r\n\r\nCREATE TABLE output_sink (\r\n    `message`
+      STRING\r\n) WITH (\r\n    'connector' = 'kafka',\r\n    'topic' = '${kafka.output.topic}',\r\n
+      \   'properties.bootstrap.servers' = '${kafka.bootstrap.servers}',\r\n    'format'
+      = 'raw',\r\n    'properties.security.protocol' = 'SASL_PLAINTEXT',\r\n    'properties.sasl.mechanism'
+      = 'PLAIN',\r\n    'properties.sasl.jaas.config' = '${kafka.sasl.jaas.config}'\r\n);\r\n\r\nINSERT
+      INTO output_sink\r\nSELECT\r\n    'PROCESSED VIA CONFIGMAP: ' || UPPER(`message`)\r\nFROM\r\n
+      \   input_source;"
     entryClass: org.apache.flink.table.client.SqlClient
     jarURI: https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar
     parallelism: 1
@@ -36,34 +45,6 @@ spec:
         - secretRef:
             name: flink-warpstream-credentials-secret
         name: flink-main-container
-        volumeMounts:
-        - mountPath: /opt/flink/sql/job.sql
-          name: flink-sql-script-volume
-          subPath: job.sql
-      initContainers:
-      - command:
-        - sh
-        - -c
-        - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
-          /flink-data/completed-jobs /flink-data/job-result-store/basic-checkpoint-ha-sql-example
-          /flink-data/job-store && chmod -R 777 /flink-data
-        image: busybox:1.28
-        name: init-fs
-        securityContext:
-          privileged: true
-          runAsUser: 0
-        volumeMounts:
-        - mountPath: /flink-data
-          name: flink-volume
-      securityContext:
-        fsGroup: 1001
-      volumes:
-      - name: flink-volume
-        persistentVolumeClaim:
-          claimName: flink-pvc
-      - configMap:
-          name: flink-sql-script
-        name: flink-sql-script-volume
   service:
     port: 8081
     targetPort: 8081
