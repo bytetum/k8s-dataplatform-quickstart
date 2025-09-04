@@ -21,6 +21,63 @@ internal class FlinkDeployment : ComponentResource
             Parent = this
         });
 
+        var flinkServiceAccount = new ServiceAccount("flink-service-account", new ServiceAccountArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink",
+                Namespace = Constants.Namespace
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this
+        });
+
+        var flinkRole = new Pulumi.Kubernetes.Rbac.V1.Role("flink-role", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink-role",
+                Namespace = Constants.Namespace
+            },
+            Rules = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.PolicyRuleArgs
+            {
+                ApiGroups = new[] { "" },
+                Resources = new[] { "configmaps" },
+                Verbs = new[] { "get", "list", "watch" }
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this
+        });
+
+        var flinkRoleBinding = new Pulumi.Kubernetes.Rbac.V1.RoleBinding("flink-role-binding", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink-role-binding",
+                Namespace = Constants.Namespace
+            },
+            Subjects = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.SubjectArgs
+            {
+                Kind = "ServiceAccount",
+                Name = "flink",
+                Namespace = Constants.Namespace
+            },
+            RoleRef = new Pulumi.Kubernetes.Types.Inputs.Rbac.V1.RoleRefArgs
+            {
+                Kind = "Role",
+                Name = flinkRole.Metadata.Apply(m => m.Name),
+                ApiGroup = "rbac.authorization.k8s.io"
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this,
+            DependsOn = new Pulumi.Resource[] { flinkServiceAccount, flinkRole }
+        });
         // Create a persistent volume for Flink data
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
         {
@@ -289,7 +346,8 @@ internal class FlinkDeployment : ComponentResource
             }, new CustomResourceOptions
             {
                 Provider = provider,
-                Parent = this
+                Parent = this,
+                DependsOn = new[] { flinkRoleBinding }
             });
     }
 
