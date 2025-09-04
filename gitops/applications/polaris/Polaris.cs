@@ -90,7 +90,7 @@ public class Polaris : ComponentResource
                                 "-c",
                                 """
                                 set -e
-                                apk add --no-cache jq curl
+                                apk add --no-cache jq
 
                                 token=$(curl -s http://polaris:8181/api/catalog/v1/oauth/tokens \
                                     --user ${CLIENT_ID}:${CLIENT_SECRET} \
@@ -115,12 +115,10 @@ public class Polaris : ComponentResource
                                 echo "Using StorageType: $STORAGE_TYPE"
 
                                 STORAGE_CONFIG_INFO="{\"storageType\": \"$STORAGE_TYPE\", \"allowedLocations\": [\"$STORAGE_LOCATION\"]}"
-                                if [[ "$STORAGE_TYPE" == "S3" ]]; then
-                                    if [ -n "${AWS_ROLE_ARN}" ]; then
-                                        STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg roleArn "$AWS_ROLE_ARN" '. + {roleArn: $roleArn}')
-                                    else
-                                        echo "Warning: AWS_ROLE_ARN not set for S3 storage"
-                                    fi
+                                if [ -n "${AWS_ROLE_ARN}" ]; then
+                                    STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg roleArn "$AWS_ROLE_ARN" '. + {roleArn: $roleArn}')
+                                else
+                                    echo "Warning: AWS_ROLE_ARN not set for S3 storage"
                                 fi
 
                                 response=$(curl -s -w "\n%{http_code}" \
