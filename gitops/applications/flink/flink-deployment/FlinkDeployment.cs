@@ -33,6 +33,10 @@ internal class FlinkDeployment : ComponentResource
                     Verbs = new[] { "impersonate" }
                 }
             }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this
         });
 
         var flinkImpersonateRoleBinding = new Pulumi.Kubernetes.Rbac.V1.ClusterRoleBinding("flink-impersonate-rb", new()
@@ -53,6 +57,10 @@ internal class FlinkDeployment : ComponentResource
                 Name = flinkImpersonateRole.Metadata.Apply(m => m.Name),
                 ApiGroup = "rbac.authorization.k8s.io"
             }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this
         });
         var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
         {
