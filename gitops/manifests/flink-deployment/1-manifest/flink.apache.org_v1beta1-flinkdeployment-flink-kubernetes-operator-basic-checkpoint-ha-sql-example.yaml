@@ -48,8 +48,7 @@ spec:
         - sh
         - -c
         - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
-          /flink-data/completed-jobs /flink-data/ha/job-result-store/basic-checkpoint-ha-sql-example
-          /flink-data/job-store && chmod -R 777 /flink-data
+          /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data
         image: busybox:1.28
         name: init-fs
         securityContext:
