@@ -17,14 +17,14 @@ spec:
     state.checkpoints.dir: file:///flink-data/checkpoints
     state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"
-  flinkVersion: v1_17
-  image: flink:1.17
+  flinkVersion: v1_20
+  image: flink:1.20
   job:
     args:
     - -f
     - /opt/flink/sql/job.sql
     entryClass: org.apache.flink.table.client.SqlClient
-    jarURI: https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar
+    jarURI: https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar
     parallelism: 1
     upgradeMode: stateless
   jobManager:

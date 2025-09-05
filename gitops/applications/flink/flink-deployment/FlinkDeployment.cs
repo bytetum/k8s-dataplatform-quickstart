@@ -137,8 +137,8 @@ internal class FlinkDeployment : ComponentResource
                 },
                 Spec = new Dictionary<string, object>
                 {
-                    ["image"] = "flink:1.17",
-                    ["flinkVersion"] = "v1_17",
+                    ["image"] = "flink:1.20",
+                    ["flinkVersion"] = "v1_20",
                     ["flinkConfiguration"] = new Dictionary<string, object>
                     {
                         ["taskmanager.numberOfTaskSlots"] = "2",
@@ -270,7 +270,7 @@ internal class FlinkDeployment : ComponentResource
                     ["job"] = new Dictionary<string, object>
                     {
                         ["jarURI"] =
-                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar",
+                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
                         ["entryClass"] = "org.apache.flink.table.client.SqlClient",
                         ["args"] = new[]
                         {
