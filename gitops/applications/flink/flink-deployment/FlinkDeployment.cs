@@ -144,9 +144,9 @@ internal class FlinkDeployment : ComponentResource
                         ["taskmanager.numberOfTaskSlots"] = "2",
                         ["state.savepoints.dir"] = "file:///flink-data/savepoints",
                         ["state.checkpoints.dir"] = "file:///flink-data/checkpoints",
-                        ["high-availability"] =
-                            "org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory",
-                        ["high-availability.storageDir"] = "file:///flink-data/ha",
+                        // ["high-availability"] =
+                        //     "org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory",
+                        // ["high-availability.storageDir"] = "file:///flink-data/ha",
                         ["jobmanager.archive.fs.dir"] = "file:///flink-data/completed-jobs",
                         ["jobstore.dir"] = "file:///flink-data/job-store",
                         ["jobmanager.scheduler"] = "adaptive",
