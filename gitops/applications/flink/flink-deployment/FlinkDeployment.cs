@@ -137,8 +137,8 @@ internal class FlinkDeployment : ComponentResource
                 },
                 Spec = new Dictionary<string, object>
                 {
-                    ["image"] = "flink:1.17",
-                    ["flinkVersion"] = "v1_17",
+                    ["image"] = "flink:1.20",
+                    ["flinkVersion"] = "v1_20",
                     ["flinkConfiguration"] = new Dictionary<string, object>
                     {
                         ["taskmanager.numberOfTaskSlots"] = "2",
