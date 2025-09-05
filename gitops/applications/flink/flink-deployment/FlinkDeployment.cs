@@ -173,10 +173,6 @@ internal class FlinkDeployment : ComponentResource
                         ["serviceAccount"] = "flink",     
                         ["spec"] = new Dictionary<string, object>
                         {
-                            ["securityContext"] = new Dictionary<string, object>
-                            {
-                                ["fsGroup"] = 1001,
-                            },
                             ["initContainers"] = new List<Dictionary<string, object>>
                             {
                                 new Dictionary<string, object>

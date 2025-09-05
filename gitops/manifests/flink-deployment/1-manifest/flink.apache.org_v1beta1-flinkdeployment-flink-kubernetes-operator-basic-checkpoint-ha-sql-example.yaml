@@ -58,8 +58,6 @@ spec:
         volumeMounts:
         - mountPath: /flink-data
           name: flink-volume
-      securityContext:
-        fsGroup: 1001
       volumes:
       - name: flink-volume
         persistentVolumeClaim:
