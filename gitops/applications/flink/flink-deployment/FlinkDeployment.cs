@@ -182,7 +182,7 @@ internal class FlinkDeployment : ComponentResource
                                     ["command"] = new List<string>
                                     {
                                         "sh", "-c",
-                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-result-store/basic-checkpoint-ha-sql-example /flink-data/job-store && chmod -R 777 /flink-data"
+                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/ha/job-result-store/basic-checkpoint-ha-sql-example /flink-data/job-store && chmod -R 777 /flink-data"
                                     },
                                     ["volumeMounts"] = new List<Dictionary<string, object>>
                                     {
