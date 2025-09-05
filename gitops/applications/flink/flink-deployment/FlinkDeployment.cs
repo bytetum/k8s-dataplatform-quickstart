@@ -137,7 +137,7 @@ internal class FlinkDeployment : ComponentResource
                 },
                 Spec = new Dictionary<string, object>
                 {
-                    ["image"] = "flink:1.20",
+                    ["image"] = "flink:1.17",
                     ["flinkVersion"] = "v1_17",
                     ["flinkConfiguration"] = new Dictionary<string, object>
                     {
