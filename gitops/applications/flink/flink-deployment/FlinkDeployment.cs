@@ -144,9 +144,9 @@ internal class FlinkDeployment : ComponentResource
                         ["taskmanager.numberOfTaskSlots"] = "2",
                         ["state.savepoints.dir"] = "file:///flink-data/savepoints",
                         ["state.checkpoints.dir"] = "file:///flink-data/checkpoints",
-                        // ["high-availability"] =
-                        //     "org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory",
-                        // ["high-availability.storageDir"] = "file:///flink-data/ha",
+                        ["high-availability"] =
+                            "org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory",
+                        ["high-availability.storageDir"] = "file:///flink-data/ha",
                         ["jobmanager.archive.fs.dir"] = "file:///flink-data/completed-jobs",
                         ["jobstore.dir"] = "file:///flink-data/job-store",
                         ["jobmanager.scheduler"] = "adaptive",
@@ -204,14 +204,6 @@ internal class FlinkDeployment : ComponentResource
                                 new Dictionary<string, object>
                                 {
                                     ["name"] = "flink-main-container",
-                                    ["volumeMounts"] = new List<Dictionary<string, object>>
-                                    {
-                                        new Dictionary<string, object>
-                                        {
-                                            ["mountPath"] = "/flink-data",
-                                            ["name"] = "flink-volume"
-                                        }
-                                    },
                                     ["envFrom"] = new[]
                                     {
                                         new Dictionary<string, object>
@@ -224,6 +216,11 @@ internal class FlinkDeployment : ComponentResource
                                     },
                                     ["volumeMounts"] = new[]
                                     {
+                                        new Dictionary<string, object>
+                                        {
+                                            ["mountPath"] = "/flink-data",
+                                            ["name"] = "flink-volume"
+                                        },
                                         new Dictionary<string, object>
                                         {
                                             ["mountPath"] = "/opt/flink/sql/job.sql",
