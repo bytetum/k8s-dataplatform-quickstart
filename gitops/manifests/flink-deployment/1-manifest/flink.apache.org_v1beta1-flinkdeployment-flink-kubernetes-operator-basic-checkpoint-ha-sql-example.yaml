@@ -17,8 +17,8 @@ spec:
     state.checkpoints.dir: file:///flink-data/checkpoints
     state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"
-  flinkVersion: v1_20
-  image: flink:1.20
+  flinkVersion: v1_17
+  image: flink:1.17
   job:
     args:
     - -f
