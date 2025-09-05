@@ -270,7 +270,7 @@ internal class FlinkDeployment : ComponentResource
                     ["job"] = new Dictionary<string, object>
                     {
                         ["jarURI"] =
-                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.17.1/flink-sql-client-1.17.1.jar",
+                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
                         ["entryClass"] = "org.apache.flink.table.client.SqlClient",
                         ["args"] = new[]
                         {
