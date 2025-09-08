@@ -170,7 +170,7 @@ internal class FlinkDeployment : ComponentResource
                     },
                     ["podTemplate"] = new Dictionary<string, object>
                     {
-                        ["serviceAccount"] = "flink",
+                        ["serviceAccount"] = "flink",     
                         ["spec"] = new Dictionary<string, object>
                         {
                             ["initContainers"] = new List<Dictionary<string, object>>
@@ -182,7 +182,7 @@ internal class FlinkDeployment : ComponentResource
                                     ["command"] = new List<string>
                                     {
                                         "sh", "-c",
-                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod -R 777 /flink-data; rm -f /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar; rm -f /opt/flink/opt/flink-azure-fs-hadoop-1.20.2.jar; rm -f /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar; rm -f /opt/flink/opt/flink-gs-fs-hadoop-1.20.2.jar; if [ -d /opt/flink/opt ]; then mv /opt/flink/opt/* /opt/flink/lib/; fi"
+                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data"
                                     },
                                     ["volumeMounts"] = new List<Dictionary<string, object>>
                                     {
@@ -204,15 +204,6 @@ internal class FlinkDeployment : ComponentResource
                                 new Dictionary<string, object>
                                 {
                                     ["name"] = "flink-main-container",
-                                    ["command"] = new[] { "java" },
-                                    ["args"] = new[]
-                                    {
-                                        "-cp",
-                                        "local:////opt/flink/lib/*",
-                                        "org.apache.flink.table.client.SqlClient",
-                                        "-f",
-                                        "/opt/flink/sql/job.sql"
-                                    },
                                     ["envFrom"] = new[]
                                     {
                                         new Dictionary<string, object>
@@ -276,6 +267,19 @@ internal class FlinkDeployment : ComponentResource
                         }
                     },
                     // Add the job configuration
+                    ["job"] = new Dictionary<string, object>
+                    {
+                        ["jarURI"] =
+                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
+                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
+                        ["args"] = new[]
+                        {
+                            "-f",
+                            "/opt/flink/sql/job.sql"
+                        },
+                        ["parallelism"] = 1,
+                        ["upgradeMode"] = "stateless"
+                    }
                 }
             }, new CustomResourceOptions
             {
