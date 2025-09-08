@@ -204,7 +204,12 @@ internal class FlinkDeployment : ComponentResource
                                     ["command"] = new List<string>
                                     {
                                         "sh", "-c",
-                                        "cp -r /opt/flink/opt/* /tmp/opt/ && mv /tmp/opt/flink-table-planner_2.12-1.20.2.jar /tmp/ && mv /tmp/opt/flink-s3-fs-hadoop-1.20.2.jar /tmp/ && cp -r /tmp/opt/* /opt/flink/opt-new/"
+                                        "mkdir -p /tmp/opt && " +
+                                        "cp -R /opt/flink/opt/. /tmp/opt/ && " +
+                                        "rm /tmp/opt/flink-table-planner_2.12-1.20.2.jar && " +
+                                        "rm /tmp/opt/flink-s3-fs-hadoop-1.20.2.jar && " +
+                                        "mkdir -p /opt/flink/opt-new && " +
+                                        "cp -R /tmp/opt/. /opt/flink/opt-new/"
                                     },
                                     ["volumeMounts"] = new List<Dictionary<string, object>>
                                     {
