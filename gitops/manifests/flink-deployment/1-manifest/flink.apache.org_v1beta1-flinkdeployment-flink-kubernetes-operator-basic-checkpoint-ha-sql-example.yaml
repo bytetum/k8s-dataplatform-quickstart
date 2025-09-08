@@ -19,6 +19,14 @@ spec:
     taskmanager.numberOfTaskSlots: "2"
   flinkVersion: v1_20
   image: flink:1.20
+  job:
+    args:
+    - -f
+    - /opt/flink/sql/job.sql
+    entryClass: org.apache.flink.table.client.SqlClient
+    jarURI: local:///opt/flink/lib/*
+    parallelism: 1
+    upgradeMode: stateless
   jobManager:
     resource:
       cpu: 1
@@ -27,15 +35,7 @@ spec:
     serviceAccount: flink
     spec:
       containers:
-      - args:
-        - -cp
-        - local:///opt/flink/lib/*
-        - org.apache.flink.table.client.SqlClient
-        - -f
-        - /opt/flink/sql/job.sql
-        command:
-        - java
-        envFrom:
+      - envFrom:
         - secretRef:
             name: flink-warpstream-credentials-secret
         name: flink-main-container
