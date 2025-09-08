@@ -170,7 +170,6 @@ internal class FlinkDeployment : ComponentResource
                     },
                     ["podTemplate"] = new Dictionary<string, object>
                     {
-                        ["serviceAccount"] = "flink",     
                         ["spec"] = new Dictionary<string, object>
                         {
                             ["initContainers"] = new List<Dictionary<string, object>>
@@ -204,11 +203,11 @@ internal class FlinkDeployment : ComponentResource
                                 new Dictionary<string, object>
                                 {
                                     ["name"] = "flink-main-container",
-                                    ["command"] = new List<string>
+                                    ["args"] = new List<string>
                                     {
-                                        "sh",
+                                        "bash",
                                         "-c",
-                                        "/opt/flink/bin/sql-client.sh -f /opt/flink/sql/job.sql"
+                                        "kubernetes-jobmanager.sh kubernetes-session"
                                     },
                                     ["envFrom"] = new[]
                                     {
@@ -271,6 +270,18 @@ internal class FlinkDeployment : ComponentResource
                             ["memory"] = "2048m",
                             ["cpu"] = 1
                         }
+                    },
+                    ["job"] = new Dictionary<string, object>
+                    {
+                        ["jarURI"] = "local:///opt/flink/opt/flink-sql-client-1.20.2.jar",
+                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
+                        ["args"] = new[]
+                        {
+                            "-f",
+                            "/opt/flink/sql/job.sql"
+                        },
+                        ["parallelism"] = 2,
+                        ["upgradeMode"] = "stateless"
                     }
                 }
             }, new CustomResourceOptions
