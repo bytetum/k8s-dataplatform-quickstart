@@ -24,7 +24,7 @@ spec:
     - -f
     - /opt/flink/sql/job.sql
     entryClass: org.apache.flink.table.client.SqlClient
-    jarURI: local:///opt/flink/lib/*:local:///opt/flink/flink-sql-client-1.20.2.jar:local:///opt/flink/opt/*
+    jarURI: local:///opt/flink/lib/*:local:///opt/flink//opt/flink-sql-client-1.20.2.jar:local:///opt/flink/opt/*
     parallelism: 1
     upgradeMode: stateless
   jobManager:
