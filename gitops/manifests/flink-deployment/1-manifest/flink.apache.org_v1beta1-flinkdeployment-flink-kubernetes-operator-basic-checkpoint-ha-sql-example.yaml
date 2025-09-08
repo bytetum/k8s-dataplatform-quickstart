@@ -19,14 +19,6 @@ spec:
     taskmanager.numberOfTaskSlots: "2"
   flinkVersion: v1_20
   image: flink:1.20
-  job:
-    args:
-    - -f
-    - /opt/flink/sql/job.sql
-    entryClass: org.apache.flink.table.client.SqlClient
-    jarURI: local:///opt/flink/opt/flink-sql-client-1.20.2.jar
-    parallelism: 1
-    upgradeMode: stateless
   jobManager:
     resource:
       cpu: 1
@@ -35,7 +27,15 @@ spec:
     serviceAccount: flink
     spec:
       containers:
-      - envFrom:
+      - args:
+        - -cp
+        - local:///opt/flink/lib/*
+        - org.apache.flink.table.client.SqlClient
+        - -f
+        - /opt/flink/sql/job.sql
+        command:
+        - java
+        envFrom:
         - secretRef:
             name: flink-warpstream-credentials-secret
         name: flink-main-container
@@ -53,6 +53,8 @@ spec:
           /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data
           && rm -f /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar /opt/flink/opt/flink-azure-fs-hadoop-1.20.2.jar
           /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar /opt/flink/opt/flink-gs-fs-hadoop-1.20.2.jar
+          && wget https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-kafka/4.0.1-2.0/flink-sql-connector-kafka-4.0.1-2.0.jar
+          -P /opt/flink/opt && mv /opt/flink/opt/* /opt/flink/lib/
         image: busybox:1.28
         name: init-fs
         securityContext:
