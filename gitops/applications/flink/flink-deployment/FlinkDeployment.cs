@@ -182,7 +182,7 @@ internal class FlinkDeployment : ComponentResource
                                     ["command"] = new List<string>
                                     {
                                         "sh", "-c",
-                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data"
+                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data && rm -f /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar /opt/flink/opt/flink-azure-fs-hadoop-1.20.2.jar /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar /opt/flink/opt/flink-gs-fs-hadoop-1.20.2.jar"
                                     },
                                     ["volumeMounts"] = new List<Dictionary<string, object>>
                                     {
@@ -270,7 +270,7 @@ internal class FlinkDeployment : ComponentResource
                     ["job"] = new Dictionary<string, object>
                     {
                         ["jarURI"] =
-                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
+                            "local:///opt/flink/lib/*:local:///opt/flink/opt/flink-sql-client-1.20.2.jar:local:///opt/flink/opt/*",
                         ["entryClass"] = "org.apache.flink.table.client.SqlClient",
                         ["args"] = new[]
                         {
