@@ -183,7 +183,6 @@ internal class FlinkDeployment : ComponentResource
                                     {
                                         "sh", "-c",
                                         @"
-                                            set -e
                                             mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store
                                             chmod -R 777 /flink-data
                                             

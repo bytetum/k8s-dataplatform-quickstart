@@ -49,9 +49,9 @@ spec:
       - command:
         - sh
         - -c
-        - "\r\n                                            set -e\r\n                                            mkdir
-          -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
-          /flink-data/completed-jobs /flink-data/job-store\r\n                                            chmod
+        - "\r\n                                            mkdir -p /opt/flink/sql
+          /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs
+          /flink-data/job-store\r\n                                            chmod
           -R 777 /flink-data\r\n                                            \r\n                                            #
           Clean up old connectors\r\n                                            rm
           -f /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar\r\n                                            rm
