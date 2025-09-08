@@ -230,7 +230,7 @@ internal class FlinkDeployment : ComponentResource
                                     {
                                         "bash",
                                         "-c",
-                                        "kubernetes-jobmanager.sh kubernetes-session"
+                                        "java -cp \"local:///opt/flink/lib/*:local:///opt/flink/opt/flink-sql-client-1.20.2.jar:local:///opt/flink/opt/*\" org.apache.flink.table.client.SqlClient -f /opt/flink/sql/job.sql"
                                     },
                                     ["envFrom"] = new[]
                                     {
@@ -306,13 +306,6 @@ internal class FlinkDeployment : ComponentResource
                     },
                     ["job"] = new Dictionary<string, object>
                     {
-                        ["jarURI"] = "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.2/flink-sql-client-1.20.2.jar",
-                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
-                        ["args"] = new[]
-                        {
-                            "-f",
-                            "/opt/flink/sql/job.sql"
-                        },
                         ["parallelism"] = 2,
                         ["upgradeMode"] = "stateless"
                     }
