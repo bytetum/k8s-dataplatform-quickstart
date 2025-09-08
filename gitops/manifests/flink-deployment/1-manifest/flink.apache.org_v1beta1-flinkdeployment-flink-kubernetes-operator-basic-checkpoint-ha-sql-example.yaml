@@ -67,12 +67,13 @@ spec:
       - command:
         - sh
         - -c
-        - mv /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar /tmp/ && mv /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar
-          /tmp/
-        image: busybox:1.28
+        - cp -r /opt/flink/opt/* /tmp/opt/ && mv /tmp/opt/flink-table-planner_2.12-1.20.2.jar
+          /tmp/ && mv /tmp/opt/flink-s3-fs-hadoop-1.20.2.jar /tmp/ && cp -r /tmp/opt/*
+          /opt/flink/opt-new/
+        image: flink:1.20
         name: init-remove-conflicting-jars
         volumeMounts:
-        - mountPath: /opt/flink/opt
+        - mountPath: /opt/flink/opt-new
           name: flink-opt-volume
       volumes:
       - name: flink-volume

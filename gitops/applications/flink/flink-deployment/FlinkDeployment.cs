@@ -200,17 +200,17 @@ internal class FlinkDeployment : ComponentResource
                                 new Dictionary<string, object>
                                 {
                                     ["name"] = "init-remove-conflicting-jars",
-                                    ["image"] = "busybox:1.28",
+                                    ["image"] = "flink:1.20",
                                     ["command"] = new List<string>
                                     {
                                         "sh", "-c",
-                                        "mv /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar /tmp/ && mv /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar /tmp/"
+                                        "cp -r /opt/flink/opt/* /tmp/opt/ && mv /tmp/opt/flink-table-planner_2.12-1.20.2.jar /tmp/ && mv /tmp/opt/flink-s3-fs-hadoop-1.20.2.jar /tmp/ && cp -r /tmp/opt/* /opt/flink/opt-new/"
                                     },
                                     ["volumeMounts"] = new List<Dictionary<string, object>>
                                     {
                                         new Dictionary<string, object>
                                         {
-                                            ["mountPath"] = "/opt/flink/opt",
+                                            ["mountPath"] = "/opt/flink/opt-new",
                                             ["name"] = "flink-opt-volume"
                                         }
                                     }
