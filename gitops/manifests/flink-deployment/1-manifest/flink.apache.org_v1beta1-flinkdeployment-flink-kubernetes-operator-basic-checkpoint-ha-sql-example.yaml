@@ -20,6 +20,11 @@ spec:
   flinkVersion: v1_20
   image: flink:1.20
   job:
+    args:
+    - -f
+    - /opt/flink/sql/job.sql
+    entryClass: org.apache.flink.table.client.SqlClient
+    jarURI: https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar
     parallelism: 1
     upgradeMode: stateless
   jobManager:
@@ -30,14 +35,7 @@ spec:
     serviceAccount: flink
     spec:
       containers:
-      - command:
-        - java
-        - -cp
-        - /opt/flink/lib/*:/opt/flink/flink-sql-client-1.20.0.jar:/opt/flink/opt/*
-        - org.apache.flink.table.client.SqlClient
-        - -f
-        - /opt/flink/sql/job.sql
-        envFrom:
+      - envFrom:
         - secretRef:
             name: flink-warpstream-credentials-secret
         name: flink-main-container
@@ -53,7 +51,6 @@ spec:
         - -c
         - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
           /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data
-          && wget -P /opt/flink https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar
         image: busybox:1.28
         name: init-fs
         securityContext:
