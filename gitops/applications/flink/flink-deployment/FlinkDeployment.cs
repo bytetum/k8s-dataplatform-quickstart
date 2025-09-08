@@ -204,6 +204,15 @@ internal class FlinkDeployment : ComponentResource
                                 new Dictionary<string, object>
                                 {
                                     ["name"] = "flink-main-container",
+                                    ["command"] = new[] { "java" },
+                                    ["args"] = new[]
+                                    {
+                                        "-cp",
+                                        "/opt/flink/lib/*",
+                                        "org.apache.flink.table.client.SqlClient",
+                                        "-f",
+                                        "/opt/flink/sql/job.sql"
+                                    },
                                     ["envFrom"] = new[]
                                     {
                                         new Dictionary<string, object>
@@ -267,19 +276,6 @@ internal class FlinkDeployment : ComponentResource
                         }
                     },
                     // Add the job configuration
-                    ["job"] = new Dictionary<string, object>
-                    {
-                        ["jarURI"] =
-                            "local:///opt/flink/lib/*",
-                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
-                        ["args"] = new[]
-                        {
-                            "-f",
-                            "/opt/flink/sql/job.sql"
-                        },
-                        ["parallelism"] = 1,
-                        ["upgradeMode"] = "stateless"
-                    }
                 }
             }, new CustomResourceOptions
             {
