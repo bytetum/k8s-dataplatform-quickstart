@@ -306,7 +306,7 @@ internal class FlinkDeployment : ComponentResource
                     },
                     ["job"] = new Dictionary<string, object>
                     {
-                        ["jarURI"] = "local:///opt/flink/opt/flink-sql-client-1.20.2.jar",
+                        ["jarURI"] = "local:///opt/flink/lib/*:local:///opt/flink/opt/flink-sql-client-1.20.2.jar:local:///opt/flink/opt/*",
                         ["entryClass"] = "org.apache.flink.table.client.SqlClient",
                         ["args"] = new[]
                         {
