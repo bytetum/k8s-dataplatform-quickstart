@@ -269,19 +269,20 @@ internal class FlinkDeployment : ComponentResource
                     // Add the job configuration
                     ["job"] = new Dictionary<string, object>
                     {
-                        ["jarURI"] =
-                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
-                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
-                        ["args"] = new[]
-                        {
-                            "-f",
-                            "/opt/flink/sql/job.sql"
-                        },
+                        // ["jarURI"] =
+                        //     "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
+                        // ["entryClass"] = "org.apache.flink.table.client.SqlClient",
+                        // ["args"] = new[]
+                        // {
+                        //     "-f",
+                        //     "/opt/flink/sql/job.sql"
+                        // },
                         ["parallelism"] = 1,
                         ["upgradeMode"] = "stateless"
                     }
                 }
-            }, new CustomResourceOptions
+            }
+            , new CustomResourceOptions
             {
                 Provider = provider,
                 Parent = this
