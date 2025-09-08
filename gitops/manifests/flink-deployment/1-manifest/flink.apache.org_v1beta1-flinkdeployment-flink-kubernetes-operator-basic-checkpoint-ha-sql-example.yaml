@@ -49,11 +49,20 @@ spec:
       - command:
         - sh
         - -c
-        - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
-          /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data
-          && rm -f /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar /opt/flink/opt/flink-azure-fs-hadoop-1.20.2.jar
-          /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar /opt/flink/opt/flink-gs-fs-hadoop-1.20.2.jar
-          && mv /opt/flink/opt/* /opt/flink/lib/
+        - "\r\n                                            set -e\r\n                                            mkdir
+          -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
+          /flink-data/completed-jobs /flink-data/job-store\r\n                                            chmod
+          -R 777 /flink-data\r\n                                            \r\n                                            #
+          Clean up old connectors\r\n                                            rm
+          -f /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar\r\n                                            rm
+          -f /opt/flink/opt/flink-azure-fs-hadoop-1.20.2.jar\r\n                                            rm
+          -f /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar\r\n                                            rm
+          -f /opt/flink/opt/flink-gs-fs-hadoop-1.20.2.jar\r\n                                            \r\n
+          \                                           # Ensure the opt directory exists
+          before moving files\r\n                                            if [
+          -d /opt/flink/opt ]; then\r\n                                                mv
+          /opt/flink/opt/* /opt/flink/lib/\r\n                                            fi\r\n
+          \                                       "
         image: busybox:1.28
         name: init-fs
         securityContext:

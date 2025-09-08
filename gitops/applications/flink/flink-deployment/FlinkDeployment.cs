@@ -182,7 +182,22 @@ internal class FlinkDeployment : ComponentResource
                                     ["command"] = new List<string>
                                     {
                                         "sh", "-c",
-                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data && rm -f /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar /opt/flink/opt/flink-azure-fs-hadoop-1.20.2.jar /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar /opt/flink/opt/flink-gs-fs-hadoop-1.20.2.jar && mv /opt/flink/opt/* /opt/flink/lib/"
+                                        @"
+                                            set -e
+                                            mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store
+                                            chmod -R 777 /flink-data
+                                            
+                                            # Clean up old connectors
+                                            rm -f /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar
+                                            rm -f /opt/flink/opt/flink-azure-fs-hadoop-1.20.2.jar
+                                            rm -f /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar
+                                            rm -f /opt/flink/opt/flink-gs-fs-hadoop-1.20.2.jar
+                                            
+                                            # Ensure the opt directory exists before moving files
+                                            if [ -d /opt/flink/opt ]; then
+                                                mv /opt/flink/opt/* /opt/flink/lib/
+                                            fi
+                                        "
                                     },
                                     ["volumeMounts"] = new List<Dictionary<string, object>>
                                     {
