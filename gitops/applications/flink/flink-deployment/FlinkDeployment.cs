@@ -227,6 +227,15 @@ internal class FlinkDeployment : ComponentResource
                                             ["name"] = "flink-sql-script-volume",
                                             ["subPath"] = "job.sql"
                                         }
+                                    },
+                                    ["command"] = new List<string>
+                                    {
+                                        "java",
+                                        "-cp",
+                                        "/opt/flink/lib/*:/opt/flink/flink-sql-client-1.20.0.jar:/opt/flink/opt/*",
+                                        "org.apache.flink.table.client.SqlClient",
+                                        "-f",
+                                        "/opt/flink/sql/job.sql"
                                     }
                                 },
                             },
@@ -269,14 +278,14 @@ internal class FlinkDeployment : ComponentResource
                     // Add the job configuration
                     ["job"] = new Dictionary<string, object>
                     {
-                        ["jarURI"] =
-                            "/opt/flink/lib/*:/opt/flink/flink-sql-client-1.20.0.jar:/opt/flink/opt/*",
-                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
-                        ["args"] = new[]
-                        {
-                            "-f",
-                            "/opt/flink/sql/job.sql"
-                        },
+                        // ["jarURI"] =
+                        //     "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
+                        // ["entryClass"] = "org.apache.flink.table.client.SqlClient",
+                        // ["args"] = new[]
+                        // {
+                        //     "-f",
+                        //     "/opt/flink/sql/job.sql"
+                        // },
                         ["parallelism"] = 1,
                         ["upgradeMode"] = "stateless"
                     }
