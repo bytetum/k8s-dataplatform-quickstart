@@ -1,19 +1,14 @@
 apiVersion: v1
 data:
-  job.sql: "-- test_job.sql\r\n-- A minimal Flink SQL script for testing the job submission
-    client.\r\n\r\n-- 1. Create a temporary source table using the 'datagen' connector.\r\n--
-    \   This connector generates data in memory and requires no external system.\r\n--
-    \   The job will automatically stop after producing 10 rows.\r\nCREATE TABLE input_source
-    (\r\n                              id INT,\r\n                              message
-    VARCHAR\r\n) WITH (\r\n      'connector' = 'datagen',\r\n      'number-of-rows'
-    = '10'\r\n      );\r\n\r\n-- 2. Create a temporary sink table using the 'print'
-    connector.\r\n--    This connector simply prints the results to the TaskManager's
-    standard output log.\r\nCREATE TABLE output_sink (\r\n                             id
-    INT,\r\n                             processed_message VARCHAR\r\n) WITH (\r\n
-    \     'connector' = 'print'\r\n      );\r\n\r\n-- 3. A simple INSERT...SELECT
-    statement to move and transform the data.\r\n--    This verifies that the SQL
-    planner and job execution work.\r\nINSERT INTO output_sink\r\nSELECT\r\n    id,\r\n
-    \   'PROCESSED: ' || message\r\nFROM\r\n    input_source;"
+  job.sql: "CREATE TABLE readings (\r\n  sensorId STRING,\r\n  reading DOUBLE,\r\n
+    \ eventTime_ltz AS TO_TIMESTAMP_LTZ(`timestamp`, 3),\r\n  `ts` TIMESTAMP(3) METADATA
+    FROM 'timestamp',\r\n  `timestamp` BIGINT,\r\n    WATERMARK FOR eventTime_ltz
+    AS eventTime_ltz - INTERVAL '30' SECONDS\r\n) WITH (\r\n  'connector' = 'kafka',\r\n
+    \ 'topic' = 'sensor.readings',\r\n  'properties.bootstrap.servers' = 'kafka:29092',\r\n
+    \ 'properties.group.id' = 'group.sensor.readings',\r\n  'format' = 'json',\r\n
+    \ 'scan.startup.mode' = 'earliest-offset',\r\n  'json.timestamp-format.standard'
+    = 'ISO-8601',\r\n  'json.fail-on-missing-field' = 'false',\r\n  'json.ignore-parse-errors'
+    = 'true'\r\n);"
 kind: ConfigMap
 metadata:
   name: flink-sql-script
