@@ -48,6 +48,8 @@ spec:
         - mountPath: /opt/flink/sql/job.sql
           name: flink-sql-script-volume
           subPath: job.sql
+        - mountPath: /opt/flink/opt
+          name: flink-opt-volume
       initContainers:
       - command:
         - sh
@@ -62,6 +64,16 @@ spec:
         volumeMounts:
         - mountPath: /flink-data
           name: flink-volume
+      - command:
+        - sh
+        - -c
+        - mv /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar /tmp/ && mv /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar
+          /tmp/
+        image: busybox:1.28
+        name: init-remove-conflicting-jars
+        volumeMounts:
+        - mountPath: /opt/flink/opt
+          name: flink-opt-volume
       volumes:
       - name: flink-volume
         persistentVolumeClaim:
@@ -69,6 +81,8 @@ spec:
       - configMap:
           name: flink-sql-script
         name: flink-sql-script-volume
+      - emptyDir: {}
+        name: flink-opt-volume
   service:
     port: 8081
     targetPort: 8081

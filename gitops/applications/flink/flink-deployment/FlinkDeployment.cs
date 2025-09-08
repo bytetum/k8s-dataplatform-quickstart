@@ -196,6 +196,24 @@ internal class FlinkDeployment : ComponentResource
                                         ["runAsUser"] = 0, // Run as root
                                         ["privileged"] = true
                                     }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "init-remove-conflicting-jars",
+                                    ["image"] = "busybox:1.28",
+                                    ["command"] = new List<string>
+                                    {
+                                        "sh", "-c",
+                                        "mv /opt/flink/opt/flink-table-planner_2.12-1.20.2.jar /tmp/ && mv /opt/flink/opt/flink-s3-fs-hadoop-1.20.2.jar /tmp/"
+                                    },
+                                    ["volumeMounts"] = new List<Dictionary<string, object>>
+                                    {
+                                        new Dictionary<string, object>
+                                        {
+                                            ["mountPath"] = "/opt/flink/opt",
+                                            ["name"] = "flink-opt-volume"
+                                        }
+                                    }
                                 }
                             },
                             ["containers"] = new[]
@@ -231,6 +249,11 @@ internal class FlinkDeployment : ComponentResource
                                             ["mountPath"] = "/opt/flink/sql/job.sql",
                                             ["name"] = "flink-sql-script-volume",
                                             ["subPath"] = "job.sql"
+                                        },
+                                        new Dictionary<string, object>
+                                        {
+                                            ["mountPath"] = "/opt/flink/opt",
+                                            ["name"] = "flink-opt-volume"
                                         }
                                     }
                                 },
@@ -252,6 +275,11 @@ internal class FlinkDeployment : ComponentResource
                                     {
                                         ["name"] = "flink-sql-script"
                                     }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "flink-opt-volume",
+                                    ["emptyDir"] = new Dictionary<string, object>()
                                 }
                             }
                         }
