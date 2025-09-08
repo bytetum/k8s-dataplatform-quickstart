@@ -208,7 +208,7 @@ internal class FlinkDeployment : ComponentResource
                                     ["args"] = new[]
                                     {
                                         "-cp",
-                                        "/opt/flink/lib/*",
+                                        "local:////opt/flink/lib/*",
                                         "org.apache.flink.table.client.SqlClient",
                                         "-f",
                                         "/opt/flink/sql/job.sql"
