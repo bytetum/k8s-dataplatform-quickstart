@@ -20,6 +20,11 @@ spec:
   flinkVersion: v1_20
   image: flink:1.20
   job:
+    args:
+    - -f
+    - /opt/flink/sql/job.sql
+    entryClass: org.apache.flink.table.client.SqlClient
+    jarURI: local:///opt/flink/opt/flink-sql-client-1.20.2.jar
     parallelism: 2
     upgradeMode: stateless
   jobManager:
@@ -32,8 +37,7 @@ spec:
       - args:
         - bash
         - -c
-        - java -cp "local:///opt/flink/lib/*:local:///opt/flink/opt/flink-sql-client-1.20.2.jar:local:///opt/flink/opt/*"
-          org.apache.flink.table.client.SqlClient -f /opt/flink/sql/job.sql
+        - kubernetes-jobmanager.sh kubernetes-session
         envFrom:
         - secretRef:
             name: flink-warpstream-credentials-secret
