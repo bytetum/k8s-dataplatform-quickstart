@@ -77,6 +77,12 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
         return this;
     }
 
+    public ArgoApplicationBuilder Chart(string chartName)
+    {
+        sources.Last().Chart = chartName;
+        return this;
+    }
+
     public Kubernetes.ApiExtensions.CustomResource Build()
     {
         if (sources.Count == 0)
