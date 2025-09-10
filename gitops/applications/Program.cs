@@ -11,7 +11,7 @@ return await Deployment.RunAsync(() =>
     var infrastructure = new Infrastructure("../manifests");
     var flinkDeployment = new FlinkDeployment("flink-deployment", "../manifests");
     var warpstream = new Warpstream("../manifests");
-    var WarpstreamSchemaRegistry = new WarpstreamSchemaRegistry("../warpstream-schema-registry"); 
+    var WarpstreamSchemaRegistry = new WarpstreamSchemaRegistry("../manifests"); 
     var polaris = new Polaris("../manifests");
     var postgres = new Postgres("../manifests");
 });
