@@ -5,8 +5,8 @@ config:
   gracefulShutdownDuration: "30s"
   heartbeatEvery: "10s"
   agentKeySecretKeyRef:
-    name: "warpstream-schema-registry-secrets"
-    key: "agent_key"
+    name: warpstream-schema-registry-secrets
+    key: agent_key
   bucketURL: "s3://local-warpstream-test?region=ap-southeast-1"
   virtualClusterID: "vci_sr_6a2b68c3_ed05_4454_b045_ed6b4b223f52"
   region: "us-east-1"
