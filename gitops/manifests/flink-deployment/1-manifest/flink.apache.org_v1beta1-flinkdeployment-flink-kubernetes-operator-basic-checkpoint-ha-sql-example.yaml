@@ -14,6 +14,7 @@ spec:
     kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
     kafka.input.topic: input-topic
     kafka.output.topic: output-topic
+    sql-gateway.endpoint.type: hiveserver2
     state.checkpoints.dir: file:///flink-data/checkpoints
     state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"

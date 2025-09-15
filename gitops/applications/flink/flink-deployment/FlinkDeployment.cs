@@ -144,6 +144,7 @@ namespace applications.flink.flink_deployment
                     FlinkVersion = "v1_20",
                     FlinkConfiguration = new FlinkConfigurationSpecArgs
                     {
+                        SqlGateWayType = "hiveserver2",
                         TaskManagerNumberOfTaskSlots = "2",
                         StateSavepointsDir = "file:///flink-data/savepoints",
                         StateCheckpointsDir = "file:///flink-data/checkpoints",
@@ -164,7 +165,7 @@ namespace applications.flink.flink_deployment
                         {
                             Memory = "2048m",
                             Cpu = 1
-                        }
+                        },
                     },
                     TaskManager = new TaskManagerSpecArgs
                     {
@@ -275,6 +276,36 @@ namespace applications.flink.flink_deployment
                         },
                         Parallelism = 1,
                         UpgradeMode = "stateless"
+                    }
+                }
+            }, new CustomResourceOptions
+            {
+                Provider = provider,
+                Parent = this
+            });
+            var flinkGatewayService = new Service("flink-sql-gateway-service", new ServiceArgs
+            {
+                Metadata = new ObjectMetaArgs
+                {
+                    Name = "flink-sql-gateway-service",
+                    Namespace = Constants.Namespace
+                },
+                Spec = new Pulumi.Kubernetes.Types.Inputs.Core.V1.ServiceSpecArgs
+                {
+                    Type = "ClusterIP",
+                    Ports = new List<Pulumi.Kubernetes.Types.Inputs.Core.V1.ServicePortArgs>
+                    {
+                        new Pulumi.Kubernetes.Types.Inputs.Core.V1.ServicePortArgs
+                        {
+                            Name = "hiveserver2",
+                            Port = 10000,
+                            TargetPort = 10000
+                        }
+                    },
+                    Selector = new Dictionary<string, string>
+                    {
+                        { "app", "basic-checkpoint-ha-sql-example" },
+                        { "component", "jobmanager" }
                     }
                 }
             }, new CustomResourceOptions
