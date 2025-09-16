@@ -123,7 +123,7 @@ namespace applications.flink.flink_deployment
                 },
                 Data =
                 {
-                    { "config.yaml", flinkConfContent }
+                    { "flink-conf.yaml", flinkConfContent }
                 }
             }, new CustomResourceOptions
             {
@@ -177,9 +177,10 @@ namespace applications.flink.flink_deployment
                 Spec = new FlinkDeploymentSpecArgs
                 {
                     Image = "flink:latest",
-                    FlinkVersion = "v1_20",
+                    FlinkVersion = "v1_21",
                     FlinkConfiguration = new FlinkConfigurationSpecArgs
                     {
+                        SqlGateWayType = "hiveserver2",
                         TaskManagerNumberOfTaskSlots = "2",
                         StateSavepointsDir = "file:///flink-data/savepoints",
                         StateCheckpointsDir = "file:///flink-data/checkpoints",
@@ -277,8 +278,9 @@ namespace applications.flink.flink_deployment
                                         },
                                         new VolumeMountArgs
                                         {
-                                            MountPath = "/opt/flink/conf",
-                                            Name = "flink-conf-volume"
+                                            MountPath = "/opt/flink/conf/flink-conf.yaml",
+                                            Name = "flink-conf-volume",
+                                            SubPath = "flink-conf.yaml"
                                         }
                                     }
                                 }

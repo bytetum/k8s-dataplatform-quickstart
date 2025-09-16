@@ -14,10 +14,11 @@ spec:
     kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
     kafka.input.topic: input-topic
     kafka.output.topic: output-topic
+    sql-gateway.endpoint.type: hiveserver2
     state.checkpoints.dir: file:///flink-data/checkpoints
     state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"
-  flinkVersion: v1_20
+  flinkVersion: v1_21
   image: flink:latest
   jobManager:
     resource:
@@ -39,8 +40,9 @@ spec:
           subPath: job.sql
         - mountPath: /opt/flink/hive-conf
           name: hive-conf-volume
-        - mountPath: /opt/flink/conf
+        - mountPath: /opt/flink/conf/flink-conf.yaml
           name: flink-conf-volume
+          subPath: flink-conf.yaml
       initContainers:
       - command:
         - sh
