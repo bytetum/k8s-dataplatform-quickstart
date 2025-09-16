@@ -5,6 +5,11 @@ metadata:
   namespace: flink-kubernetes-operator
 spec:
   flinkConfiguration:
+    catalog.hive.default-database: default
+    catalog.hive.hive-conf-dir: /opt/flink/hive-conf
+    catalog.hive.hive-version: 2.3.4
+    catalog.hive.name: myhive
+    catalog.hive.type: hive
     env.java.opts: -verbose:gc -XX:+PrintGCDetails
     high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
     high-availability.storageDir: file:///flink-data/ha

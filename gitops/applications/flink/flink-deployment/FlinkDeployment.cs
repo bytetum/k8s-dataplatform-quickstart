@@ -193,6 +193,11 @@ namespace applications.flink.flink_deployment
                         KafkaBootstrapServers = "warpstream-agent.default.svc.cluster.local:9092",
                         KafkaInputTopic = "input-topic",
                         KafkaOutputTopic = "output-topic",
+                        CatalogHiveName = "myhive",
+                        CatalogHiveType = "hive",
+                        CatalogHiveHiveConfDir = "/opt/flink/hive-conf",
+                        CatalogHiveHiveVersion = "2.3.4",
+                        CatalogHiveDefaultDatabase = "default",
                     },
                     ServiceAccount = "flink",
                     JobManager = new JobManagerSpecArgs
