@@ -5,6 +5,11 @@ metadata:
   namespace: flink-kubernetes-operator
 spec:
   flinkConfiguration:
+    catalog.hive.default-database: default
+    catalog.hive.hive-conf-dir: /opt/flink/hive-conf
+    catalog.hive.hive-version: 2.3.4
+    catalog.hive.name: myhive
+    catalog.hive.type: hive
     env.java.opts: -verbose:gc -XX:+PrintGCDetails
     high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
     high-availability.storageDir: file:///flink-data/ha
@@ -14,6 +19,7 @@ spec:
     kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
     kafka.input.topic: input-topic
     kafka.output.topic: output-topic
+    sql-gateway.endpoint.type: hiveserver2
     state.checkpoints.dir: file:///flink-data/checkpoints
     state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"
@@ -39,8 +45,6 @@ spec:
           subPath: job.sql
         - mountPath: /opt/flink/hive-conf
           name: hive-conf-volume
-        - mountPath: /opt/flink/conf
-          name: flink-conf-volume
       initContainers:
       - command:
         - sh
@@ -69,9 +73,6 @@ spec:
       - configMap:
           name: hive-conf
         name: hive-conf-volume
-      - configMap:
-          name: flink-conf
-        name: flink-conf-volume
   service:
     port: 8081
     targetPort: 8081

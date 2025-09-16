@@ -113,23 +113,6 @@ namespace applications.flink.flink_deployment
                 Parent = this
             });
 
-            var flinkConfContent = File.ReadAllText("./flink/flink-deployment/flink-conf.yaml");
-            var flinkConfConfigMap = new ConfigMap("flink-conf-cm", new ConfigMapArgs
-            {
-                Metadata = new ObjectMetaArgs
-                {
-                    Name = "flink-conf",
-                    Namespace = Constants.Namespace,
-                },
-                Data =
-                {
-                    { "config.yaml", flinkConfContent }
-                }
-            }, new CustomResourceOptions
-            {
-                Provider = provider,
-                Parent = this
-            });
 
             var flinkKafkaCredentialsSecret = new ExternalSecret("flink-warpstream-credentials-secret",
                 new ExternalSecretArgs
@@ -180,6 +163,7 @@ namespace applications.flink.flink_deployment
                     FlinkVersion = "v1_20",
                     FlinkConfiguration = new FlinkConfigurationSpecArgs
                     {
+                        SqlGateWayType = "hiveserver2",
                         TaskManagerNumberOfTaskSlots = "2",
                         StateSavepointsDir = "file:///flink-data/savepoints",
                         StateCheckpointsDir = "file:///flink-data/checkpoints",
@@ -192,6 +176,11 @@ namespace applications.flink.flink_deployment
                         KafkaBootstrapServers = "warpstream-agent.default.svc.cluster.local:9092",
                         KafkaInputTopic = "input-topic",
                         KafkaOutputTopic = "output-topic",
+                        CatalogHiveName = "myhive",
+                        CatalogHiveType = "hive",
+                        CatalogHiveHiveConfDir = "/opt/flink/hive-conf",
+                        CatalogHiveHiveVersion = "2.3.4",
+                        CatalogHiveDefaultDatabase = "default",
                     },
                     ServiceAccount = "flink",
                     JobManager = new JobManagerSpecArgs
@@ -275,11 +264,6 @@ namespace applications.flink.flink_deployment
                                             MountPath = "/opt/flink/hive-conf",
                                             Name = "hive-conf-volume"
                                         },
-                                        new VolumeMountArgs
-                                        {
-                                            MountPath = "/opt/flink/conf",
-                                            Name = "flink-conf-volume"
-                                        }
                                     }
                                 }
                             },
@@ -309,14 +293,6 @@ namespace applications.flink.flink_deployment
                                         Name = hiveConfigMap.Metadata.Apply(m => m.Name)
                                     }
                                 },
-                                new VolumeArgs
-                                {
-                                    Name = "flink-conf-volume",
-                                    ConfigMap = new ConfigMapVolumeSourceArgs
-                                    {
-                                        Name = flinkConfConfigMap.Metadata.Apply(m => m.Name)
-                                    }
-                                }
                             }
                         }
                     },
