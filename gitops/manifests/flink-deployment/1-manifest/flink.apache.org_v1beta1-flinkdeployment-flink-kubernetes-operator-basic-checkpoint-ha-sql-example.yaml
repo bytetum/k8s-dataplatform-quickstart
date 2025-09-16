@@ -28,10 +28,7 @@ spec:
     serviceAccount: flink
     spec:
       containers:
-      - env:
-        - name: HIVE_CONF_DIR
-          value: /opt/flink/hive-conf
-        envFrom:
+      - envFrom:
         - secretRef:
             name: flink-warpstream-credentials-secret
         name: flink-main-container

@@ -248,14 +248,6 @@ namespace applications.flink.flink_deployment
                                 new ContainerArgs
                                 {
                                     Name = "flink-main-container",
-                                    Env = new List<EnvVarArgs>
-                                    {
-                                        new EnvVarArgs
-                                        {
-                                            Name = "HIVE_CONF_DIR",
-                                            Value = "/opt/flink/hive-conf"
-                                        }
-                                    },
                                     EnvFrom = new List<EnvFromSourceArgs>
                                     {
                                         new EnvFromSourceArgs
