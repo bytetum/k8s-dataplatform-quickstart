@@ -113,24 +113,6 @@ namespace applications.flink.flink_deployment
                 Parent = this
             });
 
-            var flinkConfContent = File.ReadAllText("./flink/flink-deployment/flink-conf.yaml");
-            var flinkConfConfigMap = new ConfigMap("flink-conf-cm", new ConfigMapArgs
-            {
-                Metadata = new ObjectMetaArgs
-                {
-                    Name = "flink-conf",
-                    Namespace = Constants.Namespace,
-                },
-                Data =
-                {
-                    { "flink-conf.yaml", flinkConfContent }
-                }
-            }, new CustomResourceOptions
-            {
-                Provider = provider,
-                Parent = this
-            });
-
             var flinkKafkaCredentialsSecret = new ExternalSecret("flink-warpstream-credentials-secret",
                 new ExternalSecretArgs
                 {
