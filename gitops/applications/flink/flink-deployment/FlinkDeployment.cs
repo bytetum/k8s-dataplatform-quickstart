@@ -321,12 +321,6 @@ namespace applications.flink.flink_deployment
                                 }
                             }
                         }
-                    },
-                    Service = new ServiceSpecArgs
-                    {
-                        Type = "ClusterIP",
-                        Port = 8081,
-                        TargetPort = 8081
                     }
                 }
             }, new CustomResourceOptions

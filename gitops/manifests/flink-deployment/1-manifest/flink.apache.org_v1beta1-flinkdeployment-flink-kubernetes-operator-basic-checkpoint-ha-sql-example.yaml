@@ -74,10 +74,6 @@ spec:
       - configMap:
           name: flink-conf
         name: flink-conf-volume
-  service:
-    port: 8081
-    targetPort: 8081
-    type: ClusterIP
   serviceAccount: flink
   taskManager:
     resource:
