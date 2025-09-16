@@ -95,6 +95,24 @@ namespace applications.flink.flink_deployment
                 Parent = this
             });
 
+            var hiveSiteContent = File.ReadAllText("./flink/flink-deployment/hive-site.xml");
+            var hiveConfigMap = new ConfigMap("hive-conf-cm", new ConfigMapArgs
+            {
+                Metadata = new ObjectMetaArgs
+                {
+                    Name = "hive-conf",
+                    Namespace = Constants.Namespace,
+                },
+                Data =
+                {
+                    { "hive-site.xml", hiveSiteContent }
+                }
+            }, new CustomResourceOptions
+            {
+                Provider = provider,
+                Parent = this
+            });
+
             var flinkKafkaCredentialsSecret = new ExternalSecret("flink-warpstream-credentials-secret",
                 new ExternalSecretArgs
                 {
@@ -131,7 +149,7 @@ namespace applications.flink.flink_deployment
                     Parent = this
                 });
 
-            var flinkDeployment = new Pulumi.Crds.Flink.FlinkDeployment("flink-deployment-sql", new FlinkDeploymentArgs
+            var flinkDeployment = new Pulumi.Crds.Flink.FlinkDeployment("flink-deployment", new FlinkDeploymentArgs
             {
                 Metadata = new ObjectMetaArgs
                 {
@@ -140,7 +158,7 @@ namespace applications.flink.flink_deployment
                 },
                 Spec = new FlinkDeploymentSpecArgs
                 {
-                    Image = "flink:1.20",
+                    Image = "flink:latest",
                     FlinkVersion = "v1_20",
                     FlinkConfiguration = new FlinkConfigurationSpecArgs
                     {
@@ -190,7 +208,7 @@ namespace applications.flink.flink_deployment
                                     Command = new List<string>
                                     {
                                         "sh", "-c",
-                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data"
+                                        "mkdir -p /opt/flink /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data"
                                     },
                                     VolumeMounts = new List<VolumeMountArgs>
                                     {
@@ -212,6 +230,14 @@ namespace applications.flink.flink_deployment
                                 new ContainerArgs
                                 {
                                     Name = "flink-main-container",
+                                    Env = new List<EnvVarArgs>
+                                    {
+                                        new EnvVarArgs
+                                        {
+                                            Name = "HIVE_CONF_DIR",
+                                            Value = "/opt/flink/hive-conf"
+                                        }
+                                    },
                                     EnvFrom = new List<EnvFromSourceArgs>
                                     {
                                         new EnvFromSourceArgs
@@ -234,6 +260,11 @@ namespace applications.flink.flink_deployment
                                             MountPath = "/opt/flink/sql/job.sql",
                                             Name = "flink-sql-script-volume",
                                             SubPath = "job.sql"
+                                        },
+                                        new VolumeMountArgs
+                                        {
+                                            MountPath = "/opt/flink/hive-conf",
+                                            Name = "hive-conf-volume"
                                         }
                                     }
                                 }
@@ -254,6 +285,14 @@ namespace applications.flink.flink_deployment
                                     ConfigMap = new ConfigMapVolumeSourceArgs
                                     {
                                         Name = sqlScriptConfigMap.Metadata.Apply(m => m.Name)
+                                    }
+                                },
+                                new VolumeArgs
+                                {
+                                    Name = "hive-conf-volume",
+                                    ConfigMap = new ConfigMapVolumeSourceArgs
+                                    {
+                                        Name = hiveConfigMap.Metadata.Apply(m => m.Name)
                                     }
                                 }
                             }

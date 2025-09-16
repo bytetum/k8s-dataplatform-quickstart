@@ -19,7 +19,7 @@ spec:
     state.savepoints.dir: file:///flink-data/savepoints
     taskmanager.numberOfTaskSlots: "2"
   flinkVersion: v1_20
-  image: flink:1.20
+  image: flink:latest
   job:
     args:
     - -f
@@ -36,7 +36,10 @@ spec:
     serviceAccount: flink
     spec:
       containers:
-      - envFrom:
+      - env:
+        - name: HIVE_CONF_DIR
+          value: /opt/flink/hive-conf
+        envFrom:
         - secretRef:
             name: flink-warpstream-credentials-secret
         name: flink-main-container
@@ -46,12 +49,15 @@ spec:
         - mountPath: /opt/flink/sql/job.sql
           name: flink-sql-script-volume
           subPath: job.sql
+        - mountPath: /opt/flink/hive-conf
+          name: hive-conf-volume
       initContainers:
       - command:
         - sh
         - -c
-        - mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha
-          /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data
+        - mkdir -p /opt/flink /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints
+          /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod
+          -R 777 /flink-data
         image: busybox:1.28
         name: init-fs
         securityContext:
@@ -67,6 +73,9 @@ spec:
       - configMap:
           name: flink-sql-script
         name: flink-sql-script-volume
+      - configMap:
+          name: hive-conf
+        name: hive-conf-volume
   service:
     port: 8081
     targetPort: 8081
