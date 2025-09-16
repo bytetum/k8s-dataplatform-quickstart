@@ -45,9 +45,6 @@ spec:
           subPath: job.sql
         - mountPath: /opt/flink/hive-conf
           name: hive-conf-volume
-        - mountPath: /opt/flink/conf/flink-conf.yaml
-          name: flink-conf-volume
-          subPath: flink-conf.yaml
       initContainers:
       - command:
         - sh
@@ -76,9 +73,6 @@ spec:
       - configMap:
           name: hive-conf
         name: hive-conf-volume
-      - configMap:
-          name: flink-conf
-        name: flink-conf-volume
   serviceAccount: flink
   taskManager:
     resource:

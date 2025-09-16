@@ -281,12 +281,6 @@ namespace applications.flink.flink_deployment
                                             MountPath = "/opt/flink/hive-conf",
                                             Name = "hive-conf-volume"
                                         },
-                                        new VolumeMountArgs
-                                        {
-                                            MountPath = "/opt/flink/conf/flink-conf.yaml",
-                                            Name = "flink-conf-volume",
-                                            SubPath = "flink-conf.yaml"
-                                        }
                                     }
                                 }
                             },
@@ -316,14 +310,6 @@ namespace applications.flink.flink_deployment
                                         Name = hiveConfigMap.Metadata.Apply(m => m.Name)
                                     }
                                 },
-                                new VolumeArgs
-                                {
-                                    Name = "flink-conf-volume",
-                                    ConfigMap = new ConfigMapVolumeSourceArgs
-                                    {
-                                        Name = flinkConfConfigMap.Metadata.Apply(m => m.Name)
-                                    }
-                                }
                             }
                         }
                     }
