@@ -113,6 +113,24 @@ namespace applications.flink.flink_deployment
                 Parent = this
             });
 
+            var flinkConfContent = File.ReadAllText("./flink/flink-deployment/flink-conf.yaml");
+            var flinkConfConfigMap = new ConfigMap("flink-conf-cm", new ConfigMapArgs
+            {
+                Metadata = new ObjectMetaArgs
+                {
+                    Name = "flink-conf",
+                    Namespace = Constants.Namespace,
+                },
+                Data =
+                {
+                    { "flink-conf.yaml", flinkConfContent }
+                }
+            }, new CustomResourceOptions
+            {
+                Provider = provider,
+                Parent = this
+            });
+
             var flinkKafkaCredentialsSecret = new ExternalSecret("flink-warpstream-credentials-secret",
                 new ExternalSecretArgs
                 {
@@ -208,7 +226,7 @@ namespace applications.flink.flink_deployment
                                     Command = new List<string>
                                     {
                                         "sh", "-c",
-                                        "mkdir -p /opt/flink /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data"
+                                        "mkdir -p /opt/flink/conf /opt/flink/lib /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod -R 777 /flink-data /opt/flink && wget -O /opt/flink/lib/flink-connector-hive_2.12-1.20.2.jar https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-hive_2.12/1.20.2/flink-connector-hive_2.12-1.20.2.jar && wget -O /opt/flink/lib/hive-exec-2.3.4.jar https://repo.maven.apache.org/maven2/org/apache/hive/hive-exec/2.3.4/hive-exec-2.3.4.jar && wget -O /opt/flink/lib/antlr-runtime-3.5.2.jar https://repo.maven.apache.org/maven2/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar"
                                     },
                                     VolumeMounts = new List<VolumeMountArgs>
                                     {
@@ -265,6 +283,11 @@ namespace applications.flink.flink_deployment
                                         {
                                             MountPath = "/opt/flink/hive-conf",
                                             Name = "hive-conf-volume"
+                                        },
+                                        new VolumeMountArgs
+                                        {
+                                            MountPath = "/opt/flink/conf",
+                                            Name = "flink-conf-volume"
                                         }
                                     }
                                 }
@@ -294,6 +317,14 @@ namespace applications.flink.flink_deployment
                                     {
                                         Name = hiveConfigMap.Metadata.Apply(m => m.Name)
                                     }
+                                },
+                                new VolumeArgs
+                                {
+                                    Name = "flink-conf-volume",
+                                    ConfigMap = new ConfigMapVolumeSourceArgs
+                                    {
+                                        Name = flinkConfConfigMap.Metadata.Apply(m => m.Name)
+                                    }
                                 }
                             }
                         }
@@ -303,18 +334,6 @@ namespace applications.flink.flink_deployment
                         Type = "ClusterIP",
                         Port = 8081,
                         TargetPort = 8081
-                    },
-                    Job = new JobSpecArgs
-                    {
-                        JarURI = "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
-                        EntryClass = "org.apache.flink.table.client.SqlClient",
-                        Args = new List<string>
-                        {
-                            "-f",
-                            "/opt/flink/sql/job.sql"
-                        },
-                        Parallelism = 1,
-                        UpgradeMode = "stateless"
                     }
                 }
             }, new CustomResourceOptions

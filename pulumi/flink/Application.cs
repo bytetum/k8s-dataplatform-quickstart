@@ -268,6 +268,9 @@ namespace Pulumi.Crds.Flink
 
     public class FlinkConfigurationSpecArgs : ResourceArgs
     {
+        [Input("sql-gateway.endpoint.type")]
+        public Input<string>? SqlGateWayType { get; set; }
+        
         [Input("taskmanager.numberOfTaskSlots")]
         public Input<string>? TaskManagerNumberOfTaskSlots { get; set; }
 

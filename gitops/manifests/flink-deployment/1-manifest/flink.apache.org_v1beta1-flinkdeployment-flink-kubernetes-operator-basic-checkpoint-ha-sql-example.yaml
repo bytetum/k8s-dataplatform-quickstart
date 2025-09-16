@@ -20,14 +20,6 @@ spec:
     taskmanager.numberOfTaskSlots: "2"
   flinkVersion: v1_20
   image: flink:latest
-  job:
-    args:
-    - -f
-    - /opt/flink/sql/job.sql
-    entryClass: org.apache.flink.table.client.SqlClient
-    jarURI: https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar
-    parallelism: 1
-    upgradeMode: stateless
   jobManager:
     resource:
       cpu: 1
@@ -51,13 +43,18 @@ spec:
           subPath: job.sql
         - mountPath: /opt/flink/hive-conf
           name: hive-conf-volume
+        - mountPath: /opt/flink/conf
+          name: flink-conf-volume
       initContainers:
       - command:
         - sh
         - -c
-        - mkdir -p /opt/flink /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints
-          /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod
-          -R 777 /flink-data
+        - mkdir -p /opt/flink/conf /opt/flink/lib /opt/flink/sql /flink-data/savepoints
+          /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store
+          && chmod -R 777 /flink-data /opt/flink && wget -O /opt/flink/lib/flink-connector-hive_2.12-1.20.2.jar
+          https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-hive_2.12/1.20.2/flink-connector-hive_2.12-1.20.2.jar
+          && wget -O /opt/flink/lib/hive-exec-2.3.4.jar https://repo.maven.apache.org/maven2/org/apache/hive/hive-exec/2.3.4/hive-exec-2.3.4.jar
+          && wget -O /opt/flink/lib/antlr-runtime-3.5.2.jar https://repo.maven.apache.org/maven2/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar
         image: busybox:1.28
         name: init-fs
         securityContext:
@@ -76,6 +73,9 @@ spec:
       - configMap:
           name: hive-conf
         name: hive-conf-volume
+      - configMap:
+          name: flink-conf
+        name: flink-conf-volume
   service:
     port: 8081
     targetPort: 8081

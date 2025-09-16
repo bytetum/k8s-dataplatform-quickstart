@@ -1,0 +1,20 @@
+apiVersion: v1
+data:
+  hive-site.xml: "<configuration>\r\n   <property>\r\n      <name>javax.jdo.option.ConnectionURL</name>\r\n
+    \     <value>jdbc:mysql://localhost/metastore?createDatabaseIfNotExist=true</value>\r\n
+    \     <description>metadata is stored in a MySQL server</description>\r\n   </property>\r\n\r\n
+    \  <property>\r\n      <name>javax.jdo.option.ConnectionDriverName</name>\r\n
+    \     <value>com.mysql.jdbc.Driver</value>\r\n      <description>MySQL JDBC driver
+    class</description>\r\n   </property>\r\n\r\n   <property>\r\n      <name>javax.jdo.option.ConnectionUserName</name>\r\n
+    \     <value>hive</value>\r\n      <description>user name for connecting to mysql
+    server</description>\r\n   </property>\r\n\r\n   <property>\r\n      <name>javax.jdo.option.ConnectionPassword</name>\r\n
+    \     <value>hivepassword</value>\r\n      <description>password for connecting
+    to mysql server</description>\r\n   </property>\r\n\r\n   <property>\r\n       <name>hive.metastore.uris</name>\r\n
+    \      <value>thrift://localhost:9083</value>\r\n       <description>IP address
+    (or fully-qualified domain name) and port of the metastore host</description>\r\n
+    \  </property>\r\n\r\n   <property>\r\n       <name>hive.metastore.schema.verification</name>\r\n
+    \      <value>true</value>\r\n   </property>\r\n</configuration>"
+kind: ConfigMap
+metadata:
+  name: hive-conf
+  namespace: flink-kubernetes-operator
