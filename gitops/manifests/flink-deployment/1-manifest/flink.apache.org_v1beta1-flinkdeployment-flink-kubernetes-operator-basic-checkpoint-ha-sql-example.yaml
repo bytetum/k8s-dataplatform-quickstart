@@ -45,6 +45,8 @@ spec:
           subPath: job.sql
         - mountPath: /opt/flink/hive-conf
           name: hive-conf-volume
+        - mountPath: /opt/flink/conf
+          name: flink-conf-dir
       initContainers:
       - command:
         - sh
@@ -63,6 +65,17 @@ spec:
         volumeMounts:
         - mountPath: /flink-data
           name: flink-volume
+      - command:
+        - sh
+        - -c
+        - cp /tmp/flink-conf/flink-conf.yaml /etc/flink/flink-conf.yaml
+        image: busybox:1.35
+        name: copy-flink-config
+        volumeMounts:
+        - mountPath: /tmp/flink-conf
+          name: flink-conf-volume
+        - mountPath: /etc/flink
+          name: flink-conf-dir
       volumes:
       - name: flink-volume
         persistentVolumeClaim:
@@ -73,6 +86,11 @@ spec:
       - configMap:
           name: hive-conf
         name: hive-conf-volume
+      - configMap:
+          name: flink-conf
+        name: flink-conf-volume
+      - emptyDir: {}
+        name: flink-conf-dir
   serviceAccount: flink
   taskManager:
     resource:

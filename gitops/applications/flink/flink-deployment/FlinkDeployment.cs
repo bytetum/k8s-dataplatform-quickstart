@@ -246,6 +246,25 @@ namespace applications.flink.flink_deployment
                                         RunAsUser = 0,
                                         Privileged = true
                                     }
+                                },
+                                new ContainerArgs
+                                {
+                                    Name = "copy-flink-config",
+                                    Image = "busybox:1.35",
+                                    Command = new List<string> { "sh", "-c", "cp /tmp/flink-conf/flink-conf.yaml /etc/flink/flink-conf.yaml" },
+                                    VolumeMounts = new List<VolumeMountArgs>
+                                    {
+                                        new VolumeMountArgs
+                                        {
+                                            Name = "flink-conf-volume",
+                                            MountPath = "/tmp/flink-conf"
+                                        },
+                                        new VolumeMountArgs
+                                        {
+                                            Name = "flink-conf-dir",
+                                            MountPath = "/etc/flink"
+                                        }
+                                    }
                                 }
                             },
                             Containers = new List<ContainerArgs>
@@ -281,6 +300,11 @@ namespace applications.flink.flink_deployment
                                             MountPath = "/opt/flink/hive-conf",
                                             Name = "hive-conf-volume"
                                         },
+                                        new VolumeMountArgs
+                                        {
+                                            MountPath = "/opt/flink/conf",
+                                            Name = "flink-conf-dir"
+                                        }
                                     }
                                 }
                             },
@@ -310,6 +334,19 @@ namespace applications.flink.flink_deployment
                                         Name = hiveConfigMap.Metadata.Apply(m => m.Name)
                                     }
                                 },
+                                new VolumeArgs
+                                {
+                                    Name = "flink-conf-volume",
+                                    ConfigMap = new ConfigMapVolumeSourceArgs
+                                    {
+                                        Name = flinkConfConfigMap.Metadata.Apply(m => m.Name)
+                                    }
+                                },
+                                new VolumeArgs
+                                {
+                                    Name = "flink-conf-dir",
+                                    EmptyDir = new EmptyDirVolumeSourceArgs()
+                                }
                             }
                         }
                     }
