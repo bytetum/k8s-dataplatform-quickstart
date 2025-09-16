@@ -49,9 +49,9 @@ spec:
       - command:
         - sh
         - -c
-        - mkdir -p /opt/flink/conf /opt/flink/lib /opt/flink/sql /flink-data/savepoints
-          /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store
-          && chmod -R 777 /flink-data /opt/flink && wget -O /opt/flink/lib/flink-connector-hive_2.12-1.20.2.jar
+        - mkdir -p /opt/flink/lib /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints
+          /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod
+          -R 777 /flink-data /opt/flink && wget -O /opt/flink/lib/flink-connector-hive_2.12-1.20.2.jar
           https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-hive_2.12/1.20.2/flink-connector-hive_2.12-1.20.2.jar
           && wget -O /opt/flink/lib/hive-exec-2.3.4.jar https://repo.maven.apache.org/maven2/org/apache/hive/hive-exec/2.3.4/hive-exec-2.3.4.jar
           && wget -O /opt/flink/lib/antlr-runtime-3.5.2.jar https://repo.maven.apache.org/maven2/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar
