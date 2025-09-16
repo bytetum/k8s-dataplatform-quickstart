@@ -7,6 +7,8 @@
 # HIVE CATALOG CONFIGURATION
 # These settings teach Flink how to connect to and use Hive as a persistent catalog.
 # =================================================================
+# SQL Gateway Configuration (can also be defined here)
+sql-gateway.endpoint.type: hiveserver2
 
 # A logical name for the catalog that you will use in Flink SQL (e.g., USE CATALOG myhive).
 catalog.hive.name: myhive

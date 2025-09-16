@@ -180,7 +180,6 @@ namespace applications.flink.flink_deployment
                     FlinkVersion = "v1_20",
                     FlinkConfiguration = new FlinkConfigurationSpecArgs
                     {
-                        SqlGateWayType = "hiveserver2",
                         TaskManagerNumberOfTaskSlots = "2",
                         StateSavepointsDir = "file:///flink-data/savepoints",
                         StateCheckpointsDir = "file:///flink-data/checkpoints",
@@ -278,7 +277,7 @@ namespace applications.flink.flink_deployment
                                         },
                                         new VolumeMountArgs
                                         {
-                                            MountPath = "/opt/flink/conf",
+                                            MountPath = "/conf",
                                             Name = "flink-conf-volume"
                                         }
                                     }
