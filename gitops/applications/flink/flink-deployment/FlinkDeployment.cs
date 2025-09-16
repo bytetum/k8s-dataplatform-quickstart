@@ -177,7 +177,7 @@ namespace applications.flink.flink_deployment
                 Spec = new FlinkDeploymentSpecArgs
                 {
                     Image = "flink:latest",
-                    FlinkVersion = "v1_21",
+                    FlinkVersion = "v1_20",
                     FlinkConfiguration = new FlinkConfigurationSpecArgs
                     {
                         SqlGateWayType = "hiveserver2",
