@@ -123,7 +123,7 @@ namespace applications.flink.flink_deployment
                 },
                 Data =
                 {
-                    { "flink-conf.yaml", flinkConfContent }
+                    { "config.yaml", flinkConfContent }
                 }
             }, new CustomResourceOptions
             {
@@ -277,7 +277,7 @@ namespace applications.flink.flink_deployment
                                         },
                                         new VolumeMountArgs
                                         {
-                                            MountPath = "/conf",
+                                            MountPath = "/opt/flink/conf",
                                             Name = "flink-conf-volume"
                                         }
                                     }
