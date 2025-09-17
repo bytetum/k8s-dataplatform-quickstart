@@ -3,7 +3,7 @@ data:
   hive-site.xml: "<configuration>\r\n  <property>\r\n    <name>hive.metastore.uris</name>\r\n
     \   <value>thrift://hive-metastore.flink-kubernetes-operator.svc.cluster.local:9083</value>\r\n
     \ </property>\r\n\r\n  <property>\r\n    <name>javax.jdo.option.ConnectionURL</name>\r\n
-    \   <value>jdbc:postgresql://hive-metastore-postgres:5432/metastore</value>\r\n
+    \   <value>jdbc:postgresql://hive-metastore-postgres.flink-kubernetes-operator.svc.cluster.local:5432/metastore</value>\r\n
     \ </property>\r\n\r\n  <property>\r\n    <name>javax.jdo.option.ConnectionDriverName</name>\r\n
     \   <value>org.postgresql.Driver</value>\r\n  </property>\r\n\r\n  <property>\r\n
     \   <name>javax.jdo.option.ConnectionUserName</name>\r\n    <value>hive</value>\r\n

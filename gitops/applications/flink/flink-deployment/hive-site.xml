@@ -6,7 +6,7 @@
 
   <property>
     <name>javax.jdo.option.ConnectionURL</name>
-    <value>jdbc:postgresql://hive-metastore-postgres:5432/metastore</value>
+    <value>jdbc:postgresql://hive-metastore-postgres.flink-kubernetes-operator.svc.cluster.local:5432/metastore</value>
   </property>
 
   <property>
