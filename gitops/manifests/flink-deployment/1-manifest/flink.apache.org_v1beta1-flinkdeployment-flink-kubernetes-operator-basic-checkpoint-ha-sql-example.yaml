@@ -1,0 +1,81 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: basic-checkpoint-ha-sql-example
+  namespace: flink-kubernetes-operator
+spec:
+  flinkConfiguration:
+    catalog.hive.default-database: default
+    catalog.hive.hive-conf-dir: /opt/flink/hive-conf
+    catalog.hive.hive-version: 2.3.4
+    catalog.hive.name: myhive
+    catalog.hive.type: hive
+    env.java.opts: -verbose:gc -XX:+PrintGCDetails
+    high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
+    high-availability.storageDir: file:///flink-data/ha
+    jobmanager.archive.fs.dir: file:///flink-data/completed-jobs
+    jobmanager.scheduler: adaptive
+    jobstore.dir: file:///flink-data/job-store
+    kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
+    kafka.input.topic: input-topic
+    kafka.output.topic: output-topic
+    sql-gateway.endpoint.type: hiveserver2
+    state.checkpoints.dir: file:///flink-data/checkpoints
+    state.savepoints.dir: file:///flink-data/savepoints
+    taskmanager.numberOfTaskSlots: "2"
+  flinkVersion: v1_20
+  image: flink:1.20
+  jobManager:
+    resource:
+      cpu: 1
+      memory: 2048m
+  podTemplate:
+    serviceAccount: flink
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: flink-warpstream-credentials-secret
+        name: flink-main-container
+        volumeMounts:
+        - mountPath: /flink-data
+          name: flink-volume
+        - mountPath: /opt/flink/sql/job.sql
+          name: flink-sql-script-volume
+          subPath: job.sql
+        - mountPath: /opt/flink/hive-conf
+          name: hive-conf-volume
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - mkdir -p /opt/flink/lib /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints
+          /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod
+          -R 777 /flink-data /opt/flink && wget -O /opt/flink/lib/flink-connector-hive_2.12-1.20.2.jar
+          https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-hive_2.12/1.20.2/flink-connector-hive_2.12-1.20.2.jar
+          && wget -O /opt/flink/lib/hive-exec-2.3.4.jar https://repo.maven.apache.org/maven2/org/apache/hive/hive-exec/2.3.4/hive-exec-2.3.4.jar
+          && wget -O /opt/flink/lib/antlr-runtime-3.5.2.jar https://repo.maven.apache.org/maven2/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar
+        image: busybox:1.28
+        name: init-fs
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /flink-data
+          name: flink-volume
+      volumes:
+      - name: flink-volume
+        persistentVolumeClaim:
+          claimName: flink-pvc
+      - configMap:
+          name: flink-sql-script
+        name: flink-sql-script-volume
+      - configMap:
+          name: hive-conf
+        name: hive-conf-volume
+  serviceAccount: flink
+  taskManager:
+    resource:
+      cpu: 1
+      memory: 2048m
+    serviceAccount: flink
