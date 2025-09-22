@@ -1,299 +1,284 @@
 using System.Collections.Generic;
 using System.IO;
 using Pulumi.Crds.ExternalSecrets;
-using Pulumi.Crds.Flink;
 using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
-using ServiceSpecArgs = Pulumi.Crds.Flink.ServiceSpecArgs;
 
-namespace applications.flink.flink_deployment
+namespace applications.flink.flink_deployment;
+
+internal class FlinkDeployment : ComponentResource
 {
-    internal class FlinkDeployment : ComponentResource
+    public FlinkDeployment(string deploymentName, string manifestsRoot) : base(
+        "flink-deployment",
+        "flink-deployment")
     {
-        public FlinkDeployment(string deploymentName, string manifestsRoot) : base(
-            "flink-deployment",
-            "flink-deployment")
+        var provider = new Kubernetes.Provider("yaml-provider", new()
         {
-            var provider = new Kubernetes.Provider("yaml-provider", new()
-            {
-                RenderYamlToDirectory = $"{manifestsRoot}/{deploymentName}"
-            }, new CustomResourceOptions
-            {
-                Parent = this
-            });
+            RenderYamlToDirectory = $"{manifestsRoot}/{deploymentName}"
+        }, new CustomResourceOptions
+        {
+            Parent = this
+        });
 
-            var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
+        // Create a persistent volume for Flink data
+        var flinkPv = new PersistentVolume("flink-pv", new PersistentVolumeArgs
+        {
+            Metadata = new ObjectMetaArgs
             {
-                Metadata = new ObjectMetaArgs
+                Name = "flink-pv"
+            },
+            Spec = new PersistentVolumeSpecArgs
+            {
+                StorageClassName = "standard",
+                Capacity = new Dictionary<string, string>
                 {
-                    Name = "flink-pv"
+                    { "storage", "10Gi" }
                 },
-                Spec = new PersistentVolumeSpecArgs
+                AccessModes = new[] { "ReadWriteMany" },
+                PersistentVolumeReclaimPolicy = "Retain",
+                HostPath = new HostPathVolumeSourceArgs
                 {
-                    StorageClassName = "standard",
-                    Capacity = new Dictionary<string, string>
+                    Path = "/tmp/flink",
+                    Type = "DirectoryOrCreate"
+                }
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this
+        });
+        // Create a persistent volume claim for Flink data
+        var flinkPvc = new PersistentVolumeClaim("flink-pvc", new PersistentVolumeClaimArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink-pvc",
+                Namespace = Constants.Namespace
+            },
+            Spec = new PersistentVolumeClaimSpecArgs
+            {
+                StorageClassName = "standard",
+                AccessModes = new[] { "ReadWriteMany" },
+                Resources = new VolumeResourceRequirementsArgs
+                {
+                    Requests = new Dictionary<string, string>
                     {
                         { "storage", "10Gi" }
-                    },
-                    AccessModes = new[] { "ReadWriteMany" },
-                    PersistentVolumeReclaimPolicy = "Retain",
-                    HostPath = new HostPathVolumeSourceArgs
-                    {
-                        Path = "/tmp/flink",
-                        Type = "DirectoryOrCreate"
                     }
-                }
-            }, new CustomResourceOptions
-            {
-                Provider = provider,
-                Parent = this
-            });
+                },
+                VolumeName = flinkPv.Metadata.Apply(metadata => metadata.Name)
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            DependsOn = new[] { flinkPv },
+            Parent = this
+        });
 
-            var flinkPvc = new PersistentVolumeClaim("flink-pvc", new PersistentVolumeClaimArgs
+        var sqlFileContent = File.ReadAllText("./flink/flink-deployment/test_job.sql");
+        var sqlScriptConfigMap = new ConfigMap("flink-sql-script-cm", new ConfigMapArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink-sql-script",
+                Namespace = Constants.Namespace,
+            },
+            Data =
+            {
+                { "job.sql", sqlFileContent }
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this
+        });
+
+        var flinkKafkaCredentialsSecret = new ExternalSecret("flink-warpstream-credentials-secret",
+            new ExternalSecretArgs()
             {
                 Metadata = new ObjectMetaArgs
                 {
-                    Name = "flink-pvc",
+                    Name = "flink-warpstream-credentials-secret",
                     Namespace = Constants.Namespace
                 },
-                Spec = new PersistentVolumeClaimSpecArgs
+                Spec = new ExternalSecretSpecArgs
                 {
-                    StorageClassName = "standard",
-                    AccessModes = new[] { "ReadWriteMany" },
-                    Resources = new VolumeResourceRequirementsArgs
+                    SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                     {
-                        Requests = new Dictionary<string, string>
-                        {
-                            { "storage", "10Gi" }
-                        }
+                        Name = "secret-store",
+                        Kind = "ClusterSecretStore"
                     },
-                    VolumeName = flinkPv.Metadata.Apply(metadata => metadata.Name)
-                }
-            }, new CustomResourceOptions
-            {
-                Provider = provider,
-                DependsOn = new[] { flinkPv },
-                Parent = this
-            });
-
-            var sqlFileContent = File.ReadAllText("./flink/flink-deployment/test_job.sql");
-            var sqlScriptConfigMap = new ConfigMap("flink-sql-script-cm", new ConfigMapArgs
-            {
-                Metadata = new ObjectMetaArgs
-                {
-                    Name = "flink-sql-script",
-                    Namespace = Constants.Namespace,
-                },
-                Data =
-                {
-                    { "job.sql", sqlFileContent }
-                }
-            }, new CustomResourceOptions
-            {
-                Provider = provider,
-                Parent = this
-            });
-
-            var hiveSiteContent = File.ReadAllText("./flink/flink-deployment/hive-site.xml");
-            var hiveConfigMap = new ConfigMap("hive-conf-cm", new ConfigMapArgs
-            {
-                Metadata = new ObjectMetaArgs
-                {
-                    Name = "hive-conf",
-                    Namespace = Constants.Namespace,
-                },
-                Data =
-                {
-                    { "hive-site.xml", hiveSiteContent }
-                }
-            }, new CustomResourceOptions
-            {
-                Provider = provider,
-                Parent = this
-            });
-
-            var flinkKafkaCredentialsSecret = new ExternalSecret("flink-warpstream-credentials-secret",
-                new ExternalSecretArgs
-                {
-                    Metadata = new ObjectMetaArgs
+                    Target = new ExternalSecretSpecTargetArgs()
                     {
-                        Name = "flink-warpstream-credentials-secret",
-                        Namespace = Constants.Namespace
+                        Name = "flink-warpstream-credentials-secret"
                     },
-                    Spec = new ExternalSecretSpecArgs
+                    DataFrom = new ExternalSecretSpecDataFromArgs()
                     {
-                        SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs
+                        Extract = new ExternalSecretSpecDataFromExtractArgs()
                         {
-                            Name = "secret-store",
-                            Kind = "ClusterSecretStore"
-                        },
-                        Target = new ExternalSecretSpecTargetArgs
-                        {
-                            Name = "flink-warpstream-credentials-secret"
-                        },
-                        DataFrom = new InputList<ExternalSecretSpecDataFromArgs>
-                        {
-                            new ExternalSecretSpecDataFromArgs
-                            {
-                                Extract = new ExternalSecretSpecDataFromExtractArgs
-                                {
-                                    Key = "id:flink-warpstream-credentials-secret"
-                                }
-                            }
+                            Key = "id:flink-warpstream-credentials-secret"
                         }
                     }
-                }, new CustomResourceOptions
-                {
-                    Provider = provider,
-                    Parent = this
-                });
+                }
+            }, new CustomResourceOptions
+            {
+                Provider = provider,
+                Parent = this
+            });
 
-            var flinkDeployment = new Pulumi.Crds.Flink.FlinkDeployment("flink-deployment", new FlinkDeploymentArgs
+        var flinkDeployment = new Kubernetes.ApiExtensions.CustomResource("flink-deployment",
+            new FlinkDeploymentArgs()
             {
                 Metadata = new ObjectMetaArgs
                 {
                     Name = "basic-checkpoint-ha-sql-example",
-                    Namespace = Constants.Namespace
+                    Namespace = Constants.Namespace,
                 },
-                Spec = new FlinkDeploymentSpecArgs
+                Spec = new Dictionary<string, object>
                 {
-                    Image = "flink:1.20",
-                    FlinkVersion = "v1_20",
-                    FlinkConfiguration = new FlinkConfigurationSpecArgs
+                    ["image"] = "flink:1.20",
+                    ["flinkVersion"] = "v1_20",
+                    ["flinkConfiguration"] = new Dictionary<string, object>
                     {
-                        SqlGateWayType = "hiveserver2",
-                        TaskManagerNumberOfTaskSlots = "2",
-                        StateSavepointsDir = "file:///flink-data/savepoints",
-                        StateCheckpointsDir = "file:///flink-data/checkpoints",
-                        HighAvailability = "org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory",
-                        HighAvailabilityStorageDir = "file:///flink-data/ha",
-                        JobManagerArchiveFsDir = "file:///flink-data/completed-jobs",
-                        JobStoreDir = "file:///flink-data/job-store",
-                        JobManagerScheduler = "adaptive",
-                        EnvJavaOpts = "-verbose:gc -XX:+PrintGCDetails",
-                        KafkaBootstrapServers = "warpstream-agent.default.svc.cluster.local:9092",
-                        KafkaInputTopic = "input-topic",
-                        KafkaOutputTopic = "output-topic",
-                        CatalogHiveName = "myhive",
-                        CatalogHiveType = "hive",
-                        CatalogHiveHiveConfDir = "/opt/flink/hive-conf",
-                        CatalogHiveHiveVersion = "2.3.4",
-                        CatalogHiveDefaultDatabase = "default",
+                        ["taskmanager.numberOfTaskSlots"] = "2",
+                        ["state.savepoints.dir"] = "file:///flink-data/savepoints",
+                        ["state.checkpoints.dir"] = "file:///flink-data/checkpoints",
+                        ["high-availability"] =
+                            "org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory",
+                        ["high-availability.storageDir"] = "file:///flink-data/ha",
+                        ["jobmanager.archive.fs.dir"] = "file:///flink-data/completed-jobs",
+                        ["jobstore.dir"] = "file:///flink-data/job-store",
+                        ["jobmanager.scheduler"] = "adaptive",
+                        // Add additional debug/logging configuration
+                        ["env.java.opts"] = "-verbose:gc -XX:+PrintGCDetails",
+                        // Kafka configuration
+                        ["kafka.bootstrap.servers"] = "warpstream-agent.default.svc.cluster.local:9092",
+                        ["kafka.input.topic"] = "input-topic",
+                        ["kafka.output.topic"] = "output-topic",
+                        // IMPORTANT: Define your credentials here, not in the SQL script
+                        //              ["kafka.sasl.jaas.config"] = org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${env.USERNAME}\" password=\"${env.PASSWORD}\";,
                     },
-                    ServiceAccount = "flink",
-                    JobManager = new JobManagerSpecArgs
+                    ["serviceAccount"] = "flink",
+                    ["jobManager"] = new Dictionary<string, object>
                     {
-                        Resource = new ResourceSpecArgs
+                        ["resource"] = new Dictionary<string, object>
                         {
-                            Memory = "2048m",
-                            Cpu = 1
+                            ["memory"] = "2048m",
+                            ["cpu"] = 1,
                         },
                     },
-                    TaskManager = new TaskManagerSpecArgs
+                    ["podTemplate"] = new Dictionary<string, object>
                     {
-                        ServiceAccount = "flink",
-                        Resource = new ResourceSpecArgs
+                        ["serviceAccount"] = "flink",     
+                        ["spec"] = new Dictionary<string, object>
                         {
-                            Memory = "2048m",
-                            Cpu = 1
-                        }
-                    },
-                    PodTemplate = new Pulumi.Crds.Flink.PodTemplateSpecArgs
-                    {
-                        ServiceAccount = "flink",
-                        Spec = new PodSpecArgs
-                        {
-                            InitContainers = new List<ContainerArgs>
+                            ["initContainers"] = new List<Dictionary<string, object>>
                             {
-                                new ContainerArgs
+                                new Dictionary<string, object>
                                 {
-                                    Name = "init-fs",
-                                    Image = "busybox:1.28",
-                                    Command = new List<string>
+                                    ["name"] = "init-fs",
+                                    ["image"] = "busybox:1.28",
+                                    ["command"] = new List<string>
                                     {
                                         "sh", "-c",
-                                        "mkdir -p /opt/flink/lib /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs /flink-data/job-store && chmod -R 777 /flink-data /opt/flink && wget -O /opt/flink/lib/flink-connector-hive_2.12-1.20.2.jar https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-hive_2.12/1.20.2/flink-connector-hive_2.12-1.20.2.jar && wget -O /opt/flink/lib/hive-exec-2.3.4.jar https://repo.maven.apache.org/maven2/org/apache/hive/hive-exec/2.3.4/hive-exec-2.3.4.jar && wget -O /opt/flink/lib/antlr-runtime-3.5.2.jar https://repo.maven.apache.org/maven2/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar"
+                                        "mkdir -p /opt/flink/sql /flink-data/savepoints /flink-data/checkpoints /flink-data/ha /flink-data/completed-jobs  /flink-data/job-store && chmod -R 777 /flink-data"
                                     },
-                                    VolumeMounts = new List<VolumeMountArgs>
+                                    ["volumeMounts"] = new List<Dictionary<string, object>>
                                     {
-                                        new VolumeMountArgs
+                                        new Dictionary<string, object>
                                         {
-                                            MountPath = "/flink-data",
-                                            Name = "flink-volume"
+                                            ["mountPath"] = "/flink-data",
+                                            ["name"] = "flink-volume"
                                         }
                                     },
-                                    SecurityContext = new SecurityContextArgs
+                                    ["securityContext"] = new Dictionary<string, object>
                                     {
-                                        RunAsUser = 0,
-                                        Privileged = true
+                                        ["runAsUser"] = 0, // Run as root
+                                        ["privileged"] = true
                                     }
                                 }
                             },
-                            Containers = new List<ContainerArgs>
+                            ["containers"] = new[]
                             {
-                                new ContainerArgs
+                                new Dictionary<string, object>
                                 {
-                                    Name = "flink-main-container",
-                                    EnvFrom = new List<EnvFromSourceArgs>
+                                    ["name"] = "flink-main-container",
+                                    ["envFrom"] = new[]
                                     {
-                                        new EnvFromSourceArgs
+                                        new Dictionary<string, object>
                                         {
-                                            SecretRef = new SecretEnvSourceArgs
+                                            ["secretRef"] = new Dictionary<string, object>
                                             {
-                                                Name = "flink-warpstream-credentials-secret"
+                                                ["name"] = "flink-warpstream-credentials-secret"
                                             }
                                         }
                                     },
-                                    VolumeMounts = new List<VolumeMountArgs>
+                                    ["volumeMounts"] = new[]
                                     {
-                                        new VolumeMountArgs
+                                        new Dictionary<string, object>
                                         {
-                                            MountPath = "/flink-data",
-                                            Name = "flink-volume"
+                                            ["mountPath"] = "/flink-data",
+                                            ["name"] = "flink-volume"
                                         },
-                                        new VolumeMountArgs
+                                        new Dictionary<string, object>
                                         {
-                                            MountPath = "/opt/flink/sql/job.sql",
-                                            Name = "flink-sql-script-volume",
-                                            SubPath = "job.sql"
-                                        },
-                                        new VolumeMountArgs
-                                        {
-                                            MountPath = "/opt/flink/hive-conf",
-                                            Name = "hive-conf-volume"
-                                        },
+                                            ["mountPath"] = "/opt/flink/sql/job.sql",
+                                            ["name"] = "flink-sql-script-volume",
+                                            ["subPath"] = "job.sql"
+                                        }
+                                    }
+                                },
+                            },
+                            ["volumes"] = new[]
+                            {
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "flink-volume",
+                                    ["persistentVolumeClaim"] = new Dictionary<string, object>
+                                    {
+                                        ["claimName"] = flinkPvc.Metadata.Apply(metadata => metadata.Name)
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "flink-sql-script-volume",
+                                    ["configMap"] = new Dictionary<string, object>
+                                    {
+                                        ["name"] = "flink-sql-script"
                                     }
                                 }
-                            },
-                            Volumes = new List<VolumeArgs>
-                            {
-                                new VolumeArgs
-                                {
-                                    Name = "flink-volume",
-                                    PersistentVolumeClaim = new PersistentVolumeClaimVolumeSourceArgs
-                                    {
-                                        ClaimName = flinkPvc.Metadata.Apply(m => m.Name)
-                                    }
-                                },
-                                new VolumeArgs
-                                {
-                                    Name = "flink-sql-script-volume",
-                                    ConfigMap = new ConfigMapVolumeSourceArgs
-                                    {
-                                        Name = sqlScriptConfigMap.Metadata.Apply(m => m.Name)
-                                    }
-                                },
-                                new VolumeArgs
-                                {
-                                    Name = "hive-conf-volume",
-                                    ConfigMap = new ConfigMapVolumeSourceArgs
-                                    {
-                                        Name = hiveConfigMap.Metadata.Apply(m => m.Name)
-                                    }
-                                },
                             }
                         }
+                    },
+                    ["service"] = new Dictionary<string, object>
+                    {
+                        ["type"] = "ClusterIP",
+                        ["port"] = 8081,
+                        ["targetPort"] = 8081
+                    },
+                    ["taskManager"] = new Dictionary<string, object>
+                    {
+                        ["serviceAccount"] = "flink",
+                        ["resource"] = new Dictionary<string, object>
+                        {
+                            ["memory"] = "2048m",
+                            ["cpu"] = 1
+                        }
+                    },
+                    // Add the job configuration
+                    ["job"] = new Dictionary<string, object>
+                    {
+                        ["jarURI"] =
+                            "https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-client/1.20.0/flink-sql-client-1.20.0.jar",
+                        ["entryClass"] = "org.apache.flink.table.client.SqlClient",
+                        ["args"] = new[]
+                        {
+                            "-f",
+                            "/opt/flink/sql/job.sql"
+                        },
+                        ["parallelism"] = 1,
+                        ["upgradeMode"] = "stateless"
                     }
                 }
             }, new CustomResourceOptions
@@ -301,6 +286,14 @@ namespace applications.flink.flink_deployment
                 Provider = provider,
                 Parent = this
             });
+    }
+
+    private class FlinkDeploymentArgs : Kubernetes.ApiExtensions.CustomResourceArgs
+    {
+        public FlinkDeploymentArgs() : base("flink.apache.org/v1beta1", "FlinkDeployment")
+        {
         }
+
+        [Input("spec")] public Dictionary<string, object>? Spec { get; set; }
     }
 }
