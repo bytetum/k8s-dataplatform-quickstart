@@ -30,12 +30,12 @@ extraEnv:
     valueFrom:
       secretKeyRef:
         name: "warpstream-schema-registry-secrets"
-        key: "username"
+        key: "USERNAME"
   - name: WARPSTREAM_SCHEMA_REGISTRY_BASIC_AUTH_PASSWORD
     valueFrom:
       secretKeyRef:
         name: "warpstream-schema-registry-secrets"
-        key: "password"
+        key: "PASSWORD"
 
   # SCHEMA COMPATIBILITY SETTINGS
   - name: WARPSTREAM_SCHEMA_REGISTRY_COMPATIBILITY_LEVEL
