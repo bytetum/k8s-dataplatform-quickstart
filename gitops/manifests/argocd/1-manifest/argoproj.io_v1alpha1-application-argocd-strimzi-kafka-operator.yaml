@@ -14,7 +14,7 @@ spec:
   - chart: strimzi-kafka-operator
     helm:
       valueFiles:
-      - $values/gitops/manifests/polaris/values.yaml
+      - $values/gitops/manifests/strimzi-kafka-operator/values.yaml
     repoURL: quay.io/strimzi-helm
     targetRevision: 0.47.0
   - directory:

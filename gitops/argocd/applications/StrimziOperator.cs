@@ -8,7 +8,7 @@ internal class StrimziOperator
             .AddSource(ApplicationType.Helm)
             .Branch("0.47.0")
             .RepoUrl("quay.io/strimzi-helm")
-            .AddValueFile("$values/gitops/manifests/polaris/values.yaml")
+            .AddValueFile("$values/gitops/manifests/strimzi-kafka-operator/values.yaml")
             .AddSource(ApplicationType.Yaml)
             .AsValueSource("values")
             .SyncWave(1)
