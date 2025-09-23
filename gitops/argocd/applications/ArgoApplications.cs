@@ -14,10 +14,14 @@ internal class ArgoApplications : ComponentResource
 
         var certManager = new CertManager(provider);
         var externalSecrets = new ExternalSecrets(provider);
-		//var warpStream = new WarpStream(provider);
+		var warpStream = new WarpStream(provider);
         var flinkOperator = new FlinkOperator(provider);
         var flinkDeployment = new FlinkDeployment(provider);
         var polaris = new Polaris(provider);
+        // var trino = new Trino(provider);
+        var warpStreamSchemaRegistry = new WarpStreamSchemaRegistry(provider);
+        var strimziOperator = new StrimziOperator(provider);
+        // var monitoring = new KubePrometheus(provider);
     }
 }
 
