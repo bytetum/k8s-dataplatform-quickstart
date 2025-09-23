@@ -10,10 +10,19 @@ spec:
     namespace: strimzi-kafka-operator
     server: https://kubernetes.default.svc
   project: default
-  source:
-    chart: strimzi-kafka-operator
+  sources:
+  - chart: strimzi-kafka-operator
+    helm:
+      valueFiles:
+      - $values/gitops/manifests/polaris/values.yaml
     repoURL: quay.io/strimzi-helm
     targetRevision: 0.47.0
+  - directory:
+      recurse: true
+    path: gitops/manifests/strimzi-kafka-operator
+    ref: values
+    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: HEAD
   syncPolicy:
     automated:
       prune: true

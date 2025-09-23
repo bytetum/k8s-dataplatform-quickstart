@@ -1,3 +1,4 @@
 watchNamespaces:
   - "data-pipeline"
   - "strimzi-kafka-operator"
+watchAnyNamespace: true
