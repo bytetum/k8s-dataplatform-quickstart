@@ -22,7 +22,7 @@ extraEnv:
         key: SCALEWAY_SECRET_KEY
 
   - name: WARPSTREAM_TEST_MODE
-    value: "false"
+    value: "true"
 
   - name: WARPSTREAM_IS_DEMO_OR_PLAYGROUND
     value: "true"
