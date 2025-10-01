@@ -27,6 +27,9 @@ extraEnv:
   - name: WARPSTREAM_IS_DEMO_OR_PLAYGROUND
     value: "True"
     
+  - name: WARPSTREAM_BUCKET_ASSUME_ROLE_ARN_DEFAULT
+    value: arn:aws:iam::938635786472:role/local-warpstream-test
+    
 service:
   type: ClusterIP
   port: 9092
