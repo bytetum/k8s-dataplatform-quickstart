@@ -48,8 +48,6 @@ extraEnv:
     value: "true"
   - name: WARPSTREAM_IS_DEMO_OR_PLAYGROUND
     value: "true"
-  - name: WARPSTREAM_AVAILABILITY_ZONE
-    value: "eu-central-1a"
 
 service:
   type: ClusterIP
