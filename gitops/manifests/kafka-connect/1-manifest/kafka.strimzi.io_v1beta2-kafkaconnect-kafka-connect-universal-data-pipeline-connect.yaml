@@ -10,6 +10,8 @@ metadata:
 spec:
   bootstrapServers: warpstream-agent.warpstream.svc.cluster.local:9092
   config:
+    config.providers: env
+    config.providers.env.class: org.apache.kafka.common.config.provider.EnvVarConfigProvider
     config.storage.replication.factor: 1
     config.storage.topic: infra.kafka.connect.configs
     consumer.max.poll.records: 500
