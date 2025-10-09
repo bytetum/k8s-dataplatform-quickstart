@@ -1,0 +1,37 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+    strimzi.io/cluster: universal-data-pipeline-connect
+  name: postgres-debezium-source
+  namespace: kafka-connect
+spec:
+  class: io.debezium.connector.postgresql.PostgresConnector
+  config:
+    database.dbname: testdb
+    database.hostname: postgres-test.kafka-connect.svc.cluster.local
+    database.password: debezium
+    database.port: 5432
+    database.user: debezium
+    errors.deadletterqueue.context.headers.enable: true
+    errors.deadletterqueue.topic.name: debezium-errors
+    errors.tolerance: all
+    key.converter: org.apache.kafka.connect.json.JsonConverter
+    key.converter.schemas.enable: true
+    plugin.name: pgoutput
+    publication.name: dbz_publication
+    slot.name: debezium_test_slot
+    snapshot.mode: always
+    table.include.list: public.employees
+    topic.prefix: postgres-cdc
+    transforms: route,unwrap
+    transforms.route.regex: postgres-cdc.public.employees
+    transforms.route.replacement: bronze-topic
+    transforms.route.type: org.apache.kafka.connect.transforms.RegexRouter
+    transforms.unwrap.add.fields: timestamp
+    transforms.unwrap.delete.handling.mode: rewrite
+    transforms.unwrap.drop.tombstones: false
+    transforms.unwrap.type: io.debezium.transforms.ExtractNewRecordState
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+    value.converter.schemas.enable: true
+  tasksMax: 1

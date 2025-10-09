@@ -1,4 +1,5 @@
 ﻿using argocd.applications.flink_deployment;
+using argocd.applications.kafka_connect;
 
 namespace argocd.applications;
 
@@ -21,6 +22,7 @@ internal class ArgoApplications : ComponentResource
         // var trino = new Trino(provider);
         var warpStreamSchemaRegistry = new WarpStreamSchemaRegistry(provider);
         var strimziOperator = new StrimziOperator(provider);
+        var kafkaConnect = new KafkaConnect(provider);
         // var monitoring = new KubePrometheus(provider);
     }
 }

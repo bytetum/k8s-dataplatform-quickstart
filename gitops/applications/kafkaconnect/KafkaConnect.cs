@@ -1,0 +1,233 @@
+using System.Collections.Generic;
+using Pulumi.Crds.ExternalSecrets;
+using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
+
+namespace applications.kafkaconnect;
+
+internal class KafkaConnect : ComponentResource
+{
+    public KafkaConnect(string manifestsRoot) : base(
+        "kafkaconnect",
+        "kafkaconnect")
+    {
+        var provider = new Kubernetes.Provider("yaml-provider", new()
+        {
+            RenderYamlToDirectory = $"{manifestsRoot}/kafka-connect"
+        }, new CustomResourceOptions
+        {
+            Parent = this
+        });
+
+        var polarisRootPassword = new ExternalSecret("polaris-root-password", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "polaris-root-password",
+                Namespace = "kafka-connect",
+            },
+            Spec = new ExternalSecretSpecArgs
+            {
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                {
+                    Name = "secret-store",
+                    Kind = "ClusterSecretStore"
+                },
+                Target = new ExternalSecretSpecTargetArgs()
+                {
+                    Name = "polaris-root-password"
+                },
+                DataFrom = new ExternalSecretSpecDataFromArgs()
+                {
+                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    {
+                        Key = "id:polaris-root-password"
+                    }
+                }
+            }
+        }, new()
+        {
+            Parent = this,
+            Provider = provider
+        });
+
+        var icebergBucketCredentials = new ExternalSecret("iceberg-bucket-credentials", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "iceberg-bucket-credentials",
+                Namespace = "kafka-connect",
+            },
+            Spec = new ExternalSecretSpecArgs
+            {
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                {
+                    Name = "secret-store",
+                    Kind = "ClusterSecretStore"
+                },
+                Target = new ExternalSecretSpecTargetArgs()
+                {
+                    Name = "iceberg-bucket-credentials"
+                },
+                DataFrom = new ExternalSecretSpecDataFromArgs()
+                {
+                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    {
+                        Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4"
+                    }
+                }
+            }
+        }, new()
+        {
+            Parent = this,
+            Provider = provider
+        });
+
+        var kafkaConnect = new Kubernetes.ApiExtensions.CustomResource("kafka-connect",
+            new KafkaConnectArgs()
+            {
+                Metadata = new ObjectMetaArgs
+                {
+                    Name = "universal-data-pipeline-connect",
+                    Namespace = "kafka-connect",
+                    Labels = new Dictionary<string, string>
+                    {
+                        { "app", "universal-data-pipeline" }
+                    },
+                    Annotations = new Dictionary<string, string>
+                    {
+                        { "strimzi.io/use-connector-resources", "true" }
+                    }
+                },
+                Spec = new Dictionary<string, object>
+                {
+                    ["replicas"] = 1,
+                    ["bootstrapServers"] = "warpstream-agent.warpstream.svc.cluster.local:9092",
+                    ["image"] = "ttl.sh/hxt-kafka-connect-amd64:24h",
+                    ["config"] = new Dictionary<string, object>
+                    {
+                        ["group.id"] = "infra.kafka.connect.init",
+                        ["offset.storage.topic"] = "infra.kafka.connect.offsets",
+                        ["config.storage.topic"] = "infra.kafka.connect.configs",
+                        ["status.storage.topic"] = "infra.kafka.connect.status",
+                        ["offset.storage.replication.factor"] = 1,
+                        ["config.storage.replication.factor"] = 1,
+                        ["status.storage.replication.factor"] = 1,
+                        ["producer.batch.size"] = 32768,
+                        ["producer.linger.ms"] = 100,
+                        ["consumer.max.poll.records"] = 500
+                    },
+                    ["resources"] = new Dictionary<string, object>
+                    {
+                        ["requests"] = new Dictionary<string, string>
+                        {
+                            ["cpu"] = "3",
+                            ["memory"] = "6Gi"
+                        },
+                        ["limits"] = new Dictionary<string, string>
+                        {
+                            ["cpu"] = "4",
+                            ["memory"] = "8Gi"
+                        }
+                    },
+                    ["jvmOptions"] = new Dictionary<string, object>
+                    {
+                        ["-Xmx"] = "5G"
+                    },
+                    ["template"] = new Dictionary<string, object>
+                    {
+                        ["connectContainer"] = new Dictionary<string, object>
+                        {
+                            ["env"] = new List<Dictionary<string, object>>
+                            {
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "AWS_ACCESS_KEY_ID",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "iceberg-bucket-credentials",
+                                            ["key"] = "AWS_ACCESS_KEY"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "AWS_SECRET_ACCESS_KEY",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "iceberg-bucket-credentials",
+                                            ["key"] = "AWS_SECRET_KEY"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "AWS_REGION",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "iceberg-bucket-credentials",
+                                            ["key"] = "AWS_REGION"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "POLARIS_USERNAME",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "polaris-root-password",
+                                            ["key"] = "polaris-root-username"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "POLARIS_PASSWORD",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "polaris-root-password",
+                                            ["key"] = "polaris-root-password"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "POLARIS_CATALOG_URI",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "polaris-root-password",
+                                            ["key"] = "polaris-uri"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }, new CustomResourceOptions
+            {
+                Provider = provider,
+                Parent = this
+            });
+    }
+
+    private class KafkaConnectArgs : Kubernetes.ApiExtensions.CustomResourceArgs
+    {
+        public KafkaConnectArgs() : base("kafka.strimzi.io/v1beta2", "KafkaConnect")
+        {
+        }
+
+        [Input("spec")] public Dictionary<string, object>? Spec { get; set; }
+    }
+}

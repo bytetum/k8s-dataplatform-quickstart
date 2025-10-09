@@ -1,0 +1,66 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+  labels:
+    app: universal-data-pipeline
+  name: universal-data-pipeline-connect
+  namespace: kafka-connect
+spec:
+  bootstrapServers: warpstream-agent.warpstream.svc.cluster.local:9092
+  config:
+    config.storage.replication.factor: 1
+    config.storage.topic: infra.kafka.connect.configs
+    consumer.max.poll.records: 500
+    group.id: infra.kafka.connect.init
+    offset.storage.replication.factor: 1
+    offset.storage.topic: infra.kafka.connect.offsets
+    producer.batch.size: 32768
+    producer.linger.ms: 100
+    status.storage.replication.factor: 1
+    status.storage.topic: infra.kafka.connect.status
+  image: ttl.sh/hxt-kafka-connect-amd64:24h
+  jvmOptions:
+    -Xmx: 5G
+  replicas: 1
+  resources:
+    limits:
+      cpu: "4"
+      memory: 8Gi
+    requests:
+      cpu: "3"
+      memory: 6Gi
+  template:
+    connectContainer:
+      env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            key: AWS_ACCESS_KEY
+            name: iceberg-bucket-credentials
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            key: AWS_SECRET_KEY
+            name: iceberg-bucket-credentials
+      - name: AWS_REGION
+        valueFrom:
+          secretKeyRef:
+            key: AWS_REGION
+            name: iceberg-bucket-credentials
+      - name: POLARIS_USERNAME
+        valueFrom:
+          secretKeyRef:
+            key: polaris-root-username
+            name: polaris-root-password
+      - name: POLARIS_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: polaris-root-password
+            name: polaris-root-password
+      - name: POLARIS_CATALOG_URI
+        valueFrom:
+          secretKeyRef:
+            key: polaris-uri
+            name: polaris-root-password
