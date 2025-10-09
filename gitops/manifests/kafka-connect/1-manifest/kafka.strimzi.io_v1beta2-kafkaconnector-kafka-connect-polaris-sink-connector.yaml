@@ -14,7 +14,7 @@ spec:
     iceberg.catalog: iceberg
     iceberg.catalog.catalog-name: ao_catalog
     iceberg.catalog.client.region: ${env:AWS_REGION}
-    iceberg.catalog.credential: root:${env:POLARIS_PASSWORD}
+    iceberg.catalog.credential: root:s3cr3t
     iceberg.catalog.oauth2-server-uri: http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
     iceberg.catalog.s3.region: ${env:AWS_REGION}
     iceberg.catalog.scope: PRINCIPAL_ROLE:ALL
