@@ -107,6 +107,8 @@ internal class KafkaConnect : ComponentResource
                     {
                         ["group.id"] = "infra.kafka.connect.init",
                         ["offset.storage.topic"] = "infra.kafka.connect.offsets",
+                        ["config.providers"] = "env",
+                        ["config.providers.env.class"] = "org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                         ["config.storage.topic"] = "infra.kafka.connect.configs",
                         ["status.storage.topic"] = "infra.kafka.connect.status",
                         ["offset.storage.replication.factor"] = 1,
