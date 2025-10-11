@@ -88,43 +88,6 @@ spec:
               http://polaris:8181/api/management/v1/catalogs \
               -d "$PAYLOAD" -v
 
-          echo
-          echo Checking if database $DATABASE_NAME exists in catalog $CATALOG_NAME...
-
-          response=$(curl -s -w "\n%{http_code}" \
-              -H "Authorization: Bearer ${token}" \
-              -H "Accept: application/json" \
-              "http://polaris:8181/api/catalog/v1/${CATALOG_NAME}/databases/${DATABASE_NAME}")
-
-          status_code=$(echo "$response" | tail -n1)
-
-          if [ "$status_code" -eq 200 ]; then
-              echo "Database already exists, skipping creation..."
-          elif [ "$status_code" -eq 404 ]; then
-              echo "Database does not exist, proceeding..."
-
-              echo
-              echo Creating database $DATABASE_NAME in catalog $CATALOG_NAME...
-
-              DB_PAYLOAD='{
-                  "name": "'$DATABASE_NAME'",
-                  "location": "'$STORAGE_LOCATION$DATABASE_NAME'/"
-              }'
-
-              echo $DB_PAYLOAD
-
-              curl -s -H "Authorization: Bearer ${token}" \
-                  -H 'Accept: application/json' \
-                  -H 'Content-Type: application/json' \
-                  "http://polaris:8181/api/catalog/v1/${CATALOG_NAME}/databases" \
-                  -d "$DB_PAYLOAD" -v
-
-              echo Database creation completed.
-          else
-              echo "Error checking database existence: $response"
-              exit 1
-          fi
-
           echo Done.
         env:
         - name: CATALOG_NAME
