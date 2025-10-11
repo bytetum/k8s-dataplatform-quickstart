@@ -36,11 +36,11 @@ internal class PostgresDebeziumConnector : ComponentResource
                     ["config"] = new Dictionary<string, object>
                     {
                         // Database Connection
-                        ["database.hostname"] = "postgres-test.kafka-connect.svc.cluster.local",
-                        ["database.port"] = 5432,
-                        ["database.user"] = "debezium",
-                        ["database.password"] = "debezium",
-                        ["database.dbname"] = "testdb",
+                        ["database.hostname"] = "${env:POSTGRES_HOST}",
+                        ["database.port"] = "${env:POSTGRES_PORT}",
+                        ["database.user"] = "${env:POSTGRES_USER}",
+                        ["database.password"] = "${env:POSTGRES_PASSWORD}",
+                        ["database.dbname"] = "${env:POSTGRES_DB}",
 
                         // Debezium Configuration
                         ["topic.prefix"] = "postgres-cdc",

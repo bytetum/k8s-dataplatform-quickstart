@@ -82,6 +82,38 @@ internal class KafkaConnect : ComponentResource
             Provider = provider
         });
 
+        var postgresCredentials = new ExternalSecret("postgres-credentials", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "postgres-credentials",
+                Namespace = "kafka-connect",
+            },
+            Spec = new ExternalSecretSpecArgs
+            {
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                {
+                    Name = "secret-store",
+                    Kind = "ClusterSecretStore"
+                },
+                Target = new ExternalSecretSpecTargetArgs()
+                {
+                    Name = "postgres-credentials"
+                },
+                DataFrom = new ExternalSecretSpecDataFromArgs()
+                {
+                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    {
+                        Key = "id:postgres-secret-id" // Replace with actual secret ID
+                    }
+                }
+            }
+        }, new()
+        {
+            Parent = this,
+            Provider = provider
+        });
+
         var kafkaConnect = new Kubernetes.ApiExtensions.CustomResource("kafka-connect",
             new KafkaConnectArgs()
             {
@@ -210,6 +242,66 @@ internal class KafkaConnect : ComponentResource
                                         {
                                             ["name"] = "polaris-root-password",
                                             ["key"] = "polaris-uri"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "POSTGRES_HOST",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "postgres-credentials",
+                                            ["key"] = "host"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "POSTGRES_PORT",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "postgres-credentials",
+                                            ["key"] = "port"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "POSTGRES_USER",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "postgres-credentials",
+                                            ["key"] = "username"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "POSTGRES_PASSWORD",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "postgres-credentials",
+                                            ["key"] = "password"
+                                        }
+                                    }
+                                },
+                                new Dictionary<string, object>
+                                {
+                                    ["name"] = "POSTGRES_DB",
+                                    ["valueFrom"] = new Dictionary<string, object>
+                                    {
+                                        ["secretKeyRef"] = new Dictionary<string, object>
+                                        {
+                                            ["name"] = "postgres-credentials",
+                                            ["key"] = "dbname"
                                         }
                                     }
                                 }
