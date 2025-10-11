@@ -211,18 +211,6 @@ internal class KafkaConnect : ComponentResource
                                 },
                                 new Dictionary<string, object>
                                 {
-                                    ["name"] = "POLARIS_USERNAME",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "polaris-root-password",
-                                            ["key"] = "polaris-root-username"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
                                     ["name"] = "POLARIS_PASSWORD",
                                     ["valueFrom"] = new Dictionary<string, object>
                                     {
@@ -230,18 +218,6 @@ internal class KafkaConnect : ComponentResource
                                         {
                                             ["name"] = "polaris-root-password",
                                             ["key"] = "polaris-root-password"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "POLARIS_CATALOG_URI",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "polaris-root-password",
-                                            ["key"] = "polaris-uri"
                                         }
                                     }
                                 },

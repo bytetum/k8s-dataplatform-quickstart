@@ -51,20 +51,10 @@ spec:
           secretKeyRef:
             key: AWS_REGION
             name: iceberg-bucket-credentials
-      - name: POLARIS_USERNAME
-        valueFrom:
-          secretKeyRef:
-            key: polaris-root-username
-            name: polaris-root-password
       - name: POLARIS_PASSWORD
         valueFrom:
           secretKeyRef:
             key: polaris-root-password
-            name: polaris-root-password
-      - name: POLARIS_CATALOG_URI
-        valueFrom:
-          secretKeyRef:
-            key: polaris-uri
             name: polaris-root-password
       - name: POSTGRES_HOST
         valueFrom:

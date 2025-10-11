@@ -26,7 +26,7 @@ spec:
     iceberg.control.commit.timeout-ms: 30000
     iceberg.hadoop.fs.s3a.access.key: ${env:AWS_ACCESS_KEY_ID}
     iceberg.hadoop.fs.s3a.secret.key: ${env:AWS_SECRET_ACCESS_KEY}
-    iceberg.tables: hxt_db.users
+    iceberg.tables: test_db.users
     iceberg.tables.auto-create-enabled: true
     iceberg.tables.evolve-schema-enabled: true
     iceberg.tables.upsert-mode-enabled: true
