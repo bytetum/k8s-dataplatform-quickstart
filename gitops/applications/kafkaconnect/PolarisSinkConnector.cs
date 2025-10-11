@@ -48,7 +48,7 @@ internal class PolarisSinkConnector : ComponentResource
                         // Create via Spark SQL: CREATE DATABASE test_db
                         // Or via Polaris API: POST /api/catalog/v1/ao_catalog/namespaces
                         ["iceberg.tables"] = $"{Constants.PolarisDatabase}.users",
-                        ["iceberg.tables.upsert-mode-enabled"] = true,
+                        ["iceberg.tables.upsert-mode-enabled"] = false,
                         ["iceberg.tables.evolve-schema-enabled"] = true,
 
                         // Iceberg Catalog Configuration

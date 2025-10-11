@@ -29,7 +29,7 @@ spec:
     iceberg.tables: test_db.users
     iceberg.tables.auto-create-enabled: true
     iceberg.tables.evolve-schema-enabled: true
-    iceberg.tables.upsert-mode-enabled: true
+    iceberg.tables.upsert-mode-enabled: false
     key.converter: org.apache.kafka.connect.json.JsonConverter
     key.converter.schemas.enable: true
     topics: bronze.postgres.employees
