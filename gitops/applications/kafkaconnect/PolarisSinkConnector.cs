@@ -36,7 +36,7 @@ internal class PolarisSinkConnector : ComponentResource
                     ["config"] = new Dictionary<string, object>
                     {
                         // Kafka Topics and Converters
-                        ["topics"] = "bronze-topic",
+                        ["topics"] = "bronze.postgres.employees",
                         ["key.converter"] = "org.apache.kafka.connect.json.JsonConverter",
                         ["value.converter"] = "org.apache.kafka.connect.json.JsonConverter",
                         ["key.converter.schemas.enable"] = true,

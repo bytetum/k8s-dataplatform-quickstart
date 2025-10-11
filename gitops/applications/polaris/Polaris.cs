@@ -51,11 +51,6 @@ public class Polaris : ComponentResource
                                 },
                                 new EnvVarArgs
                                 {
-                                    Name = "DATABASE_NAME",
-                                    Value = Constants.PolarisDatabase
-                                },
-                                new EnvVarArgs
-                                {
                                     Name = "STORAGE_LOCATION",
                                     Value = "s3://local-iceberg-test/"
                                 },

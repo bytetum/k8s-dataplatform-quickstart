@@ -26,7 +26,7 @@ spec:
     topic.prefix: postgres-cdc
     transforms: route,unwrap
     transforms.route.regex: postgres-cdc.public.employees
-    transforms.route.replacement: bronze-topic
+    transforms.route.replacement: bronze.postgres.employees
     transforms.route.type: org.apache.kafka.connect.transforms.RegexRouter
     transforms.unwrap.add.fields: timestamp
     transforms.unwrap.delete.handling.mode: rewrite

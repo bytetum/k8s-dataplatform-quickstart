@@ -32,7 +32,7 @@ spec:
     iceberg.tables.upsert-mode-enabled: true
     key.converter: org.apache.kafka.connect.json.JsonConverter
     key.converter.schemas.enable: true
-    topics: bronze-topic
+    topics: bronze.postgres.employees
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: true
   tasksMax: 1

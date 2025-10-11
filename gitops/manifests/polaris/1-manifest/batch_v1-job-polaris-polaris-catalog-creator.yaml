@@ -92,8 +92,6 @@ spec:
         env:
         - name: CATALOG_NAME
           value: ao_catalog
-        - name: DATABASE_NAME
-          value: test_db
         - name: STORAGE_LOCATION
           value: s3://local-iceberg-test/
         - name: CLIENT_ID
