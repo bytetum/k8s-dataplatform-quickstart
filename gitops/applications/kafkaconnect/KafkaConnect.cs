@@ -82,11 +82,11 @@ internal class KafkaConnect : ComponentResource
             Provider = provider
         });
 
-        var postgresCredentials = new ExternalSecret("postgres-credentials", new()
+        var postgresCredentials = new ExternalSecret("pricefiles-db-credentials", new()
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = "postgres-credentials",
+                Name = "pricefiles-db-credentials",
                 Namespace = "kafka-connect",
             },
             Spec = new ExternalSecretSpecArgs
@@ -98,13 +98,13 @@ internal class KafkaConnect : ComponentResource
                 },
                 Target = new ExternalSecretSpecTargetArgs()
                 {
-                    Name = "postgres-credentials"
+                    Name = "pricefiles-db-credentials"
                 },
                 DataFrom = new ExternalSecretSpecDataFromArgs()
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:postgres-secret-id" // Replace with actual secret ID
+                        Key = "id:86fac104-7ff1-47d8-8cd1-7e2d74dbc0fd" // Replace with actual secret ID
                     }
                 }
             }
@@ -228,7 +228,7 @@ internal class KafkaConnect : ComponentResource
                                     {
                                         ["secretKeyRef"] = new Dictionary<string, object>
                                         {
-                                            ["name"] = "postgres-credentials",
+                                            ["name"] = "pricefiles-db-credentials",
                                             ["key"] = "host"
                                         }
                                     }
@@ -240,7 +240,7 @@ internal class KafkaConnect : ComponentResource
                                     {
                                         ["secretKeyRef"] = new Dictionary<string, object>
                                         {
-                                            ["name"] = "postgres-credentials",
+                                            ["name"] = "pricefiles-db-credentials",
                                             ["key"] = "port"
                                         }
                                     }
@@ -252,7 +252,7 @@ internal class KafkaConnect : ComponentResource
                                     {
                                         ["secretKeyRef"] = new Dictionary<string, object>
                                         {
-                                            ["name"] = "postgres-credentials",
+                                            ["name"] = "pricefiles-db-credentials",
                                             ["key"] = "username"
                                         }
                                     }
@@ -264,7 +264,7 @@ internal class KafkaConnect : ComponentResource
                                     {
                                         ["secretKeyRef"] = new Dictionary<string, object>
                                         {
-                                            ["name"] = "postgres-credentials",
+                                            ["name"] = "pricefiles-db-credentials",
                                             ["key"] = "password"
                                         }
                                     }
@@ -276,7 +276,7 @@ internal class KafkaConnect : ComponentResource
                                     {
                                         ["secretKeyRef"] = new Dictionary<string, object>
                                         {
-                                            ["name"] = "postgres-credentials",
+                                            ["name"] = "pricefiles-db-credentials",
                                             ["key"] = "dbname"
                                         }
                                     }

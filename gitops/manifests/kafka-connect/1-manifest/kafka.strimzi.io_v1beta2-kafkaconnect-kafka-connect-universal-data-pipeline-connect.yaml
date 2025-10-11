@@ -60,24 +60,24 @@ spec:
         valueFrom:
           secretKeyRef:
             key: host
-            name: postgres-credentials
+            name: pricefiles-db-credentials
       - name: POSTGRES_PORT
         valueFrom:
           secretKeyRef:
             key: port
-            name: postgres-credentials
+            name: pricefiles-db-credentials
       - name: POSTGRES_USER
         valueFrom:
           secretKeyRef:
             key: username
-            name: postgres-credentials
+            name: pricefiles-db-credentials
       - name: POSTGRES_PASSWORD
         valueFrom:
           secretKeyRef:
             key: password
-            name: postgres-credentials
+            name: pricefiles-db-credentials
       - name: POSTGRES_DB
         valueFrom:
           secretKeyRef:
             key: dbname
-            name: postgres-credentials
+            name: pricefiles-db-credentials
