@@ -47,24 +47,24 @@ internal class PolarisSinkConnector : ComponentResource
                         // NOTE: test_db database/namespace must be created in Polaris before deploying this connector
                         // Create via Spark SQL: CREATE DATABASE test_db
                         // Or via Polaris API: POST /api/catalog/v1/ao_catalog/namespaces
-                        ["iceberg.tables"] = "test_db.users",
-                        ["iceberg.tables.upsert-mode-enabled"] = false,
-                        ["iceberg.tables.evolve-schema-enabled"] = "true",
+                        ["iceberg.tables"] = $"{Constants.PolarisDatabase}.users",
+                        ["iceberg.tables.upsert-mode-enabled"] = true,
+                        ["iceberg.tables.evolve-schema-enabled"] = true,
 
                         // Iceberg Catalog Configuration
                         ["iceberg.catalog"] = "iceberg",
                         ["iceberg.catalog.type"] = "rest",
-                        ["iceberg.catalog.warehouse"] = "ao_catalog",
-                        ["iceberg.catalog.catalog-name"] = "ao_catalog",
+                        ["iceberg.catalog.warehouse"] = Constants.PolarisCatalog,
+                        ["iceberg.catalog.catalog-name"] = Constants.PolarisCatalog,
                         ["iceberg.catalog.uri"] = "http://polaris.polaris.svc.cluster.local:8181/api/catalog",
                         ["iceberg.catalog.oauth2-server-uri"] = "http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens",
                         ["iceberg.catalog.credential"] = "root:${env:POLARIS_PASSWORD}",
                         ["iceberg.catalog.scope"] = "PRINCIPAL_ROLE:ALL",
 
                         // Iceberg Control Settings
-                        ["iceberg.control.commit.interval-ms"] = "300000",
-                        ["iceberg.control.commit.timeout-ms"] = "30000",
-                        ["iceberg.control.commit.threads"] = "8",
+                        ["iceberg.control.commit.interval-ms"] = 300000,
+                        ["iceberg.control.commit.timeout-ms"] = 30000,
+                        ["iceberg.control.commit.threads"] = 8,
 
                         // AWS/S3 Configuration
                         ["iceberg.catalog.s3.region"] = "${env:AWS_REGION}",
