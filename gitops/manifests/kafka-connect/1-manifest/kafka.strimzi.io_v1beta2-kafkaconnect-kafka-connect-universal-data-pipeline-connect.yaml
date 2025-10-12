@@ -24,15 +24,15 @@ spec:
     status.storage.topic: infra.kafka.connect.status
   image: ttl.sh/hxt-kafka-connect-amd64:24h
   jvmOptions:
-    -Xmx: 2G
+    -Xmx: 5G
   replicas: 1
   resources:
     limits:
-      cpu: "2"
-      memory: 4Gi
+      cpu: "4"
+      memory: 8Gi
     requests:
-      cpu: "1"
-      memory: 2Gi
+      cpu: "3"
+      memory: 6Gi
   template:
     connectContainer:
       env:
