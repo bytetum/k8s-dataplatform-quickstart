@@ -154,18 +154,18 @@ internal class KafkaConnect : ComponentResource
                     {
                         ["requests"] = new Dictionary<string, string>
                         {
-                            ["cpu"] = "3",
-                            ["memory"] = "6Gi"
+                            ["cpu"] = "1",
+                            ["memory"] = "2Gi"
                         },
                         ["limits"] = new Dictionary<string, string>
                         {
-                            ["cpu"] = "4",
-                            ["memory"] = "8Gi"
+                            ["cpu"] = "2",
+                            ["memory"] = "4Gi"
                         }
                     },
                     ["jvmOptions"] = new Dictionary<string, object>
                     {
-                        ["-Xmx"] = "5G"
+                        ["-Xmx"] = "2G"
                     },
                     ["template"] = new Dictionary<string, object>
                     {
