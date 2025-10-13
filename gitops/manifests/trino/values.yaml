@@ -1,27 +1,30 @@
-server:
-  workers: 1
-additionalProperties:
-  log.level: INFO
-  logger.io.trino.plugin.iceberg: DEBUG
-  logger.io.trino.plugin.iceberg.catalog.rest: DEBUG
-  logger.io.trino.filesystem.s3.debug: true
-  logger.io.trino.s3.debug: true
+# Trino Configuration with Iceberg Connector
+
+# Replica configuration
+coordinator:
+  replicas: 1
+
+worker:
+  replicas: 1
+
+# Catalogs configuration
 catalogs:
   iceberg: |
     connector.name=iceberg
     iceberg.catalog.type=rest
     iceberg.rest-catalog.uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog
     iceberg.rest-catalog.warehouse=ao_catalog
-    iceberg.rest-catalog.vended-credentials-enabled=true
-    iceberg.rest-catalog.security=oauth2
-    iceberg.rest-catalog.oauth2.credential=root:${env:POLARIS_ROOT_PASSWORD}
-    iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
+    # OAuth2 client credentials
+    iceberg.rest-catalog.security=OAUTH2
     iceberg.rest-catalog.oauth2.server-uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
-    fs.native-s3.enabled=true
-    s3.region=${env:AWS_REGION}
-    s3.path-style-access=true
+    iceberg.rest-catalog.oauth2.credential=root:s3cr3t
+    iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
+    iceberg.rest-catalog.nested-namespace-enabled=true
+    iceberg.rest-catalog.case-insensitive-name-matching=true
+    iceberg.rest-catalog.session=NONE
+    iceberg.rest-catalog.vended-credentials-enabled=false
+    iceberg.file-format=PARQUET
+    iceberg.compression-codec=ZSTD
+
 service:
   type: ClusterIP
-# envFrom:
-#   - secretRef:
-#       name: polaris-principal
