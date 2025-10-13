@@ -26,7 +26,7 @@ internal class PostgresDebeziumConnector : ComponentResource
                     Namespace = "kafka-connect",
                     Labels = new Dictionary<string, string>
                     {
-                        { "strimzi.io/cluster", "universal-data-pipeline-connect" }
+                        { "strimzi.io/cluster", "universal-kafka-connect" }
                     }
                 },
                 Spec = new Dictionary<string, object>

@@ -119,11 +119,11 @@ internal class KafkaConnect : ComponentResource
             {
                 Metadata = new ObjectMetaArgs
                 {
-                    Name = "universal-data-pipeline-connect",
+                    Name = "universal-kafka-connect",
                     Namespace = "kafka-connect",
                     Labels = new Dictionary<string, string>
                     {
-                        { "app", "universal-data-pipeline" }
+                        { "app", "universal-kafka" }
                     },
                     Annotations = new Dictionary<string, string>
                     {

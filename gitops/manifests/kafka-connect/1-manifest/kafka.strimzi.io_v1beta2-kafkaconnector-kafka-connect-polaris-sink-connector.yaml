@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   labels:
-    strimzi.io/cluster: universal-data-pipeline-connect
+    strimzi.io/cluster: universal-kafka-connect
   name: polaris-sink-connector
   namespace: kafka-connect
 spec:

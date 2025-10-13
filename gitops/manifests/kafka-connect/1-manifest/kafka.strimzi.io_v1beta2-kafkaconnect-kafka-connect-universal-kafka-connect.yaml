@@ -4,8 +4,8 @@ metadata:
   annotations:
     strimzi.io/use-connector-resources: "true"
   labels:
-    app: universal-data-pipeline
-  name: universal-data-pipeline-connect
+    app: universal-kafka
+  name: universal-kafka-connect
   namespace: kafka-connect
 spec:
   bootstrapServers: warpstream-agent.warpstream.svc.cluster.local:9092

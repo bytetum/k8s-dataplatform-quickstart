@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   labels:
-    strimzi.io/cluster: universal-data-pipeline-connect
+    strimzi.io/cluster: universal-kafka-connect
   name: postgres-debezium-source
   namespace: kafka-connect
 spec:
