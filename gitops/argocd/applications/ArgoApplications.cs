@@ -19,7 +19,7 @@ internal class ArgoApplications : ComponentResource
         var flinkOperator = new FlinkOperator(provider);
         var flinkDeployment = new FlinkDeployment(provider);
         var polaris = new Polaris(provider);
-        // var trino = new Trino(provider);
+        var trino = new Trino(provider);
         var warpStreamSchemaRegistry = new WarpStreamSchemaRegistry(provider);
         var strimziOperator = new StrimziOperator(provider);
         var kafkaConnect = new KafkaConnect(provider);

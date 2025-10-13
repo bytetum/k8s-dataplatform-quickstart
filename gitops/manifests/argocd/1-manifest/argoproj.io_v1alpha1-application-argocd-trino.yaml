@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  name: trino
+  namespace: argocd
+spec:
+  destination:
+    namespace: trino
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+  - chart: trino
+    helm:
+      valueFiles:
+      - $values/gitops/manifests/trino/values.yaml
+    repoURL: https://trinodb.github.io/charts
+    targetRevision: 0.27.0
+  - directory:
+      recurse: true
+    path: gitops/manifests/trino
+    ref: values
+    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
