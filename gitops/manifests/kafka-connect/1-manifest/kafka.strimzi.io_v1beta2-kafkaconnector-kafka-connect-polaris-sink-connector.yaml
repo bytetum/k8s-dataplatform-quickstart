@@ -21,7 +21,7 @@ spec:
     iceberg.catalog.type: rest
     iceberg.catalog.uri: http://polaris.polaris.svc.cluster.local:8181/api/catalog
     iceberg.catalog.warehouse: ao_catalog
-    iceberg.control.commit.interval-ms: 300000
+    iceberg.control.commit.interval-ms: 60000
     iceberg.control.commit.threads: 8
     iceberg.control.commit.timeout-ms: 30000
     iceberg.hadoop.fs.s3a.access.key: ${env:AWS_ACCESS_KEY_ID}

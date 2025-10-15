@@ -18,6 +18,86 @@ internal class KafkaConnect : ComponentResource
             Parent = this
         });
 
+		var registryWriteCredentials = new ExternalSecret("container-registry-write-credentials", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "container-registry-write-credentials",
+                Namespace = "kafka-connect",
+            },
+            Spec = new ExternalSecretSpecArgs()
+            {
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                {
+                    Name = "shared-secret-store",
+                    Kind = "ClusterSecretStore"
+                },
+                Target = new ExternalSecretSpecTargetArgs()
+                {
+                    Name = "container-registry-write-credentials",
+                    Template = new ExternalSecretSpecTargetTemplateArgs()
+                    {
+                        Type = "kubernetes.io/dockerconfigjson",
+                        Data = new Dictionary<string, string>
+                        {
+                            [".dockerconfigjson"] = "{\"auths\":{\"rg.nl-ams.scw.cloud\":{\"auth\":\"{{ printf \"%s:%s\" .SCALEWAY_ACCESS_KEY .SCALEWAY_SECRET_KEY | b64enc }}\"}}}"
+                        }
+                    }
+                },
+                DataFrom = new ExternalSecretSpecDataFromArgs()
+                {
+                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    {
+                        Key = "id:f11e62c3-85f0-40c9-82a8-b6f1d7ce7932"
+                    }
+                }
+            }
+        }, new()
+        {
+            Parent = this,
+            Provider = provider
+        });
+        
+        var registryReadCredentials = new ExternalSecret("container-registry-read-credentials", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "container-registry-read-credentials",
+                Namespace = "kafka-connect",
+            },
+            Spec = new ExternalSecretSpecArgs()
+            {
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                {
+                    Name = "shared-secret-store",
+                    Kind = "ClusterSecretStore"
+                },
+                Target = new ExternalSecretSpecTargetArgs()
+                {
+                    Name = "container-registry-read-credentials",
+                    Template = new ExternalSecretSpecTargetTemplateArgs()
+                    {
+                        Type = "kubernetes.io/dockerconfigjson",
+                        Data = new Dictionary<string, string>
+                        {
+                            [".dockerconfigjson"] = "{\"auths\":{\"rg.nl-ams.scw.cloud\":{\"auth\":\"{{ printf \"%s:%s\" .SCALEWAY_ACCESS_KEY .SCALEWAY_SECRET_KEY | b64enc }}\"}}}"
+                        }
+                    }
+                },
+                DataFrom = new ExternalSecretSpecDataFromArgs()
+                {
+                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    {
+                        Key = "id:1cf21d4a-b561-4353-9981-fecafe592689"
+                    }
+                }
+            }
+        }, new()
+        {
+            Parent = this,
+            Provider = provider
+        });
+
         var polarisRootPassword = new ExternalSecret("polaris-root-password", new()
         {
             Metadata = new ObjectMetaArgs
@@ -114,7 +194,7 @@ internal class KafkaConnect : ComponentResource
             Provider = provider
         });
 
-        var kafkaConnect = new Kubernetes.ApiExtensions.CustomResource("kafka-connect",
+ 		var kafkaConnect = new Kubernetes.ApiExtensions.CustomResource("kafka-connect",
             new KafkaConnectArgs()
             {
                 Metadata = new ObjectMetaArgs

@@ -62,7 +62,7 @@ internal class PolarisSinkConnector : ComponentResource
                         ["iceberg.catalog.scope"] = "PRINCIPAL_ROLE:ALL",
 
                         // Iceberg Control Settings
-                        ["iceberg.control.commit.interval-ms"] = 300000,
+                        ["iceberg.control.commit.interval-ms"] = 60000,
                         ["iceberg.control.commit.timeout-ms"] = 30000,
                         ["iceberg.control.commit.threads"] = 8,
 
