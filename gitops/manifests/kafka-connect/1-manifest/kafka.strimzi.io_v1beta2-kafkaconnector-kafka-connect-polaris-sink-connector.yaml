@@ -13,10 +13,8 @@ spec:
     errors.tolerance: all
     iceberg.catalog: iceberg
     iceberg.catalog.catalog-name: ao_catalog
-    iceberg.catalog.client.region: ${env:AWS_REGION}
     iceberg.catalog.credential: root:${env:POLARIS_PASSWORD}
     iceberg.catalog.oauth2-server-uri: http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
-    iceberg.catalog.s3.region: ${env:AWS_REGION}
     iceberg.catalog.scope: PRINCIPAL_ROLE:ALL
     iceberg.catalog.type: rest
     iceberg.catalog.uri: http://polaris.polaris.svc.cluster.local:8181/api/catalog
@@ -24,8 +22,6 @@ spec:
     iceberg.control.commit.interval-ms: 60000
     iceberg.control.commit.threads: 8
     iceberg.control.commit.timeout-ms: 30000
-    iceberg.hadoop.fs.s3a.access.key: ${env:AWS_ACCESS_KEY_ID}
-    iceberg.hadoop.fs.s3a.secret.key: ${env:AWS_SECRET_ACCESS_KEY}
     iceberg.tables: test_db.users
     iceberg.tables.auto-create-enabled: true
     iceberg.tables.evolve-schema-enabled: true

@@ -67,10 +67,10 @@ internal class PolarisSinkConnector : ComponentResource
                         ["iceberg.control.commit.threads"] = 8,
 
                         // AWS/S3 Configuration
-                        ["iceberg.catalog.s3.region"] = "${env:AWS_REGION}",
-                        ["iceberg.catalog.client.region"] = "${env:AWS_REGION}",
-                        ["iceberg.hadoop.fs.s3a.access.key"] = "${env:AWS_ACCESS_KEY_ID}",
-                        ["iceberg.hadoop.fs.s3a.secret.key"] = "${env:AWS_SECRET_ACCESS_KEY}",
+                       	// ["iceberg.catalog.s3.region"] = "${env:AWS_REGION}",
+                        // ["iceberg.catalog.client.region"] = "${env:AWS_REGION}",
+                        // ["iceberg.hadoop.fs.s3a.access.key"] = "${env:AWS_ACCESS_KEY_ID}",
+                        // ["iceberg.hadoop.fs.s3a.secret.key"] = "${env:AWS_SECRET_ACCESS_KEY}",
 
                         // Error Handling
                         ["errors.tolerance"] = "all",
