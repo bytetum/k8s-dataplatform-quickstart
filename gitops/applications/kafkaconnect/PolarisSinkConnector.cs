@@ -64,7 +64,7 @@ internal class PolarisSinkConnector : ComponentResource
                         // Iceberg Control Settings
                         ["iceberg.control.commit.interval-ms"] = 60000,
                         ["iceberg.control.commit.timeout-ms"] = 30000,
-                        ["iceberg.control.commit.threads"] = 8,
+                        ["iceberg.control.commit.threads"] = 2,
 
                         // AWS/S3 Configuration
                        	// ["iceberg.catalog.s3.region"] = "${env:AWS_REGION}",

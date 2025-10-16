@@ -17,8 +17,8 @@ internal class KafkaConnect : ComponentResource
         {
             Parent = this
         });
-
-		var registryWriteCredentials = new ExternalSecret("container-registry-write-credentials", new()
+        
+        var registryWriteCredentials = new ExternalSecret("container-registry-write-credentials", new()
         {
             Metadata = new ObjectMetaArgs
             {
@@ -255,42 +255,6 @@ internal class KafkaConnect : ComponentResource
                             {
                                 new Dictionary<string, object>
                                 {
-                                    ["name"] = "AWS_ACCESS_KEY_ID",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "iceberg-bucket-credentials",
-                                            ["key"] = "AWS_ACCESS_KEY"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "AWS_SECRET_ACCESS_KEY",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "iceberg-bucket-credentials",
-                                            ["key"] = "AWS_SECRET_KEY"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "AWS_REGION",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "iceberg-bucket-credentials",
-                                            ["key"] = "AWS_REGION"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
                                     ["name"] = "POLARIS_PASSWORD",
                                     ["valueFrom"] = new Dictionary<string, object>
                                     {
@@ -371,7 +335,7 @@ internal class KafkaConnect : ComponentResource
                 Parent = this
             });
     }
-
+    
     private class KafkaConnectArgs : Kubernetes.ApiExtensions.CustomResourceArgs
     {
         public KafkaConnectArgs() : base("kafka.strimzi.io/v1beta2", "KafkaConnect")

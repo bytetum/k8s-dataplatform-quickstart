@@ -20,7 +20,7 @@ spec:
     iceberg.catalog.uri: http://polaris.polaris.svc.cluster.local:8181/api/catalog
     iceberg.catalog.warehouse: ao_catalog
     iceberg.control.commit.interval-ms: 60000
-    iceberg.control.commit.threads: 8
+    iceberg.control.commit.threads: 2
     iceberg.control.commit.timeout-ms: 30000
     iceberg.tables: test_db.users
     iceberg.tables.auto-create-enabled: true
