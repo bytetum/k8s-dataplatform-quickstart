@@ -1,0 +1,30 @@
+# Trino Configuration with Iceberg Connector
+
+# Replica configuration
+coordinator:
+  replicas: 1
+
+worker:
+  replicas: 1
+
+# Catalogs configuration
+catalogs:
+  iceberg: |
+    connector.name=iceberg
+    iceberg.catalog.type=rest
+    iceberg.rest-catalog.uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog
+    iceberg.rest-catalog.warehouse=ao_catalog
+    # OAuth2 client credentials
+    iceberg.rest-catalog.security=OAUTH2
+    iceberg.rest-catalog.oauth2.server-uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
+    iceberg.rest-catalog.oauth2.credential=root:s3cr3t
+    iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
+    iceberg.rest-catalog.nested-namespace-enabled=true
+    iceberg.rest-catalog.case-insensitive-name-matching=true
+    iceberg.rest-catalog.session=NONE
+    iceberg.rest-catalog.vended-credentials-enabled=false
+    iceberg.file-format=PARQUET
+    iceberg.compression-codec=ZSTD
+
+service:
+  type: ClusterIP
