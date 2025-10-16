@@ -24,18 +24,33 @@ spec:
     status.storage.topic: infra.kafka.connect.status
   image: ttl.sh/hxt-kafka-connect-amd64:24h
   jvmOptions:
-    -Xmx: 3G
+    -Xmx: 4G
   replicas: 1
   resources:
     limits:
       cpu: "2"
-      memory: 4Gi
+      memory: 6Gi
     requests:
-      cpu: "1"
-      memory: 2Gi
+      cpu: "2"
+      memory: 4Gi
   template:
     connectContainer:
       env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            key: AWS_ACCESS_KEY
+            name: iceberg-bucket-credentials
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            key: AWS_SECRET_KEY
+            name: iceberg-bucket-credentials
+      - name: AWS_REGION
+        valueFrom:
+          secretKeyRef:
+            key: AWS_REGION
+            name: iceberg-bucket-credentials
       - name: POLARIS_PASSWORD
         valueFrom:
           secretKeyRef:
