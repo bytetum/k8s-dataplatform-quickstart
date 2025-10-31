@@ -20,25 +20,23 @@ coordinator:
       memory: "3Gi"
       cpu: "1.5"
 
-  # Add environment variables to mount AWS credentials from your secret.
-  # This assumes a secret named 'iceberg-bucket-credentials' exists in the 'polaris' namespace.
-  extraEnv:
-    - name: AWS_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_ACCESS_KEY
-    - name: AWS_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_SECRET_KEY
-    - name: AWS_REGION
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_REGION
-          optional: true
+env:
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_ACCESS_KEY
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_SECRET_KEY
+  - name: AWS_REGION
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_REGION
+        optional: true
 
 # 3. Define general server configurations.
 server:
