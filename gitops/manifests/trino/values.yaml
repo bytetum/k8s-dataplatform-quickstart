@@ -64,7 +64,7 @@ server:
       io.trino=INFO
 
 # 4. Define the Polaris catalog to be mounted into /etc/trino/catalog.
-additionalCatalogs:
+catalogs:
   # This creates the polaris.properties file.
   iceberg: |
     connector.name=iceberg
