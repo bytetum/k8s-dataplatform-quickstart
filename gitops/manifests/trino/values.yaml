@@ -64,21 +64,20 @@ server:
       io.trino=INFO
 
 # 4. Define the Polaris catalog to be mounted into /etc/trino/catalog.
-catalogs:
+additionalCatalogs:
   # This creates the polaris.properties file.
-  iceberg: 
-    properties: |
-      connector.name=iceberg
-      iceberg.catalog.type=rest
-      iceberg.rest-catalog.uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog
-      iceberg.rest-catalog.warehouse=ao_catalog
-      iceberg.rest-catalog.security=OAUTH2
-      iceberg.rest-catalog.oauth2.credential=root:s3cr3t
-      iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
-      iceberg.rest-catalog.oauth2.server-uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
-      fs.native-s3.enabled=true
-      s3.endpoint=https://s3.amazonaws.com
-      s3.region=eu-west-3
+  iceberg: |
+    connector.name=iceberg
+    iceberg.catalog.type=rest
+    iceberg.rest-catalog.uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog
+    iceberg.rest-catalog.warehouse=ao_catalog
+    iceberg.rest-catalog.security=OAUTH2
+    iceberg.rest-catalog.oauth2.credential=root:s3cr3t
+    iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
+    iceberg.rest-catalog.oauth2.server-uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
+    fs.native-s3.enabled=true
+    s3.endpoint=https://s3.amazonaws.com
+    s3.region=eu-west-3
 
 # Note: The service configuration, image name (trinodb/trino:latest),
 # and port (8080) match the defaults in the Helm chart, so they
