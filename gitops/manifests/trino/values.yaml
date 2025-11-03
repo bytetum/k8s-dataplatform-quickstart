@@ -1,21 +1,30 @@
+coordinator:
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+env:
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_ACCESS_KEY
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_SECRET_KEY
+  - name: AWS_REGION
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_REGION
+
 worker:
-  env:
-    - name: AWS_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_ACCESS_KEY
-    - name: AWS_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_SECRET_KEY
-    - name: AWS_REGION
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_REGION
-          optional: true
   replicas: 1
   resources:
     requests:
@@ -24,34 +33,6 @@ worker:
     limits:
       memory: "1Gi"
       cpu: "500m"
-
-coordinator:
-  env:
-    - name: AWS_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_ACCESS_KEY
-    - name: AWS_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_SECRET_KEY
-    - name: AWS_REGION
-      valueFrom:
-        secretKeyRef:
-          name: iceberg-bucket-credentials
-          key: AWS_REGION
-          optional: true
-  resources:
-    requests:
-      memory: "512Mi"
-      cpu: "250m"
-    limits:
-      memory: "1Gi"
-      cpu: "500m"
-
-
 
 server:
   workers: 1
@@ -66,7 +47,11 @@ catalogs:
     iceberg.rest-catalog.oauth2.credential=root:s3cr3t
     iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
     iceberg.rest-catalog.oauth2.server-uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
+    fs.native-s3.enabled=true
+    s3.endpoint=https://s3.amazonaws.com
+    s3.region=eu-west-3
 
+  # Keep the default test catalogs for verification
   tpch: |
     connector.name=tpch
     tpch.splits-per-node=4
