@@ -16,7 +16,7 @@ spec:
       valueFiles:
       - $values/gitops/manifests/trino/values.yaml
     repoURL: https://trinodb.github.io/charts
-    targetRevision: 0.27.0
+    targetRevision: 1.41.0
   - directory:
       recurse: true
     path: gitops/manifests/trino
