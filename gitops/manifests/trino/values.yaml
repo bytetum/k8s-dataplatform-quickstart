@@ -1,4 +1,21 @@
 worker:
+  env:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: iceberg-bucket-credentials
+          key: AWS_ACCESS_KEY
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: iceberg-bucket-credentials
+          key: AWS_SECRET_KEY
+    - name: AWS_REGION
+      valueFrom:
+        secretKeyRef:
+          name: iceberg-bucket-credentials
+          key: AWS_REGION
+          optional: true
   replicas: 1
   resources:
     requests:
@@ -9,6 +26,23 @@ worker:
       cpu: "500m"
 
 coordinator:
+  env:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: iceberg-bucket-credentials
+          key: AWS_ACCESS_KEY
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: iceberg-bucket-credentials
+          key: AWS_SECRET_KEY
+    - name: AWS_REGION
+      valueFrom:
+        secretKeyRef:
+          name: iceberg-bucket-credentials
+          key: AWS_REGION
+          optional: true
   resources:
     requests:
       memory: "512Mi"
@@ -17,23 +51,7 @@ coordinator:
       memory: "1Gi"
       cpu: "500m"
 
-env:
-  - name: AWS_ACCESS_KEY_ID
-    valueFrom:
-      secretKeyRef:
-        name: iceberg-bucket-credentials
-        key: AWS_ACCESS_KEY
-  - name: AWS_SECRET_ACCESS_KEY
-    valueFrom:
-      secretKeyRef:
-        name: iceberg-bucket-credentials
-        key: AWS_SECRET_KEY
-  - name: AWS_REGION
-    valueFrom:
-      secretKeyRef:
-        name: iceberg-bucket-credentials
-        key: AWS_REGION
-        optional: true
+
 
 server:
   workers: 1
