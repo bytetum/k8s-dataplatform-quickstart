@@ -8,6 +8,11 @@ coordinator:
       cpu: "500m"
 
 env:
+  - name: POLARIS_ROOT_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: trino-polaris-credentials
+        key: polaris-root-password
   - name: AWS_ACCESS_KEY_ID
     valueFrom:
       secretKeyRef:
@@ -44,7 +49,7 @@ catalogs:
     iceberg.rest-catalog.uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog
     iceberg.rest-catalog.warehouse=ao_catalog
     iceberg.rest-catalog.security=OAUTH2
-    iceberg.rest-catalog.oauth2.credential=root:s3cr3t
+    iceberg.rest-catalog.oauth2.credential=root:${ENV:POLARIS_ROOT_PASSWORD}
     iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
     iceberg.rest-catalog.oauth2.server-uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
     fs.native-s3.enabled=true
