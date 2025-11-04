@@ -2,10 +2,10 @@ coordinator:
   resources:
     requests:
       memory: "2Gi"
-      cpu: "1000m"
+      cpu: "500m"
     limits:
       memory: "4Gi"
-      cpu: "2000m"
+      cpu: "1000m"
 
 env:
   - name: POLARIS_ROOT_PASSWORD
@@ -34,10 +34,10 @@ worker:
   resources:
     requests:
       memory: "2Gi"
-      cpu: "1000m"
+      cpu: "500m"
     limits:
       memory: "4Gi"
-      cpu: "2000m"
+      cpu: "1000m"
 
 server:
   workers: 1
