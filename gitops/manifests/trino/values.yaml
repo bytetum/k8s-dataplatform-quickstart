@@ -1,11 +1,11 @@
 coordinator:
   resources:
     requests:
-      memory: "512Mi"
-      cpu: "250m"
+      memory: "2Gi"
+      cpu: "1000m"
     limits:
-      memory: "1Gi"
-      cpu: "500m"
+      memory: "4Gi"
+      cpu: "2000m"
 
 env:
   - name: POLARIS_ROOT_PASSWORD
@@ -33,11 +33,11 @@ worker:
   replicas: 1
   resources:
     requests:
-      memory: "512Mi"
-      cpu: "250m"
+      memory: "2Gi"
+      cpu: "1000m"
     limits:
-      memory: "1Gi"
-      cpu: "500m"
+      memory: "4Gi"
+      cpu: "2000m"
 
 server:
   workers: 1
