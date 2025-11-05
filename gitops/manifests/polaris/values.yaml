@@ -48,9 +48,6 @@ realmContext:
   realms:
     - database
 
-features:
-  DROP_WITH_PURGE_ENABLED: true
-
 extraInitContainers:
   - name: polaris-boostrap
     image: apache/polaris-admin-tool:latest
