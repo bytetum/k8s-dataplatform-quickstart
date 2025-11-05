@@ -16,7 +16,7 @@ spec:
       valueFiles:
       - $values/gitops/manifests/polaris/values.yaml
     repoURL: https://downloads.apache.org/incubator/polaris/helm-chart
-    targetRevision: 1.0.0-incubating
+    targetRevision: 1.2.0
   - directory:
       recurse: true
     path: gitops/manifests/polaris
@@ -25,7 +25,7 @@ spec:
     targetRevision: HEAD
   syncPolicy:
     automated:
-      prune: false
-      selfHeal: false
+      prune: true
+      selfHeal: true
     syncOptions:
     - CreateNamespace=true
