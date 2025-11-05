@@ -20,7 +20,7 @@ extraEnv:
   - name: POLARIS_PERSISTENCE_TYPE
     value: relational-jdbc
 
-  - name: polaris.features.DROP_WITH_PURGE_ENABLED
+  - name: polaris.features."ALLOW_INSECURE_STORAGE_TYPES"
     value: "true"
 
   - name: QUARKUS_DATASOURCE_USERNAME
