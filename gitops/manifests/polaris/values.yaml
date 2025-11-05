@@ -20,9 +20,6 @@ extraEnv:
   - name: POLARIS_PERSISTENCE_TYPE
     value: relational-jdbc
 
-  - name: DROP_WITH_PURGE_ENABLED
-    value: "true"
-
   - name: QUARKUS_DATASOURCE_USERNAME
     valueFrom:
       secretKeyRef:
@@ -48,6 +45,9 @@ realmContext:
   realms:
     - database
 
+features:
+  DROP_WITH_PURGE_ENABLED: true
+  
 extraInitContainers:
   - name: polaris-boostrap
     image: apache/polaris-admin-tool:latest
