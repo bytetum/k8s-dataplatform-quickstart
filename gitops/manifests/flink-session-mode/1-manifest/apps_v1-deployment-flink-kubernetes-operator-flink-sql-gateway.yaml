@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-sql-gateway
+  namespace: flink-kubernetes-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flink
+      component: sql-gateway
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: sql-gateway
+    spec:
+      containers:
+      - args:
+        - "/opt/flink/bin/sql-gateway.sh start -Dsql-gateway.endpoint.rest.address=0.0.0.0
+          &&\r\n                                echo \"SQL Gateway daemon started.
+          Tailing logs to keep container alive.\" &&\r\n                                sleep
+          infinity"
+        command:
+        - /bin/sh
+        - -c
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AWS_ACCESS_KEY_ID
+              name: flink-bucket-credentials
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: AWS_SECRET_ACCESS_KEY
+              name: flink-bucket-credentials
+        image: flink-test:1.20.2
+        imagePullPolicy: Never
+        name: sql-gateway
+        ports:
+        - containerPort: 8083
+          name: rest
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /opt/flink/conf
+          name: flink-config-volume
+      serviceAccountName: flink-sql-gateway-sa
+      volumes:
+      - configMap:
+          name: flink-config
+        name: flink-config-volume

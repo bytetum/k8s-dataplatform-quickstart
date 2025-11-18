@@ -1,6 +1,7 @@
 ﻿global using Pulumi;
 global using Kubernetes = Pulumi.Kubernetes;
 using applications.flink.flink_deployment;
+using applications.flink.flink_session_mode;
 using applications.infrastructure;
 using applications.warpstream;
 using applications.polaris;
@@ -18,4 +19,13 @@ return await Deployment.RunAsync(() =>
     var kafkaConnectCluster = new KafkaConnect("../manifests");
     var postgreDebeziumConnector = new PostgresDebeziumConnector("../manifests");
     var polarisSinkConncetor = new PolarisSinkConnector("../manifests");
+
+    var flinkSessionMode = new FlinkClusterBuilder("../manifests")
+        .WithTaskSlots(1)
+        .WithTaskManagerReplicas(4)
+        .WithParallelismDefault(4)
+        .WithJobManagerMemory("2048m")
+        // REDUCED: 1.75Gi leaves a 1GB buffer on the 8GB node (4 * 1.75 = 7GB).
+        .WithTaskManagerMemory("1792m")
+        .Build();
 });
