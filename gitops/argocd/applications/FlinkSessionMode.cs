@@ -6,6 +6,7 @@ public class FlinkSessionMode
     {
         new ArgoApplicationBuilder("flink-session-mode", provider)
             .SyncWave(2)
+            .InNamespace("flink-kubernetes-operator")
             .Build();
     }
 }
