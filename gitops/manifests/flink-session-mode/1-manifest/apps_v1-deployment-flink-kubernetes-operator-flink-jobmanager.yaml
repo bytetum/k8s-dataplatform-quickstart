@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-jobmanager
+  namespace: flink-kubernetes-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flink
+      component: jobmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: jobmanager
+    spec:
+      containers:
+      - args:
+        - jobmanager
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AWS_ACCESS_KEY_ID
+              name: flink-bucket-credentials
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: AWS_SECRET_ACCESS_KEY
+              name: flink-bucket-credentials
+        image: flink-test:1.20.2
+        imagePullPolicy: Never
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          tcpSocket:
+            port: 6123
+        name: jobmanager
+        ports:
+        - containerPort: 6123
+          name: rpc
+        - containerPort: 6124
+          name: blob-server
+        - containerPort: 8081
+          name: webui
+        volumeMounts:
+        - mountPath: /opt/flink/conf
+          name: flink-config-volume
+      volumes:
+      - configMap:
+          name: flink-config
+        name: flink-config-volume

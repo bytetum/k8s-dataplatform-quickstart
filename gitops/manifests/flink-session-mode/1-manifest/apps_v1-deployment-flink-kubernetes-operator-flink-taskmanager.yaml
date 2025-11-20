@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-taskmanager
+  namespace: flink-kubernetes-operator
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: flink
+      component: taskmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: taskmanager
+    spec:
+      containers:
+      - args:
+        - taskmanager
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AWS_ACCESS_KEY_ID
+              name: flink-bucket-credentials
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: AWS_SECRET_ACCESS_KEY
+              name: flink-bucket-credentials
+        image: flink-test:1.20.2
+        imagePullPolicy: Never
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          tcpSocket:
+            port: 6122
+        name: taskmanager
+        ports:
+        - containerPort: 6122
+          name: rpc
+        volumeMounts:
+        - mountPath: /opt/flink/conf/
+          name: flink-config-volume
+        - mountPath: /data/rocksdb
+          name: rocksdb-local-dir
+      volumes:
+      - configMap:
+          name: flink-config
+        name: flink-config-volume
+      - emptyDir: {}
+        name: rocksdb-local-dir

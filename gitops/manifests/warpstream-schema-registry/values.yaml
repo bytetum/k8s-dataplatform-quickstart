@@ -1,0 +1,72 @@
+# values.yaml for WarpStream Schema Registry Agent
+replicas: 1
+
+config:
+  gracefulShutdownDuration: "30s"
+  heartbeatEvery: "10s"
+  agentKeySecretKeyRef:
+    name: warpstream-schema-registry-secrets
+    key: agent_key
+  bucketURL: "s3://local-warpstream-test?region=ap-southeast-1"
+  virtualClusterID: "vci_sr_6a2b68c3_ed05_4454_b045_ed6b4b223f52"
+  region: "us-east-1"
+
+extraEnv:
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: warpstream-bucket-credentials
+        key: SCALEWAY_ACCESS_KEY
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: warpstream-bucket-credentials
+        key: SCALEWAY_SECRET_KEY
+
+  # BASIC AUTHENTICATION CONFIGURATION
+  - name: WARPSTREAM_SCHEMA_REGISTRY_BASIC_AUTH_ENABLED
+    value: "true"
+  - name: WARPSTREAM_SCHEMA_REGISTRY_BASIC_AUTH_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: "warpstream-schema-registry-secrets"
+        key: "USERNAME"
+  - name: WARPSTREAM_SCHEMA_REGISTRY_BASIC_AUTH_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: "warpstream-schema-registry-secrets"
+        key: "PASSWORD"
+
+  # SCHEMA COMPATIBILITY SETTINGS
+  - name: WARPSTREAM_SCHEMA_REGISTRY_COMPATIBILITY_LEVEL
+    value: "BACKWARD"
+  - name: WARPSTREAM_SCHEMA_REGISTRY_COMPATIBILITY_LEVEL_PER_SUBJECT_ENABLE
+    value: "true"
+
+  # Test mode settings (remove for production)
+  - name: WARPSTREAM_TEST_MODE
+    value: "true"
+  - name: WARPSTREAM_IS_DEMO_OR_PLAYGROUND
+    value: "true"
+  - name: WARPSTREAM_AVAILABILITY_ZONE
+    value: "eu-central-1a"
+
+service:
+  type: ClusterIP
+  port: 8081 # Standard schema registry port
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
+  limits:
+    cpu: "500m"
+    memory: "1Gi"
+
+autoscaling:
+  enabled: false
+
+enforceProductionResourceRequirements: false
+
+tls:
+  enabled: false # Set to true for production with TLS
