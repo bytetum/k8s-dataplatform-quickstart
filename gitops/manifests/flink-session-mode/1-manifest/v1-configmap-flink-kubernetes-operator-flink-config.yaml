@@ -3,12 +3,12 @@ data:
   flink-conf.yaml: |-
     jobmanager.rpc.address: flink-jobmanager
     rest.address: flink-jobmanager
-    taskmanager.numberOfTaskSlots: 1
+    taskmanager.numberOfTaskSlots: 2
     blob.server.port: 6124
     jobmanager.rpc.port: 6123
     taskmanager.rpc.port: 6122
-    jobmanager.memory.process.size: 2048m
-    taskmanager.memory.process.size: 1792m
+    jobmanager.memory.process.size: 1024m
+    taskmanager.memory.process.size: 2048m
     parallelism.default: 2
 
     execution.checkpointing.interval: 1min

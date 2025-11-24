@@ -4,7 +4,7 @@ metadata:
   name: flink-taskmanager
   namespace: flink-kubernetes-operator
 spec:
-  replicas: 4
+  replicas: 2
   selector:
     matchLabels:
       app: flink
