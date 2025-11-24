@@ -163,6 +163,75 @@ internal class FlinkClusterBuilder
             Provider = provider
         });
 
+        // Service account for JobManager and TaskManager
+        var sqlGatewaySA = new ServiceAccount("flink-sql-gateway-sa", new ServiceAccountArgs
+        {
+            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-sa", Namespace = _namespace }
+        }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
+
+        var flinkClusterRoleBinding = new ClusterRoleBinding("flink-role-binding-flink", new ClusterRoleBindingArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "flink-role-binding-flink"
+            },
+            RoleRef = new RoleRefArgs
+            {
+                ApiGroup = "rbac.authorization.k8s.io",
+                Kind = "ClusterRole",
+                Name = "edit"
+            },
+            Subjects = new InputList<SubjectArgs>
+            {
+                new SubjectArgs
+                {
+                    Kind = "ServiceAccount",
+                    Name = "flink-sql-gateway-sa",
+                    Namespace = _namespace
+                }
+            }
+        }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
+
+        var sqlGatewayRole = new ClusterRole("flink-sql-gateway-role", new ClusterRoleArgs
+        {
+            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-role" },
+            Rules = new InputList<PolicyRuleArgs>
+            {
+                new PolicyRuleArgs
+                {
+                    ApiGroups = { "" },
+                    Resources = { "endpoints" },
+                    Verbs = { "get", "list", "watch", "create", "update", "patch" }
+                },
+                new PolicyRuleArgs
+                {
+                    ApiGroups = { "discovery.k8s.io" },
+                    Resources = { "endpointslices" },
+                    Verbs = { "get", "list", "watch", "create", "update", "patch" }
+                }
+            }
+        }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
+
+        var sqlGatewayRB = new ClusterRoleBinding("flink-sql-gateway-rb", new ClusterRoleBindingArgs
+        {
+            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-rb" },
+            Subjects = new InputList<SubjectArgs>
+            {
+                new SubjectArgs
+                {
+                    Kind = "ServiceAccount",
+                    Name = "flink-sql-gateway-sa",
+                    Namespace = _namespace
+                }
+            },
+            RoleRef = new RoleRefArgs
+            {
+                Kind = "ClusterRole",
+                Name = "flink-sql-gateway-role",
+                ApiGroup = "rbac.authorization.k8s.io"
+            }
+        }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
+
         var configMap = new ConfigMap("flink-config", new ConfigMapArgs
         {
             Metadata = new ObjectMetaArgs
@@ -176,25 +245,29 @@ internal class FlinkClusterBuilder
                 {
                     "flink-conf.yaml",
                     $"""
-                          jobmanager.rpc.address: flink-jobmanager
-                          rest.address: flink-jobmanager
-                          taskmanager.numberOfTaskSlots: {_taskSlots}
-                          blob.server.port: 6124
-                          jobmanager.rpc.port: 6123
-                          taskmanager.rpc.port: 6122
-                          jobmanager.memory.process.size: {_jobManagerMemory}
-                          taskmanager.memory.process.size: {_taskManagerMemory}
-                          parallelism.default: {_parallelismDefault}
+                         jobmanager.rpc.address: flink-jobmanager
+                         rest.address: flink-jobmanager
+                         taskmanager.numberOfTaskSlots: {_taskSlots}
+                         blob.server.port: 6124
+                         jobmanager.rpc.port: 6123
+                         taskmanager.rpc.port: 6122
+                         jobmanager.memory.process.size: {_jobManagerMemory}
+                         taskmanager.memory.process.size: {_taskManagerMemory}
+                         parallelism.default: {_parallelismDefault}
 
-                          execution.checkpointing.interval: 1min
-                          execution.checkpointing.storage: filesystem
-                          execution.checkpointing.dir: s3://local-rocksdb-test/flink-data/checkpoints
+                         execution.checkpointing.interval: 1min
+                         execution.checkpointing.storage: filesystem
+                         execution.checkpointing.dir: s3://local-rocksdb-test/flink-session-mode/checkpoints
 
-                          state.backend.type: rocksdb
-                          execution.checkpointing.incremental: true
-                          execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-data/savepoints
-                          state.backend.rocksdb.localdir: /data/rocksdb
-                          """.Replace("\r\n", "\n")
+                         state.backend.type: rocksdb
+                         execution.checkpointing.incremental: true
+                         execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-session-mode/savepoints
+                         state.backend.rocksdb.localdir: /data/rocksdb
+                         jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-session-mode/completed-jobs
+                         high-availability.storageDir: s3://local-rocksdb-test/flink-session-mode/ha
+                         kubernetes.cluster-id: flink-session-cluster-01
+                         high-availability.type: kubernetes
+                         """.Replace("\r\n", "\n")
                 },
                 {
                     "log4j-console.properties",
@@ -251,6 +324,7 @@ internal class FlinkClusterBuilder
                         // {
                         //     new LocalObjectReferenceArgs { Name = "container-registry-read-credentials" }
                         // },
+                        ServiceAccountName = sqlGatewaySA.Metadata.Apply(m => m.Name),
                         Containers = new ContainerArgs
                         {
                             Name = "jobmanager",
@@ -279,7 +353,7 @@ internal class FlinkClusterBuilder
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_ACCESS_KEY_ID"  
+                                            Key = "AWS_ACCESS_KEY_ID"
                                         }
                                     }
                                 },
@@ -291,7 +365,7 @@ internal class FlinkClusterBuilder
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_SECRET_ACCESS_KEY"  
+                                            Key = "AWS_SECRET_ACCESS_KEY"
                                         }
                                     }
                                 }
@@ -348,6 +422,7 @@ internal class FlinkClusterBuilder
                         // {
                         //     new LocalObjectReferenceArgs { Name = "container-registry-read-credentials" }
                         // },
+                        ServiceAccountName = sqlGatewaySA.Metadata.Apply(m => m.Name),
                         Containers = new ContainerArgs
                         {
                             Name = "taskmanager",
@@ -371,7 +446,7 @@ internal class FlinkClusterBuilder
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_ACCESS_KEY_ID"  
+                                            Key = "AWS_ACCESS_KEY_ID"
                                         }
                                     }
                                 },
@@ -383,7 +458,7 @@ internal class FlinkClusterBuilder
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_SECRET_ACCESS_KEY"  
+                                            Key = "AWS_SECRET_ACCESS_KEY"
                                         }
                                     }
                                 }
@@ -412,48 +487,6 @@ internal class FlinkClusterBuilder
             }
         }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
 
-        var sqlGatewaySA = new ServiceAccount("flink-sql-gateway-sa", new ServiceAccountArgs
-        {
-            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-sa", Namespace = _namespace }
-        }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
-
-        var sqlGatewayRole = new ClusterRole("flink-sql-gateway-role", new ClusterRoleArgs
-        {
-            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-role" },
-            Rules = new InputList<PolicyRuleArgs>
-            {
-                new PolicyRuleArgs
-                {
-                    ApiGroups = { "" },
-                    Resources = { "endpoints" },
-                    Verbs = { "get", "list", "watch", "create", "update", "patch" }
-                },
-                new PolicyRuleArgs
-                {
-                    ApiGroups = { "discovery.k8s.io" },
-                    Resources = { "endpointslices" },
-                    Verbs = { "get", "list", "watch", "create", "update", "patch" }
-                }
-            }
-        }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
-
-        var sqlGatewayRB = new ClusterRoleBinding("flink-sql-gateway-rb", new ClusterRoleBindingArgs
-        {
-            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-rb" },
-            Subjects = new SubjectArgs
-            {
-                Kind = "ServiceAccount",
-                Name = "flink-sql-gateway-sa",
-                Namespace = _namespace
-            },
-            RoleRef = new RoleRefArgs
-            {
-                Kind = "ClusterRole",
-                Name = "flink-sql-gateway-role",
-                ApiGroup = "rbac.authorization.k8s.io"
-            }
-        }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
-
         var sqlGatewayDeployment = new Pulumi.Kubernetes.Apps.V1.Deployment("flink-sql-gateway", new DeploymentArgs
         {
             Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway", Namespace = _namespace },
@@ -468,7 +501,7 @@ internal class FlinkClusterBuilder
                         { Labels = new InputMap<string> { { "app", "flink" }, { "component", "sql-gateway" } } },
                     Spec = new PodSpecArgs
                     {
-                        ServiceAccountName = "flink-sql-gateway-sa",
+                        ServiceAccountName = sqlGatewaySA.Metadata.Apply(m => m.Name),
                         // ImagePullSecrets = new InputList<LocalObjectReferenceArgs>
                         // {
                         //     new LocalObjectReferenceArgs { Name = "container-registry-read-credentials" }
@@ -498,7 +531,7 @@ internal class FlinkClusterBuilder
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_ACCESS_KEY_ID"  
+                                            Key = "AWS_ACCESS_KEY_ID"
                                         }
                                     }
                                 },
@@ -510,7 +543,7 @@ internal class FlinkClusterBuilder
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_SECRET_ACCESS_KEY"  
+                                            Key = "AWS_SECRET_ACCESS_KEY"
                                         }
                                     }
                                 }

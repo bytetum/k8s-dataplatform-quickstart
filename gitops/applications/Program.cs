@@ -21,11 +21,10 @@ return await Deployment.RunAsync(() =>
     var polarisSinkConncetor = new PolarisSinkConnector("../manifests");
 
     var flinkSessionMode = new FlinkClusterBuilder("../manifests")
-        .WithTaskSlots(1)
-        .WithTaskManagerReplicas(4)
-        .WithParallelismDefault(4)
-        .WithJobManagerMemory("2048m")
-        // REDUCED: 1.75Gi leaves a 1GB buffer on the 8GB node (4 * 1.75 = 7GB).
-        .WithTaskManagerMemory("1792m")
+        .WithTaskSlots(2)
+        .WithTaskManagerReplicas(2)
+        .WithParallelismDefault(2)
+        .WithJobManagerMemory("1024m")
+        .WithTaskManagerMemory("2048m")
         .Build();
 });

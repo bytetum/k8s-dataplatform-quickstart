@@ -45,6 +45,7 @@ spec:
           name: flink-config-volume
         - mountPath: /data/rocksdb
           name: rocksdb-local-dir
+      serviceAccountName: flink-sql-gateway-sa
       volumes:
       - configMap:
           name: flink-config

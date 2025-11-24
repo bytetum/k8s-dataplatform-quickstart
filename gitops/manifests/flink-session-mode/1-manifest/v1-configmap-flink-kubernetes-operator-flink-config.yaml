@@ -9,16 +9,20 @@ data:
     taskmanager.rpc.port: 6122
     jobmanager.memory.process.size: 2048m
     taskmanager.memory.process.size: 1792m
-    parallelism.default: 4
+    parallelism.default: 2
 
     execution.checkpointing.interval: 1min
     execution.checkpointing.storage: filesystem
-    execution.checkpointing.dir: s3://local-rocksdb-test/flink-data/checkpoints
+    execution.checkpointing.dir: s3://local-rocksdb-test/flink-session-mode/checkpoints
 
     state.backend.type: rocksdb
     execution.checkpointing.incremental: true
-    execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-data/savepoints
+    execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-session-mode/savepoints
     state.backend.rocksdb.localdir: /data/rocksdb
+    jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-session-mode/completed-jobs
+    high-availability.storageDir: s3://local-rocksdb-test/flink-session-mode/ha
+    kubernetes.cluster-id: flink-session-cluster-01
+    high-availability.type: kubernetes
   log4j-console.properties: |-
     rootLogger.level = INFO
     rootLogger.appenderRef.console.ref = ConsoleAppender
