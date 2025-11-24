@@ -24,7 +24,7 @@ internal class ArgoApplications : ComponentResource
         var warpStreamSchemaRegistry = new WarpStreamSchemaRegistry(provider);
         var strimziOperator = new StrimziOperator(provider);
         var kafkaConnect = new KafkaConnect(provider);
-        //var flinkSessionMode = new FlinkSessionMode(provider);
+        var flinkSessionMode = new FlinkSessionMode(provider);
         // var monitoring = new KubePrometheus(provider);
     }
 }
