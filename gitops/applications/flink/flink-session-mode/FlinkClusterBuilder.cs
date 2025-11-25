@@ -18,8 +18,8 @@ internal class FlinkClusterBuilder
     private string _manifestRoot = "";
     private int _taskSlots = 1;
     private int _taskManagerReplicas = 2;
-    private string _jobManagerMemory = "1600m";
-    private string _taskManagerMemory = "1728m";
+    private string _jobManagerMemory = "1024m";
+    private string _taskManagerMemory = "2048m";
     private int _parallelismDefault = 2;
 
     public FlinkClusterBuilder(string manifestsRoot)
