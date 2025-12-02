@@ -11,7 +11,6 @@ using applications.kafkaconnect;
 return await Deployment.RunAsync(() =>
 {
     var infrastructure = new Infrastructure("../manifests");
-    var flinkDeployment = new FlinkDeployment("flink-deployment", "../manifests");
     var warpstream = new Warpstream("../manifests");
     var WarpstreamSchemaRegistry = new WarpstreamSchemaRegistry("../manifests");
     var polaris = new Polaris("../manifests");
@@ -19,6 +18,9 @@ return await Deployment.RunAsync(() =>
     var kafkaConnectCluster = new KafkaConnect("../manifests");
     var postgreDebeziumConnector = new PostgresDebeziumConnector("../manifests");
     var polarisSinkConncetor = new PolarisSinkConnector("../manifests");
+
+
+    var flinkDeployment = new FlinkDeploymentBuilder("../manifests").Build();
 
     var flinkSessionMode = new FlinkClusterBuilder("../manifests")
         .WithTaskSlots(2)
