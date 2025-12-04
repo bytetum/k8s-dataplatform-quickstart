@@ -20,7 +20,9 @@ return await Deployment.RunAsync(() =>
     var polarisSinkConncetor = new PolarisSinkConnector("../manifests");
 
 
-    var flinkDeployment = new FlinkDeploymentBuilder("../manifests").Build();
+    var flinkDeployment = new FlinkDeploymentBuilder("../manifests")
+        .WithDeploymentName("sql-runner-example")
+        .Build();
 
     var flinkSessionMode = new FlinkClusterBuilder("../manifests")
         .WithTaskSlots(2)

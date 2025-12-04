@@ -16,9 +16,9 @@ internal class FlinkDeploymentBuilder
     private string _flinkVersion = "v1_20";
     private int _taskSlots = 1;
     private string _jobManagerMemory = "1024m";
-    private double _jobManagerCpu = 0.5;
+    private double _jobManagerCpu = 0.6;
     private string _taskManagerMemory = "2048m";
-    private double _taskManagerCpu = 0.5;
+    private double _taskManagerCpu = 0.6;
     private int _jobParallelism = 1;
     private string _kafkaBootstrapServers = "warpstream-agent.default.svc.cluster.local:9092";
     private string _sqlFilePath = "";
@@ -115,9 +115,9 @@ internal class FlinkDeploymentBuilder
 
     public ComponentResource Build()
     {
-        var flinkDeploymentComponent = new ComponentResource("flink-deployment", "flink-deployment");
+        var flinkDeploymentComponent = new ComponentResource(_deploymentName, _deploymentName);
 
-        var manifestsPath = $"{_manifestRoot}/flink-deployment";
+        var manifestsPath = $"{_manifestRoot}/{_deploymentName}";
         var provider = new Pulumi.Kubernetes.Provider("yaml-provider", new()
         {
             RenderYamlToDirectory = manifestsPath
@@ -126,7 +126,7 @@ internal class FlinkDeploymentBuilder
             Parent = flinkDeploymentComponent
         });
 
-        var flinkDeployment = new FlinkDeployment("flink-deployment",
+        var flinkDeployment = new FlinkDeployment(_deploymentName,
             new FlinkDeploymentArgs()
             {
                 Metadata = new ObjectMetaArgs
@@ -137,12 +137,9 @@ internal class FlinkDeploymentBuilder
                 Spec = new FlinkDeploymentSpecArgs
                 {
                     Image = _image,
-                    // ImagePullSecrets = new InputList<ImagePullSecretArgs>
+                    // ImagePullSecrets = new InputList<LocalObjectReferenceArgs>
                     // {
-                    //     new ImagePullSecretArgs
-                    //     {
-                    //         Name = "container-registry-read-credentials"
-                    //     }
+                    //     new LocalObjectReferenceArgs { Name = "container-registry-read-credentials" }
                     // },
                     FlinkVersion = _flinkVersion,
                     FlinkConfiguration = new FlinkConfigurationSpecArgs

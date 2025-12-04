@@ -53,6 +53,8 @@ namespace Pulumi.Crds.FlinkDeployment
     {
         [Input("flinkConfiguration")] public Input<FlinkConfigurationSpecArgs>? FlinkConfiguration { get; set; }
 
+        [Input("imagePullSecrets")] public InputList<LocalObjectReferenceArgs>? ImagePullSecrets { get; set; }
+        
         [Input("flinkVersion")] public Input<string>? FlinkVersion { get; set; }
 
         [Input("image")] public Input<string>? Image { get; set; }
