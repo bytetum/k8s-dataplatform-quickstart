@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  name: strimzi-kafka-operator
+  namespace: argocd
+spec:
+  destination:
+    namespace: strimzi-kafka-operator
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+  - chart: strimzi-kafka-operator
+    helm:
+      valueFiles:
+      - $values/gitops/manifests/strimzi-kafka-operator/values.yaml
+    repoURL: quay.io/strimzi-helm
+    targetRevision: 0.47.0
+  - directory:
+      recurse: true
+    path: gitops/manifests/strimzi-kafka-operator
+    ref: values
+    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
