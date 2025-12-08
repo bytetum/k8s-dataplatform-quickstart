@@ -206,11 +206,10 @@ namespace Pulumi.Crds.FlinkDeployment
 
         [Output("kafka.bootstrap.servers")] public Output<string> KafkaBootstrapServers { get; private set; } = null!;
 
-        [Output("metrics.reporter.prom.factory")]
+        [Output("metrics.reporter.prom.factory.class")]
         public Output<string> MetricsReporterPromFactory { get; private set; } = null!;
 
-        [Output("metrics.reporter.prom.port")]
-        public Output<string> MetricsReporterPromPort { get; private set; } = null!;
+   
     }
 
     public class FlinkConfigurationSpecArgs : ResourceArgs
@@ -246,10 +245,9 @@ namespace Pulumi.Crds.FlinkDeployment
 
         [Input("kafka.bootstrap.servers")] public Input<string>? KafkaBootstrapServers { get; set; }
 
-        [Input("metrics.reporter.prom.factory")]
+        [Input("metrics.reporter.prom.factory.class")]
         public Input<string>? MetricsReporterPromFactory { get; set; }
 
-        [Input("metrics.reporter.prom.port")]
-        public Input<string>? MetricsReporterPromPort { get; set; }
+    
     }
 }

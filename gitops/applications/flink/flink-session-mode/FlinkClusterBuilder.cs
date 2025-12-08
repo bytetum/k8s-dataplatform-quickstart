@@ -269,8 +269,7 @@ internal class FlinkClusterBuilder
                          high-availability.type: kubernetes
 
                          # Prometheus metrics reporter
-                         metrics.reporter.prom.factory: org.apache.flink.metrics.prometheus.PrometheusReporter
-                         metrics.reporter.prom.port: 9249
+                         metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
                          """.Replace("\r\n", "\n")
                 },
                 {

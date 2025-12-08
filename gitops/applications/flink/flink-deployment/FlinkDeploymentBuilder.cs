@@ -189,8 +189,7 @@ internal class FlinkDeploymentBuilder
                         KafkaBootstrapServers = _kafkaBootstrapServers,
                         
                         // Prometheus metrics reporter configuration
-                        MetricsReporterPromFactory = "org.apache.flink.metrics.prometheus.PrometheusReporter",
-                        MetricsReporterPromPort = "9249"
+                        MetricsReporterPromFactory = "org.apache.flink.metrics.prometheus.PrometheusReporterFactory",
                     },
                     ServiceAccount = "flink-sql-gateway-sa",
                     JobManager = new JobManagerSpecArgs

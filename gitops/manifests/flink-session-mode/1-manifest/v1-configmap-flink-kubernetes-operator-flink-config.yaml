@@ -25,8 +25,7 @@ data:
     high-availability.type: kubernetes
 
     # Prometheus metrics reporter
-    metrics.reporter.prom.factory: org.apache.flink.metrics.prometheus.PrometheusReporter
-    metrics.reporter.prom.port: 9249
+    metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
   log4j-console.properties: |-
     rootLogger.level = INFO
     rootLogger.appenderRef.console.ref = ConsoleAppender
