@@ -19,9 +19,11 @@ return await Deployment.RunAsync(() =>
     var postgreDebeziumConnector = new PostgresDebeziumConnector("../manifests");
     var polarisSinkConncetor = new PolarisSinkConnector("../manifests");
 
-
-    var flinkDeployment = new FlinkDeploymentBuilder("../manifests")
+    var jarFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
         .WithDeploymentName("sql-runner-example")
+        .WithJarS3Uri("s3://local-rocksdb-test/examples-scala.jar")
+        .WithEntryClass("io.github.streamingwithflink.chapter1.AverageSensorReadings")
+        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
         .Build();
 
     var flinkSessionMode = new FlinkClusterBuilder("../manifests")

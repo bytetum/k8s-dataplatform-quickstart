@@ -11,9 +11,14 @@ spec:
       component: taskmanager
   template:
     metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9249"
+        prometheus.io/scrape: "true"
       labels:
         app: flink
         component: taskmanager
+        metrics: prometheus
     spec:
       containers:
       - args:
@@ -40,6 +45,8 @@ spec:
         ports:
         - containerPort: 6122
           name: rpc
+        - containerPort: 9249
+          name: metrics
         volumeMounts:
         - mountPath: /opt/flink/conf/
           name: flink-config-volume

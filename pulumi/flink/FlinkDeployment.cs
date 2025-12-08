@@ -205,6 +205,12 @@ namespace Pulumi.Crds.FlinkDeployment
         public Output<string> JobManagerArchiveFsDir { get; private set; } = null!;
 
         [Output("kafka.bootstrap.servers")] public Output<string> KafkaBootstrapServers { get; private set; } = null!;
+
+        [Output("metrics.reporter.prom.factory")]
+        public Output<string> MetricsReporterPromFactory { get; private set; } = null!;
+
+        [Output("metrics.reporter.prom.port")]
+        public Output<string> MetricsReporterPromPort { get; private set; } = null!;
     }
 
     public class FlinkConfigurationSpecArgs : ResourceArgs
@@ -239,5 +245,11 @@ namespace Pulumi.Crds.FlinkDeployment
         [Input("jobmanager.archive.fs.dir")] public Input<string>? JobManagerArchiveFsDir { get; set; }
 
         [Input("kafka.bootstrap.servers")] public Input<string>? KafkaBootstrapServers { get; set; }
+
+        [Input("metrics.reporter.prom.factory")]
+        public Input<string>? MetricsReporterPromFactory { get; set; }
+
+        [Input("metrics.reporter.prom.port")]
+        public Input<string>? MetricsReporterPromPort { get; set; }
     }
 }

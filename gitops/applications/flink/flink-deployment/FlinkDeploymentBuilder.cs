@@ -23,6 +23,9 @@ internal class FlinkDeploymentBuilder
     private string _kafkaBootstrapServers = "warpstream-agent.default.svc.cluster.local:9092";
     private string _sqlFilePath = "";
     private string _s3BucketPath = "s3://local-rocksdb-test";
+    private string _entryClass = "";
+    private string _jarFilePath = "";
+    private UpgradeMode _upgradeMode = UpgradeMode.Stateless;
 
 
     public FlinkDeploymentBuilder(string manifestsRoot)
@@ -101,15 +104,27 @@ internal class FlinkDeploymentBuilder
         return this;
     }
 
-    public FlinkDeploymentBuilder WithSqlFilePath(string sqlFilePath)
+    public FlinkDeploymentBuilder WithSqlS3Uri(string sqlFilePath)
     {
         _sqlFilePath = sqlFilePath;
         return this;
     }
     
-    public FlinkDeploymentBuilder WithS3BucketPath(string s3BucketPath)
+    public FlinkDeploymentBuilder WithJarS3Uri(string jarFilePath)
     {
-        _s3BucketPath = s3BucketPath.TrimEnd('/');
+        _jarFilePath = jarFilePath;
+        return this;
+    }
+    
+    public FlinkDeploymentBuilder WithEntryClass(string entryClass)
+    {
+        _entryClass = entryClass;
+        return this;
+    }
+    
+    public FlinkDeploymentBuilder WithUpgradeMode(UpgradeMode upgradeMode)
+    {
+        _upgradeMode = upgradeMode;
         return this;
     }
 
@@ -133,6 +148,18 @@ internal class FlinkDeploymentBuilder
                 {
                     Name = _deploymentName,
                     Namespace = _namespace,
+                    Labels = new InputMap<string>
+                    {
+                        { "app", _deploymentName },
+                        { "component", "flink" },
+                        { "metrics", "prometheus" }
+                    },
+                    Annotations = new InputMap<string>
+                    {
+                        { "prometheus.io/scrape", "true" },
+                        { "prometheus.io/port", "9249" },
+                        { "prometheus.io/path", "/metrics" }
+                    }
                 },
                 Spec = new FlinkDeploymentSpecArgs
                 {
@@ -145,7 +172,7 @@ internal class FlinkDeploymentBuilder
                     FlinkConfiguration = new FlinkConfigurationSpecArgs
                     {
                         TaskManagerNumberOfTaskSlots = _taskSlots.ToString(),
-
+                        
                         HighAvailabilityType = "kubernetes",
                         HighAvailabilityStorageDir = $"{_s3BucketPath}/flink-apps/{_deploymentName}/ha",
 
@@ -159,7 +186,11 @@ internal class FlinkDeploymentBuilder
                         ExecutionCheckpointingIncremental = true,
                         StateBackendRocksDbLocalDir = "/data/rocksdb",
                         JobManagerArchiveFsDir = $"{_s3BucketPath}/flink-common/completed-jobs",
-                        KafkaBootstrapServers = _kafkaBootstrapServers
+                        KafkaBootstrapServers = _kafkaBootstrapServers,
+                        
+                        // Prometheus metrics reporter configuration
+                        MetricsReporterPromFactory = "org.apache.flink.metrics.prometheus.PrometheusReporter",
+                        MetricsReporterPromPort = "9249"
                     },
                     ServiceAccount = "flink-sql-gateway-sa",
                     JobManager = new JobManagerSpecArgs
@@ -226,6 +257,11 @@ internal class FlinkDeploymentBuilder
                                         {
                                             MountPath = "/opt/flink/sql",
                                             Name = "flink-sql"
+                                        },
+                                        new VolumeMountArgs
+                                        {
+                                            MountPath = "/opt/flink/jar",
+                                            Name = "flink-jar"
                                         }
                                     }
                                 },
@@ -266,7 +302,10 @@ internal class FlinkDeploymentBuilder
                                     Command = new InputList<string>
                                     {
                                         "sh", "-c",
-                                        "aws s3 cp s3://local-rocksdb-test/flink-sql-runner-script.sql /opt/flink/sql/script.sql"
+                                        // Download JAR if jarFilePath is set, otherwise download SQL script
+                                        !string.IsNullOrEmpty(_jarFilePath)
+                                            ? $"aws s3 cp {_jarFilePath} /opt/flink/jar/{System.IO.Path.GetFileName(_jarFilePath)}"
+                                            : $"aws s3 cp {_sqlFilePath} /opt/flink/sql/{System.IO.Path.GetFileName(_sqlFilePath)}"
                                     },
                                     VolumeMounts = new InputList<VolumeMountArgs>
                                     {
@@ -274,6 +313,11 @@ internal class FlinkDeploymentBuilder
                                         {
                                             MountPath = "/opt/flink/sql",
                                             Name = "flink-sql"
+                                        },
+                                        new VolumeMountArgs
+                                        {
+                                            MountPath = "/opt/flink/jar",
+                                            Name = "flink-jar"
                                         }
                                     }
                                 }
@@ -289,19 +333,34 @@ internal class FlinkDeploymentBuilder
                                 {
                                     Name = "flink-sql",
                                     EmptyDir = new EmptyDirVolumeSourceArgs()
+                                },
+                                new VolumeArgs
+                                {
+                                    Name = "flink-jar",
+                                    EmptyDir = new EmptyDirVolumeSourceArgs()
                                 }
                             }
                         }
                     },
                     Job = new JobSpecArgs
                     {
-                        JarURI = "local:///opt/flink/usrlib/runner.jar",
-                        Args = new InputList<string>
-                        {
-                            "/opt/flink/sql/script.sql",
-                        },
+                        // Use downloaded JAR if jarFilePath is set, otherwise use default SQL runner
+                        JarURI = !string.IsNullOrEmpty(_jarFilePath)
+                            ? $"local:///opt/flink/jar/{System.IO.Path.GetFileName(_jarFilePath)}"
+                            : "local:///opt/flink/usrlib/runner.jar",
+                        EntryClass = _entryClass,
+                        // Only pass SQL script args when NOT using custom JAR
+                        Args = string.IsNullOrEmpty(_jarFilePath)
+                            ? new InputList<string> { $"/opt/flink/sql/{System.IO.Path.GetFileName(_sqlFilePath)}" }
+                            : null,
                         Parallelism = _jobParallelism,
-                        UpgradeMode = "last-state"
+                        UpgradeMode = _upgradeMode switch
+                        {
+                            UpgradeMode.Stateless => "stateless",
+                            UpgradeMode.Savepoint => "savepoint",
+                            UpgradeMode.LastState => "last-state",
+                            _ => throw new ArgumentOutOfRangeException()
+                        }
                     }
                 }
             }, new CustomResourceOptions
@@ -311,5 +370,12 @@ internal class FlinkDeploymentBuilder
             });
 
         return flinkDeploymentComponent;
+    }
+    
+    public enum UpgradeMode
+    {
+        Stateless,
+        Savepoint,
+        LastState
     }
 }

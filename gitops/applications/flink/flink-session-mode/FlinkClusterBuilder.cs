@@ -267,6 +267,10 @@ internal class FlinkClusterBuilder
                          high-availability.storageDir: s3://local-rocksdb-test/flink-session-mode/ha
                          kubernetes.cluster-id: flink-session-cluster-01
                          high-availability.type: kubernetes
+
+                         # Prometheus metrics reporter
+                         metrics.reporter.prom.factory: org.apache.flink.metrics.prometheus.PrometheusReporter
+                         metrics.reporter.prom.port: 9249
                          """.Replace("\r\n", "\n")
                 },
                 {
@@ -317,7 +321,20 @@ internal class FlinkClusterBuilder
                 Template = new PodTemplateSpecArgs
                 {
                     Metadata = new ObjectMetaArgs
-                        { Labels = new InputMap<string> { { "app", "flink" }, { "component", "jobmanager" } } },
+                    {
+                        Labels = new InputMap<string>
+                        {
+                            { "app", "flink" },
+                            { "component", "jobmanager" },
+                            { "metrics", "prometheus" }
+                        },
+                        Annotations = new InputMap<string>
+                        {
+                            { "prometheus.io/scrape", "true" },
+                            { "prometheus.io/port", "9249" },
+                            { "prometheus.io/path", "/metrics" }
+                        }
+                    },
                     Spec = new PodSpecArgs
                     {
                         // ImagePullSecrets = new InputList<LocalObjectReferenceArgs>
@@ -336,7 +353,8 @@ internal class FlinkClusterBuilder
                             {
                                 new ContainerPortArgs { Name = "rpc", ContainerPortValue = 6123 },
                                 new ContainerPortArgs { Name = "blob-server", ContainerPortValue = 6124 },
-                                new ContainerPortArgs { Name = "webui", ContainerPortValue = 8081 }
+                                new ContainerPortArgs { Name = "webui", ContainerPortValue = 8081 },
+                                new ContainerPortArgs { Name = "metrics", ContainerPortValue = 9249 }
                             },
                             LivenessProbe = new ProbeArgs
                             {
@@ -415,7 +433,20 @@ internal class FlinkClusterBuilder
                 Template = new PodTemplateSpecArgs
                 {
                     Metadata = new ObjectMetaArgs
-                        { Labels = new InputMap<string> { { "app", "flink" }, { "component", "taskmanager" } } },
+                    {
+                        Labels = new InputMap<string>
+                        {
+                            { "app", "flink" },
+                            { "component", "taskmanager" },
+                            { "metrics", "prometheus" }
+                        },
+                        Annotations = new InputMap<string>
+                        {
+                            { "prometheus.io/scrape", "true" },
+                            { "prometheus.io/port", "9249" },
+                            { "prometheus.io/path", "/metrics" }
+                        }
+                    },
                     Spec = new PodSpecArgs
                     {
                         // ImagePullSecrets = new InputList<LocalObjectReferenceArgs>
@@ -430,7 +461,11 @@ internal class FlinkClusterBuilder
                             Image = "flink-test:1.20.2",
                             ImagePullPolicy = "Never",
                             Args = new InputList<string> { "taskmanager" },
-                            Ports = new ContainerPortArgs { Name = "rpc", ContainerPortValue = 6122 },
+                            Ports = new InputList<ContainerPortArgs>
+                            {
+                                new ContainerPortArgs { Name = "rpc", ContainerPortValue = 6122 },
+                                new ContainerPortArgs { Name = "metrics", ContainerPortValue = 9249 }
+                            },
                             LivenessProbe = new ProbeArgs
                             {
                                 TcpSocket = new TCPSocketActionArgs { Port = 6122 }, InitialDelaySeconds = 30,
