@@ -24,10 +24,14 @@ spec:
     snapshot.mode: always
     table.include.list: public.employees
     topic.prefix: postgres-cdc
-    transforms: route
+    transforms: route,unwrap
     transforms.route.regex: postgres-cdc.public.employees
     transforms.route.replacement: bronze.postgres.employees
     transforms.route.type: org.apache.kafka.connect.transforms.RegexRouter
+    transforms.unwrap.add.fields: timestamp
+    transforms.unwrap.delete.handling.mode: rewrite
+    transforms.unwrap.drop.tombstones: false
+    transforms.unwrap.type: io.debezium.transforms.ExtractNewRecordState
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: true
   tasksMax: 1

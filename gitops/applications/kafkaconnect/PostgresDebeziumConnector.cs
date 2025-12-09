@@ -59,12 +59,18 @@ internal class PostgresDebeziumConnector : ComponentResource
                         ["value.converter.schemas.enable"] = true,
 
                         // Transforms
-                        ["transforms"] = "route",
+                        ["transforms"] = "route,unwrap",
 
                         // Route Transform - redirects messages to bronze-topic
                         ["transforms.route.type"] = "org.apache.kafka.connect.transforms.RegexRouter",
                         ["transforms.route.regex"] = "postgres-cdc.public.employees",
                         ["transforms.route.replacement"] = "bronze.postgres.employees",
+                        
+                        // Unwrap Transform - extracts clean records from CDC envelope
+                        ["transforms.unwrap.type"] = "io.debezium.transforms.ExtractNewRecordState",
+                        ["transforms.unwrap.drop.tombstones"] = false,
+                        ["transforms.unwrap.delete.handling.mode"] = "rewrite",
+                        ["transforms.unwrap.add.fields"] = "timestamp",
 
 
                         // Error Handling
