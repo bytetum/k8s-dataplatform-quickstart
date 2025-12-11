@@ -3,17 +3,17 @@ kind: Application
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-  name: flink-deployment
+  name: kafka-connect
   namespace: argocd
 spec:
   destination:
-    namespace: flink-deployment
+    namespace: kafka-connect
     server: https://kubernetes.default.svc
   project: default
   source:
     directory:
       recurse: true
-    path: gitops/manifests/flink-deployment
+    path: gitops/manifests/kafka-connect
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:

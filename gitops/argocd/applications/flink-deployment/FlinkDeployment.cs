@@ -4,8 +4,8 @@ internal class FlinkDeployment
 {
     public FlinkDeployment(Kubernetes.Provider provider)
     {
-        new ArgoApplicationBuilder("flink-deployment", provider)
-            .SyncWave(2)
+        new ArgoApplicationBuilder("sql-runner-example", provider)
+            .SyncWave(3)
             .Build();
     }
 }
