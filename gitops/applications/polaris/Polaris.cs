@@ -162,6 +162,15 @@ public class Polaris : ComponentResource
                                     http://polaris:8181/api/management/v1/catalogs \
                                     -d "$PAYLOAD" -v
                                 
+                                echo
+                                echo "Granting CATALOG_MANAGE_CONTENT privilege..."
+                                curl -s -H "Authorization: Bearer ${token}" \
+                                    -H 'Content-Type: application/json' \
+                                    -X PUT \
+                                    http://polaris:8181/api/management/v1/catalogs/${CATALOG_NAME}/catalog-roles/catalog_admin/grants \
+                                    -d '{"type":"catalog", "privilege":"CATALOG_MANAGE_CONTENT"}' -v
+                                
+                                echo
                                 echo Done.
                                 """.Replace("\r\n", "\n")
                             }

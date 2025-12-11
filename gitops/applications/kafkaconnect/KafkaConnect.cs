@@ -226,9 +226,32 @@ internal class KafkaConnect : ComponentResource
                         ["offset.storage.replication.factor"] = 1,
                         ["config.storage.replication.factor"] = 1,
                         ["status.storage.replication.factor"] = 1,
-                        ["producer.batch.size"] = 32768,
+                        
+                        ["session.timeout.ms"] = 120000,           
+                        ["request.timeout.ms"] = 60000,          
+                        ["heartbeat.interval.ms"] = 3000,
+                        ["worker.sync.timeout.ms"] = 3000,
+                        
+                        ["fetch.max.wait.ms"] = 10000,
+                        ["max.poll.interval.ms"] = 300000,
+                        ["metadata.max.age.ms"] = 60000,
+                        
+                        ["consumer.group.instance.id"] = "universal-kafka-connect-connect-0",
+                        ["consumer.fetch.max.wait.ms"] = 10000,
+                        ["consumer.fetch.max.bytes"] = 50242880,
+                        ["consumer.max.partition.fetch.bytes"] = 50242880,
+                        ["consumer.request.timeout.ms"] = 60000,
+                        ["consumer.session.timeout.ms"] = 45000,
+                        ["consumer.metadata.max.age.ms"] = 60000,
+                        ["consumer.retry.backoff.ms"] = 1000,
+                        
+                        ["producer.batch.size"] = 100000,
                         ["producer.linger.ms"] = 100,
-                        ["consumer.max.poll.records"] = 500
+                        ["producer.buffer.memory"] = 128000000,
+                        ["producer.request.timeout.ms"] = 60000,
+                        ["producer.compression.type"] = "lz4",
+                        ["producer.metadata.max.age.ms"] = 60000,
+                        ["producer.retry.backoff.ms"] = 1000,
                     },
                     ["resources"] = new Dictionary<string, object>
                     {
