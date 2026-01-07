@@ -1,3 +1,10 @@
+metrics:
+  # -- Specifies whether metrics for the polaris server should be enabled.
+  enabled: true
+  # -- Additional tags (dimensional labels) to add to the metrics.
+  tags:
+    {}
+
 extraEnv:
   - name: AWS_STORAGE_BUCKET
     value: s3://local-iceberg-test/
