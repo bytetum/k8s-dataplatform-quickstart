@@ -1,9 +1,18 @@
 using System.Collections.Generic;
+using Pulumi;
 using Pulumi.Crds.ExternalSecrets;
+using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
 namespace applications.kafkaconnect;
 
+/// <summary>
+/// Main Kafka Connect application that orchestrates:
+/// - External secrets for credentials
+/// - Kafka Connect cluster
+/// - Metrics configuration
+/// - Iceberg sink connectors
+/// </summary>
 internal class KafkaConnect : ComponentResource
 {
     public KafkaConnect(string manifestsRoot) : base(
@@ -18,7 +27,11 @@ internal class KafkaConnect : ComponentResource
             Parent = this
         });
 
-		var registryWriteCredentials = new ExternalSecret("container-registry-write-credentials", new()
+        // ========================================================================
+        // 1. EXTERNAL SECRETS - Credentials from external secret store
+        // ========================================================================
+
+        var registryWriteCredentials = new ExternalSecret("container-registry-write-credentials", new()
         {
             Metadata = new ObjectMetaArgs
             {
@@ -40,7 +53,8 @@ internal class KafkaConnect : ComponentResource
                         Type = "kubernetes.io/dockerconfigjson",
                         Data = new Dictionary<string, string>
                         {
-                            [".dockerconfigjson"] = "{\"auths\":{\"rg.nl-ams.scw.cloud\":{\"auth\":\"{{ printf \"%s:%s\" .SCALEWAY_ACCESS_KEY .SCALEWAY_SECRET_KEY | b64enc }}\"}}}"
+                            [".dockerconfigjson"] =
+                                "{\"auths\":{\"rg.nl-ams.scw.cloud\":{\"auth\":\"{{ printf \"%s:%s\" .SCALEWAY_ACCESS_KEY .SCALEWAY_SECRET_KEY | b64enc }}\"}}}"
                         }
                     }
                 },
@@ -57,7 +71,7 @@ internal class KafkaConnect : ComponentResource
             Parent = this,
             Provider = provider
         });
-        
+
         var registryReadCredentials = new ExternalSecret("container-registry-read-credentials", new()
         {
             Metadata = new ObjectMetaArgs
@@ -80,7 +94,8 @@ internal class KafkaConnect : ComponentResource
                         Type = "kubernetes.io/dockerconfigjson",
                         Data = new Dictionary<string, string>
                         {
-                            [".dockerconfigjson"] = "{\"auths\":{\"rg.nl-ams.scw.cloud\":{\"auth\":\"{{ printf \"%s:%s\" .SCALEWAY_ACCESS_KEY .SCALEWAY_SECRET_KEY | b64enc }}\"}}}"
+                            [".dockerconfigjson"] =
+                                "{\"auths\":{\"rg.nl-ams.scw.cloud\":{\"auth\":\"{{ printf \"%s:%s\" .SCALEWAY_ACCESS_KEY .SCALEWAY_SECRET_KEY | b64enc }}\"}}}"
                         }
                     }
                 },
@@ -194,213 +209,45 @@ internal class KafkaConnect : ComponentResource
             Provider = provider
         });
 
- 		var kafkaConnect = new Kubernetes.ApiExtensions.CustomResource("kafka-connect",
-            new KafkaConnectArgs()
-            {
-                Metadata = new ObjectMetaArgs
-                {
-                    Name = "universal-kafka-connect",
-                    Namespace = "kafka-connect",
-                    Labels = new Dictionary<string, string>
-                    {
-                        { "app", "universal-kafka" }
-                    },
-                    Annotations = new Dictionary<string, string>
-                    {
-                        { "strimzi.io/use-connector-resources", "true" }
-                    }
-                },
-                Spec = new Dictionary<string, object>
-                {
-                    ["replicas"] = 1,
-                    ["bootstrapServers"] = "warpstream-agent.warpstream.svc.cluster.local:9092",
-                    ["image"] = "ttl.sh/hxt-kafka-connect-amd64:24h",
-                    ["config"] = new Dictionary<string, object>
-                    {
-                        ["group.id"] = "infra.kafka.connect.init",
-                        ["offset.storage.topic"] = "infra.kafka.connect.offsets",
-                        ["config.providers"] = "env",
-                        ["config.providers.env.class"] = "org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                        ["config.storage.topic"] = "infra.kafka.connect.configs",
-                        ["status.storage.topic"] = "infra.kafka.connect.status",
-                        ["offset.storage.replication.factor"] = 1,
-                        ["config.storage.replication.factor"] = 1,
-                        ["status.storage.replication.factor"] = 1,
-                        
-                        ["session.timeout.ms"] = 120000,           
-                        ["request.timeout.ms"] = 60000,          
-                        ["heartbeat.interval.ms"] = 3000,
-                        ["worker.sync.timeout.ms"] = 3000,
-                        
-                        ["fetch.max.wait.ms"] = 10000,
-                        ["max.poll.interval.ms"] = 300000,
-                        ["metadata.max.age.ms"] = 60000,
-                        
-                        ["consumer.group.instance.id"] = "universal-kafka-connect-connect-0",
-                        ["consumer.fetch.max.wait.ms"] = 10000,
-                        ["consumer.fetch.max.bytes"] = 50242880,
-                        ["consumer.max.partition.fetch.bytes"] = 50242880,
-                        ["consumer.request.timeout.ms"] = 60000,
-                        ["consumer.session.timeout.ms"] = 45000,
-                        ["consumer.metadata.max.age.ms"] = 60000,
-                        ["consumer.retry.backoff.ms"] = 1000,
-                        
-                        ["producer.batch.size"] = 100000,
-                        ["producer.linger.ms"] = 100,
-                        ["producer.buffer.memory"] = 128000000,
-                        ["producer.request.timeout.ms"] = 60000,
-                        ["producer.compression.type"] = "lz4",
-                        ["producer.metadata.max.age.ms"] = 60000,
-                        ["producer.retry.backoff.ms"] = 1000,
-                    },
-                    ["resources"] = new Dictionary<string, object>
-                    {
-                        ["requests"] = new Dictionary<string, string>
-                        {
-                            ["cpu"] = "2",
-                            ["memory"] = "4Gi"
-                        },
-                        ["limits"] = new Dictionary<string, string>
-                        {
-                            ["cpu"] = "2",
-                            ["memory"] = "6Gi"
-                        }
-                    },
-                    ["jvmOptions"] = new Dictionary<string, object>
-                    {
-                        ["-Xmx"] = "4G"
-                    },
-                    ["template"] = new Dictionary<string, object>
-                    {
-                        ["connectContainer"] = new Dictionary<string, object>
-                        {
-                            ["env"] = new List<Dictionary<string, object>>
-                            {
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "AWS_ACCESS_KEY_ID",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "iceberg-bucket-credentials",
-                                            ["key"] = "AWS_ACCESS_KEY"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "AWS_SECRET_ACCESS_KEY",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "iceberg-bucket-credentials",
-                                            ["key"] = "AWS_SECRET_KEY"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "AWS_REGION",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "iceberg-bucket-credentials",
-                                            ["key"] = "AWS_REGION"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "POLARIS_PASSWORD",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "polaris-root-password",
-                                            ["key"] = "polaris-root-password"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "POSTGRES_HOST",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "pricefiles-db-credentials",
-                                            ["key"] = "host"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "POSTGRES_PORT",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "pricefiles-db-credentials",
-                                            ["key"] = "port"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "POSTGRES_USER",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "pricefiles-db-credentials",
-                                            ["key"] = "username"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "POSTGRES_PASSWORD",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "pricefiles-db-credentials",
-                                            ["key"] = "password"
-                                        }
-                                    }
-                                },
-                                new Dictionary<string, object>
-                                {
-                                    ["name"] = "POSTGRES_DB",
-                                    ["valueFrom"] = new Dictionary<string, object>
-                                    {
-                                        ["secretKeyRef"] = new Dictionary<string, object>
-                                        {
-                                            ["name"] = "pricefiles-db-credentials",
-                                            ["key"] = "dbname"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }, new CustomResourceOptions
-            {
-                Provider = provider,
-                Parent = this
-            });
-    }
-
-    private class KafkaConnectArgs : Kubernetes.ApiExtensions.CustomResourceArgs
-    {
-        public KafkaConnectArgs() : base("kafka.strimzi.io/v1beta2", "KafkaConnect")
+        var metricsConfig = new ConfigMap("kafka-connect-metrics", new()
         {
-        }
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "kafka-connect-metrics",
+                Namespace = "kafka-connect"
+            },
+            Data = new InputMap<string>
+            {
+                {
+                    "metrics-config.yml",
+                    $"""
+                         lowercaseOutputName: true
+                         lowercaseOutputLabelNames: true
+                         rules:
+                         # DLQ metrics (most important)
+                         - pattern: kafka.connect<type=task-error-metrics, connector=(.+), task=(.+)><>(total-record-errors|deadletterqueue-produce-requests)
+                           name: kafka_connect_task_error_$3
+                           labels:
+                             connector: "$1"
+                             task: "$2"
 
-        [Input("spec")] public Dictionary<string, object>? Spec { get; set; }
+                         # Connector status
+                         - pattern: kafka.connect<type=connect-worker-metrics><>(connector-count|task-count)
+                           name: kafka_connect_worker_$1
+
+                         # Task metrics
+                         - pattern: kafka.connect<type=sink-task-metrics, connector=(.+), task=(.+)><>(sink-record-send-total|offset-commit-completion-total)
+                           name: kafka_connect_sink_task_$3
+                           labels:
+                             connector: "$1"
+                             task: "$2"
+                         """.Replace("\r\n", "\n")
+                }
+            }
+        }, new CustomResourceOptions
+        {
+            Parent = this,
+            Provider = provider
+        });
     }
 }

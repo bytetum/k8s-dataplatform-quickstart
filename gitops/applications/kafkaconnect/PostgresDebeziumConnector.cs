@@ -65,7 +65,7 @@ internal class PostgresDebeziumConnector : ComponentResource
                         ["transforms.route.type"] = "org.apache.kafka.connect.transforms.RegexRouter",
                         ["transforms.route.regex"] = "postgres-cdc.public.employees",
                         ["transforms.route.replacement"] = "bronze.postgres.employees",
-                        
+
                         // Unwrap Transform - extracts clean records from CDC envelope
                         ["transforms.unwrap.type"] = "io.debezium.transforms.ExtractNewRecordState",
                         ["transforms.unwrap.drop.tombstones"] = false,
