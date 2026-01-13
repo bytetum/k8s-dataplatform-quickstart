@@ -35,7 +35,7 @@ spec:
             secretKeyRef:
               key: AWS_SECRET_ACCESS_KEY
               name: flink-bucket-credentials
-        image: flink-test:1.20.2
+        image: flink-custom:test
         imagePullPolicy: Never
         name: sql-gateway
         ports:

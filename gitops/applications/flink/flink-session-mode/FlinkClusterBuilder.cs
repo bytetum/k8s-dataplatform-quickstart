@@ -345,7 +345,7 @@ internal class FlinkClusterBuilder
                         {
                             Name = "jobmanager",
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
-                            Image = "flink-test:1.20.2",
+                            Image = "flink-custom:test",
                             ImagePullPolicy = "Never",
                             Args = new InputList<string> { "jobmanager" },
                             Ports = new InputList<ContainerPortArgs>
@@ -457,7 +457,7 @@ internal class FlinkClusterBuilder
                         {
                             Name = "taskmanager",
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
-                            Image = "flink-test:1.20.2",
+                            Image = "flink-custom:test",
                             ImagePullPolicy = "Never",
                             Args = new InputList<string> { "taskmanager" },
                             Ports = new InputList<ContainerPortArgs>
@@ -545,7 +545,7 @@ internal class FlinkClusterBuilder
                             Name = "sql-gateway",
                             SecurityContext = new SecurityContextArgs { Privileged = true, RunAsUser = 0 },
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
-                            Image = "flink-test:1.20.2",
+                            Image = "flink-custom:test",
                             ImagePullPolicy = "Never",
                             Command = new InputList<string> { "/bin/sh", "-c" },
                             Args = new InputList<string>
