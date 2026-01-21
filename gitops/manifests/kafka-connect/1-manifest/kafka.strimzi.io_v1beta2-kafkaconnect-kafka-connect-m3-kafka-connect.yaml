@@ -29,6 +29,7 @@ spec:
     metadata.max.age.ms: 60000
     offset.storage.replication.factor: 1
     offset.storage.topic: m3.kafka.connect.offsets
+    producer.acks: all
     producer.batch.size: 100000
     producer.buffer.memory: 128000000
     producer.compression.type: lz4
@@ -37,8 +38,6 @@ spec:
     producer.metadata.max.age.ms: 60000
     producer.request.timeout.ms: 60000
     producer.retry.backoff.ms: 1000
-    producer.transaction.timeout.ms: 60000
-    producer.transactional.id: m3-kafka-connect-tx-0
     request.timeout.ms: 60000
     session.timeout.ms: 120000
     status.storage.replication.factor: 1

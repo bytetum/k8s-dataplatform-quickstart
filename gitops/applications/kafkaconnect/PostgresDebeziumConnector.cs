@@ -26,7 +26,7 @@ internal class PostgresDebeziumConnector : ComponentResource
                     Namespace = "kafka-connect",
                     Labels = new Dictionary<string, string>
                     {
-                        { "strimzi.io/cluster", "universal-kafka-connect" }
+                        { "strimzi.io/cluster", "m3-kafka-connect" }
                     }
                 },
                 Spec = new Dictionary<string, object>
@@ -73,11 +73,13 @@ internal class PostgresDebeziumConnector : ComponentResource
                         ["transforms.unwrap.add.fields"] = "timestamp",
 
 
+                        // Note: Idempotent producer is enabled at cluster level (KafkaConnectClusterBuilder)
+
                         // Error Handling
                         ["errors.tolerance"] = "all",
                         ["errors.deadletterqueue.topic.name"] = "debezium-errors",
                         ["errors.deadletterqueue.context.headers.enable"] = true,
-                        
+
                         // DLQ Producer Configuration - Prevent duplicate CDC errors
                         ["errors.deadletterqueue.producer.acks"] = "all",
                         ["errors.deadletterqueue.producer.enable.idempotence"] = true

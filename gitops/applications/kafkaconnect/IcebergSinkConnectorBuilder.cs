@@ -327,6 +327,7 @@ public class IcebergSinkConnectorBuilder
             // ========================================================================
             // 6. ERROR HANDLING (base configuration)
             // ========================================================================
+            // Note: Idempotent producer is enabled at cluster level (KafkaConnectClusterBuilder)
             ["errors.log.enable"] = true,
             ["errors.log.include.messages"] = true,
         };

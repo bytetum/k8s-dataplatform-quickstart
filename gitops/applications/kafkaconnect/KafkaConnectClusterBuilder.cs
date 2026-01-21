@@ -170,10 +170,10 @@ public class KafkaConnectClusterBuilder
                 ["producer.metadata.max.age.ms"] = 60000,
                 ["producer.retry.backoff.ms"] = 1000,
                 
-                // Idempotent producer (exactly-once semantics)
+                // Idempotent producer for at-least-once with deduplication
+                // Note: Do NOT set transactional.id - source connectors don't support Kafka transactions
                 ["producer.enable.idempotence"] = true,
-                ["producer.transaction.timeout.ms"] = 60000,
-                ["producer.transactional.id"] = $"{_clusterName}-tx-0",
+                ["producer.acks"] = "all",
             },
 
             ["resources"] = new Dictionary<string, object>
