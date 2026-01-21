@@ -78,6 +78,12 @@ internal class Secrets : ComponentResource
 								Value = "{\"USERNAME\": \"USERNAME\", \"PASSWORD\": \"PASSWORD\"}",
 								Version = "latest_enabled"
 							},
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:schema-registry-credentials",
+								Value = "{\"username\": \"ccun_291350ada8541780bdbc5663f2d22855a4da5bf905a576bac6c8dfa95c89db71\", \"password\": \"ccp_956975877bc5eeb62ce21d18c49d320a3d128cb9d0c81278999a742f6272090e\"}",
+								Version = "latest_enabled"
+							},
                         }
                     }
                     //MARK: endchange

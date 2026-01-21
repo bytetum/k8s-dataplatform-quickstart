@@ -122,6 +122,38 @@ internal class FlinkClusterBuilder
             Provider = provider
         });
 
+        var schemaRegistryCredentials = new ExternalSecret("schema-registry-credentials", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "schema-registry-credentials",
+                Namespace = _namespace,
+            },
+            Spec = new ExternalSecretSpecArgs
+            {
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                {
+                    Name = "secret-store",
+                    Kind = "ClusterSecretStore"
+                },
+                Target = new ExternalSecretSpecTargetArgs()
+                {
+                    Name = "schema-registry-credentials"
+                },
+                DataFrom = new ExternalSecretSpecDataFromArgs()
+                {
+                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    {
+                        Key = "id:schema-registry-credentials"
+                    }
+                }
+            }
+        }, new()
+        {
+            Parent = flinkClusterComponent,
+            Provider = provider
+        });
+
         var registryReadCredentials = new ExternalSecret("container-registry-read-credentials", new()
         {
             Metadata = new ObjectMetaArgs
@@ -385,6 +417,30 @@ internal class FlinkClusterBuilder
                                             Key = "AWS_SECRET_ACCESS_KEY"
                                         }
                                     }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "SCHEMA_REGISTRY_USERNAME",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "schema-registry-credentials",
+                                            Key = "username"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "SCHEMA_REGISTRY_PASSWORD",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "schema-registry-credentials",
+                                            Key = "password"
+                                        }
+                                    }
                                 }
                             },
                             VolumeMounts = new InputList<VolumeMountArgs>
@@ -495,6 +551,30 @@ internal class FlinkClusterBuilder
                                             Key = "AWS_SECRET_ACCESS_KEY"
                                         }
                                     }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "SCHEMA_REGISTRY_USERNAME",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "schema-registry-credentials",
+                                            Key = "username"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "SCHEMA_REGISTRY_PASSWORD",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "schema-registry-credentials",
+                                            Key = "password"
+                                        }
+                                    }
                                 }
                             },
                             VolumeMounts = new InputList<VolumeMountArgs>
@@ -578,6 +658,30 @@ internal class FlinkClusterBuilder
                                         {
                                             Name = "flink-bucket-credentials",
                                             Key = "AWS_SECRET_ACCESS_KEY"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "SCHEMA_REGISTRY_USERNAME",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "schema-registry-credentials",
+                                            Key = "username"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "SCHEMA_REGISTRY_PASSWORD",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "schema-registry-credentials",
+                                            Key = "password"
                                         }
                                     }
                                 }

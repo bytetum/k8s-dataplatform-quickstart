@@ -37,7 +37,7 @@ return await Deployment.RunAsync(() =>
         .WithConnectorName("cidmas")
         .WithSourceTopic("bronze.m3.cidmas")
         .WithDestinationTable("m3_bronze.cidmas")
-        .WithIdColumns("idcono", "idsuno")
+        .WithIdColumns("idsuno")
         .WithPartitionBy("idcono")
         .Build();
 
@@ -53,8 +53,21 @@ return await Deployment.RunAsync(() =>
         .WithConnectorName("csytab")
         .WithSourceTopic("bronze.m3.csytab")
         .WithDestinationTable("m3_bronze.csytab")
-        .WithIdColumns("ctstco", "ctstky")
+        .WithIdColumns("ctstky", "ctstco")
         .WithPartitionBy("ctstco")
+        .Build();
+
+    // Debug Connector for Analyst Development
+    // Fail-fast mode with 10s commits for immediate feedback
+    // See: docs/DEVOPS-ANALYST-WAY-OF-WORKING.md
+    var debugIcebergSinkSilver = new IcebergSinkConnectorBuilder("../manifests")
+        .WithConnectorName("debug-silver")
+        .WithTopicsRegex(@"^debug\.silver\..*")
+        .WithDynamicRouting("iceberg_table")
+        .WithDefaultIdColumns("record_key")
+        .WithCommitInterval(10000) // 10s for fast feedback
+        .WithSchemaRegistryCache(cacheSize: 1000, cacheTtlMs: 300000)
+        .WithFailFastMode(retryDelayMaxMs: 60000, retryTimeoutMs: 300000)
         .Build();
 
     var jarFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
