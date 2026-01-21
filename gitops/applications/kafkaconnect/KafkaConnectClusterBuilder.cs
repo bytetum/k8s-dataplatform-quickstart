@@ -169,6 +169,11 @@ public class KafkaConnectClusterBuilder
                 ["producer.compression.type"] = "lz4",
                 ["producer.metadata.max.age.ms"] = 60000,
                 ["producer.retry.backoff.ms"] = 1000,
+                
+                // Idempotent producer (exactly-once semantics)
+                ["producer.enable.idempotence"] = true,
+                ["producer.transaction.timeout.ms"] = 60000,
+                ["producer.transactional.id"] = $"{_clusterName}-tx-0",
             },
 
             ["resources"] = new Dictionary<string, object>
@@ -200,6 +205,8 @@ public class KafkaConnectClusterBuilder
                         CreateEnvVar("AWS_SECRET_ACCESS_KEY", "iceberg-bucket-credentials", "AWS_SECRET_KEY"),
                         CreateEnvVar("AWS_REGION", "iceberg-bucket-credentials", "AWS_REGION"),
                         CreateEnvVar("POLARIS_PASSWORD", "polaris-root-password", "polaris-root-password"),
+                        CreateEnvVar("SCHEMA_REGISTRY_USERNAME", "schema-registry-credentials", "username"),
+                        CreateEnvVar("SCHEMA_REGISTRY_PASSWORD", "schema-registry-credentials", "password"),
                     }
                 }
             }
@@ -272,6 +279,8 @@ public class KafkaConnectClusterBuilder
                             CreateEnvVarArgs("AWS_SECRET_ACCESS_KEY", "iceberg-bucket-credentials", "AWS_SECRET_KEY"),
                             CreateEnvVarArgs("AWS_REGION", "iceberg-bucket-credentials", "AWS_REGION"),
                             CreateEnvVarArgs("POLARIS_PASSWORD", "polaris-root-password", "polaris-root-password"),
+                            CreateEnvVarArgs("SCHEMA_REGISTRY_USERNAME", "schema-registry-credentials", "username"),
+                            CreateEnvVarArgs("SCHEMA_REGISTRY_PASSWORD", "schema-registry-credentials", "password"),
                         }
                     }
                 }

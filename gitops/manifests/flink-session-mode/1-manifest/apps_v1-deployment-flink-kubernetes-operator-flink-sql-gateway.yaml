@@ -35,6 +35,16 @@ spec:
             secretKeyRef:
               key: AWS_SECRET_ACCESS_KEY
               name: flink-bucket-credentials
+        - name: SCHEMA_REGISTRY_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: schema-registry-credentials
+        - name: SCHEMA_REGISTRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: schema-registry-credentials
         image: flink-custom:test
         imagePullPolicy: Never
         name: sql-gateway

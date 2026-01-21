@@ -1,0 +1,49 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  labels:
+    strimzi.io/cluster: m3-kafka-connect
+  name: m3-iceberg-sink-cidmas
+  namespace: kafka-connect
+spec:
+  class: io.tabular.iceberg.connect.IcebergSinkConnector
+  config:
+    errors.deadletterqueue.context.headers.enable: true
+    errors.deadletterqueue.producer.acks: all
+    errors.deadletterqueue.producer.enable.idempotence: true
+    errors.deadletterqueue.topic.name: m3.iceberg.dlq
+    errors.log.enable: true
+    errors.log.include.messages: true
+    errors.tolerance: all
+    iceberg.catalog: iceberg
+    iceberg.catalog.catalog-name: ao_catalog
+    iceberg.catalog.credential: root:${env:POLARIS_PASSWORD}
+    iceberg.catalog.oauth2-server-uri: http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
+    iceberg.catalog.scope: PRINCIPAL_ROLE:ALL
+    iceberg.catalog.type: rest
+    iceberg.catalog.uri: http://polaris.polaris.svc.cluster.local:8181/api/catalog
+    iceberg.catalog.warehouse: ao_catalog
+    iceberg.control.commit.interval-ms: 60000
+    iceberg.control.commit.threads: 2
+    iceberg.control.commit.timeout-ms: 30000
+    iceberg.control.group-id-prefix: m3-iceberg-cidmas-control
+    iceberg.control.topic: sink-control-iceberg-cidmas
+    iceberg.table.m3_bronze.cidmas.id-columns: idsuno
+    iceberg.table.m3_bronze.cidmas.partition-by: idcono
+    iceberg.tables: m3_bronze.cidmas
+    iceberg.tables.auto-create-enabled: true
+    iceberg.tables.evolve-schema-enabled: true
+    iceberg.tables.schema-force-optional: true
+    iceberg.tables.upsert-mode-enabled: true
+    key.converter: io.confluent.connect.avro.AvroConverter
+    key.converter.schema.registry.basic.auth.credentials.source: USER_INFO
+    key.converter.schema.registry.basic.auth.user.info: ${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}
+    key.converter.schema.registry.url: http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094
+    key.converter.schemas.enable: true
+    topics: bronze.m3.cidmas
+    value.converter: io.confluent.connect.avro.AvroConverter
+    value.converter.schema.registry.basic.auth.credentials.source: USER_INFO
+    value.converter.schema.registry.basic.auth.user.info: ${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}
+    value.converter.schema.registry.url: http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094
+    value.converter.schemas.enable: true
+  tasksMax: 1

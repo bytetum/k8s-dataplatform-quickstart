@@ -14,6 +14,8 @@ spec:
     database.port: ${env:POSTGRES_PORT}
     database.user: ${env:POSTGRES_USER}
     errors.deadletterqueue.context.headers.enable: true
+    errors.deadletterqueue.producer.acks: all
+    errors.deadletterqueue.producer.enable.idempotence: true
     errors.deadletterqueue.topic.name: debezium-errors
     errors.tolerance: all
     key.converter: org.apache.kafka.connect.json.JsonConverter

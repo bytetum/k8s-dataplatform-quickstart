@@ -209,6 +209,38 @@ internal class KafkaConnect : ComponentResource
             Provider = provider
         });
 
+        var schemaRegistryCredentials = new ExternalSecret("schema-registry-credentials", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "schema-registry-credentials",
+                Namespace = "kafka-connect",
+            },
+            Spec = new ExternalSecretSpecArgs
+            {
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                {
+                    Name = "secret-store",
+                    Kind = "ClusterSecretStore"
+                },
+                Target = new ExternalSecretSpecTargetArgs()
+                {
+                    Name = "schema-registry-credentials"
+                },
+                DataFrom = new ExternalSecretSpecDataFromArgs()
+                {
+                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    {
+                        Key = "id:schema-registry-credentials"
+                    }
+                }
+            }
+        }, new()
+        {
+            Parent = this,
+            Provider = provider
+        });
+
         var metricsConfig = new ConfigMap("kafka-connect-metrics", new()
         {
             Metadata = new ObjectMetaArgs

@@ -76,7 +76,11 @@ internal class PostgresDebeziumConnector : ComponentResource
                         // Error Handling
                         ["errors.tolerance"] = "all",
                         ["errors.deadletterqueue.topic.name"] = "debezium-errors",
-                        ["errors.deadletterqueue.context.headers.enable"] = true
+                        ["errors.deadletterqueue.context.headers.enable"] = true,
+                        
+                        // DLQ Producer Configuration - Prevent duplicate CDC errors
+                        ["errors.deadletterqueue.producer.acks"] = "all",
+                        ["errors.deadletterqueue.producer.enable.idempotence"] = true
                     }
                 }
             }, new CustomResourceOptions
