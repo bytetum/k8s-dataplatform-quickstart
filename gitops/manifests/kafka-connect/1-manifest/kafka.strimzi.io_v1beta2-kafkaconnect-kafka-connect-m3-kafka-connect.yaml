@@ -46,7 +46,7 @@ spec:
     worker.sync.timeout.ms: 3000
   image: ttl.sh/hxt-kafka-connect-amd64-20-12:24h
   jvmOptions:
-    -Xmx: 4G
+    -Xmx: 5G
   metricsConfig:
     type: jmxPrometheusExporter
     valueFrom:
@@ -57,7 +57,7 @@ spec:
   resources:
     limits:
       cpu: "2"
-      memory: 6Gi
+      memory: 8Gi
     requests:
       cpu: "2"
       memory: 4Gi

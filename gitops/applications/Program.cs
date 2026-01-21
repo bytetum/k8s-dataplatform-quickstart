@@ -28,8 +28,8 @@ return await Deployment.RunAsync(() =>
             cpuRequest: "2",
             memoryRequest: "4Gi",
             cpuLimit: "2",
-            memoryLimit: "6Gi",
-            jvmMaxHeap: "4G")
+            memoryLimit: "8Gi",
+            jvmMaxHeap: "5G") // Keep heap at ~50% of container limit for JVM overhead
         .Build("../manifests");
 
     // Iceberg Sink Connectors
@@ -68,19 +68,6 @@ return await Deployment.RunAsync(() =>
         .WithCommitInterval(10000) // 10s for fast feedback
         .WithSchemaRegistryCache(cacheSize: 1000, cacheTtlMs: 300000)
         .WithFailFastMode(retryDelayMaxMs: 60000, retryTimeoutMs: 300000)
-        .Build();
-
-    var jarFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
-        .WithDeploymentName("sql-runner-exampl-3")
-        .WithJarS3Uri("s3://local-rocksdb-test/examples-scala.jar")
-        .WithEntryClass("io.github.streamingwithflink.chapter1.AverageSensorReadings")
-        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
-        .Build();
-    
-    var scriptFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
-        .WithDeploymentName("sql-runner-example-script")
-        .WithSqlS3Uri("s3://local-rocksdb-test/flink-sql-runner-script.sql")
-        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
         .Build();
 
     var flinkSessionMode = new FlinkClusterBuilder("../manifests")
