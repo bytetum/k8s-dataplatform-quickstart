@@ -4,11 +4,11 @@ metadata:
   annotations:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    config-hash: 787554c508e4c313
+    config-hash: 6283e8d499c03218
   labels:
     app: schema-check
-    target: csytab
-  name: schema-check-csytab
+    target: customer_transactions
+  name: schema-check-customer_transactions
   namespace: kafka-connect
 spec:
   backoffLimit: 3
@@ -23,13 +23,18 @@ spec:
           set -e
 
           SCHEMA_REGISTRY_URL="http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094"
-          SUBJECT="bronze.m3.csytab-value"
+          SUBJECT="silver.m3.customer_transactions-value"
           TIMEOUT=300
           INTERVAL=5
+          SCHEMA_COMPATIBILITY="BACKWARD"
+          AUTO_SET_COMPATIBILITY="true"
 
           echo "Checking schema subject: $SUBJECT"
           echo "Schema Registry: $SCHEMA_REGISTRY_URL"
           echo "Timeout: ${TIMEOUT}s, Retry interval: ${INTERVAL}s"
+          if [ -n "$SCHEMA_COMPATIBILITY" ]; then
+              echo "Schema compatibility: $SCHEMA_COMPATIBILITY (auto-set: $AUTO_SET_COMPATIBILITY)"
+          fi
 
           elapsed=0
           while [ $elapsed -lt $TIMEOUT ]; do
@@ -43,6 +48,24 @@ spec:
                       -u "$SCHEMA_REGISTRY_USERNAME:$SCHEMA_REGISTRY_PASSWORD" \
                       "$SCHEMA_REGISTRY_URL/subjects/$SUBJECT/versions/latest")
                   echo "Schema info: $schema_info"
+
+                  # Auto-set compatibility if enabled and specified
+                  if [ "$AUTO_SET_COMPATIBILITY" = "true" ] && [ -n "$SCHEMA_COMPATIBILITY" ]; then
+                      echo "Setting schema compatibility to: $SCHEMA_COMPATIBILITY"
+                      compat_response=$(curl -s -o /dev/null -w "%{http_code}" \
+                          -X PUT -H "Content-Type: application/json" \
+                          -d "{\"compatibility\":\"$SCHEMA_COMPATIBILITY\"}" \
+                          -u "$SCHEMA_REGISTRY_USERNAME:$SCHEMA_REGISTRY_PASSWORD" \
+                          "$SCHEMA_REGISTRY_URL/config/$SUBJECT")
+
+                      if [ "$compat_response" = "200" ]; then
+                          echo "Compatibility set successfully to $SCHEMA_COMPATIBILITY"
+                      else
+                          echo "Warning: Failed to set compatibility (HTTP $compat_response)"
+                          # Don't fail - schema exists, compatibility setting is optional
+                      fi
+                  fi
+
                   exit 0
               fi
 

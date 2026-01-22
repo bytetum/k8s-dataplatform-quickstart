@@ -2,10 +2,10 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   annotations:
-    config-hash: 3a42a6a4d14ba52a
+    config-hash: 1b8eb32789874961
   labels:
     strimzi.io/cluster: m3-kafka-connect
-  name: silver-iceberg-sink-valid-example
+  name: silver-m3-customer_transactions
   namespace: kafka-connect
 spec:
   class: io.tabular.iceberg.connect.IcebergSinkConnector
@@ -13,7 +13,7 @@ spec:
     errors.deadletterqueue.context.headers.enable: true
     errors.deadletterqueue.producer.acks: all
     errors.deadletterqueue.producer.enable.idempotence: true
-    errors.deadletterqueue.topic.name: m3.iceberg.dlq
+    errors.deadletterqueue.topic.name: silver.m3.customer_transactions_dlq
     errors.log.enable: true
     errors.log.include.messages: true
     errors.tolerance: all
@@ -28,10 +28,10 @@ spec:
     iceberg.control.commit.interval-ms: 60000
     iceberg.control.commit.threads: 2
     iceberg.control.commit.timeout-ms: 30000
-    iceberg.control.group-id-prefix: silver-iceberg-sink-valid-example-control
-    iceberg.control.topic: sink-control-silver-iceberg-sink-valid-example
-    iceberg.table.m3_silver.valid_example.id-columns: record_key
-    iceberg.tables: m3_silver.valid_example
+    iceberg.control.group-id-prefix: silver-m3-customer_transactions-control
+    iceberg.control.topic: sink-control-silver-m3-customer_transactions
+    iceberg.table.m3_silver.customer_transactions.id-columns: record_key
+    iceberg.tables: m3_silver.customer_transactions
     iceberg.tables.auto-create-enabled: true
     iceberg.tables.evolve-schema-enabled: true
     iceberg.tables.schema-force-optional: true
@@ -41,7 +41,7 @@ spec:
     key.converter.schema.registry.basic.auth.user.info: ${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}
     key.converter.schema.registry.url: http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094
     key.converter.schemas.enable: true
-    topics: silver.m3.valid_example
+    topics: silver.m3.customer_transactions
     value.converter: io.confluent.connect.avro.AvroConverter
     value.converter.schema.registry.basic.auth.credentials.source: USER_INFO
     value.converter.schema.registry.basic.auth.user.info: ${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}
