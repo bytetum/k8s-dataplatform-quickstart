@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   annotations:
-    config-hash: 3cb747b288221b81
+    config-hash: dfca131b91da68b6
   labels:
     strimzi.io/cluster: m3-kafka-connect
   name: postgres-debezium-source

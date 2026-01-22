@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   annotations:
-    config-hash: 515cfd47a4124127
+    config-hash: d4774f6353903825
   labels:
     strimzi.io/cluster: m3-kafka-connect
   name: bronze-m3-cidven
@@ -30,9 +30,9 @@ spec:
     iceberg.control.commit.timeout-ms: 30000
     iceberg.control.group-id-prefix: bronze-m3-cidven-control
     iceberg.control.topic: sink-control-bronze-m3-cidven
-    iceberg.table.m3_bronze.cidven.id-columns: iisuno
-    iceberg.table.m3_bronze.cidven.partition-by: iisugr
-    iceberg.tables: m3_bronze.cidven
+    iceberg.table.bronze.m3_cidven.id-columns: iisuno
+    iceberg.table.bronze.m3_cidven.partition-by: iisugr
+    iceberg.tables: bronze.m3_cidven
     iceberg.tables.auto-create-enabled: true
     iceberg.tables.evolve-schema-enabled: true
     iceberg.tables.schema-force-optional: true

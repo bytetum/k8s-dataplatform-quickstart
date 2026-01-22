@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   annotations:
-    config-hash: 9ecc09886ad0257f
+    config-hash: b2aac79c7645b2d3
   labels:
     strimzi.io/cluster: m3-kafka-connect
   name: debug-iceberg-sink-silver

@@ -1,0 +1,93 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    config-hash: a92ab539bb6d6051
+  labels:
+    app: schema-check
+    target: valid-example
+  name: schema-check-valid-example
+  namespace: kafka-connect
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - |-
+          #!/bin/sh
+          set -e
+
+          SCHEMA_REGISTRY_URL="http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094"
+          SUBJECT="silver.m3.valid_example-value"
+          TIMEOUT=300
+          INTERVAL=5
+          SCHEMA_COMPATIBILITY="BACKWARD"
+          AUTO_SET_COMPATIBILITY="true"
+
+          echo "Checking schema subject: $SUBJECT"
+          echo "Schema Registry: $SCHEMA_REGISTRY_URL"
+          echo "Timeout: ${TIMEOUT}s, Retry interval: ${INTERVAL}s"
+          if [ -n "$SCHEMA_COMPATIBILITY" ]; then
+              echo "Schema compatibility: $SCHEMA_COMPATIBILITY (auto-set: $AUTO_SET_COMPATIBILITY)"
+          fi
+
+          elapsed=0
+          while [ $elapsed -lt $TIMEOUT ]; do
+              response=$(curl -s -o /dev/null -w "%{http_code}" \
+                  -u "$SCHEMA_REGISTRY_USERNAME:$SCHEMA_REGISTRY_PASSWORD" \
+                  "$SCHEMA_REGISTRY_URL/subjects/$SUBJECT/versions/latest")
+
+              if [ "$response" = "200" ]; then
+                  echo "Schema found for subject: $SUBJECT"
+                  schema_info=$(curl -s \
+                      -u "$SCHEMA_REGISTRY_USERNAME:$SCHEMA_REGISTRY_PASSWORD" \
+                      "$SCHEMA_REGISTRY_URL/subjects/$SUBJECT/versions/latest")
+                  echo "Schema info: $schema_info"
+
+                  # Auto-set compatibility if enabled and specified
+                  if [ "$AUTO_SET_COMPATIBILITY" = "true" ] && [ -n "$SCHEMA_COMPATIBILITY" ]; then
+                      echo "Setting schema compatibility to: $SCHEMA_COMPATIBILITY"
+                      compat_response=$(curl -s -o /dev/null -w "%{http_code}" \
+                          -X PUT -H "Content-Type: application/json" \
+                          -d "{\"compatibility\":\"$SCHEMA_COMPATIBILITY\"}" \
+                          -u "$SCHEMA_REGISTRY_USERNAME:$SCHEMA_REGISTRY_PASSWORD" \
+                          "$SCHEMA_REGISTRY_URL/config/$SUBJECT")
+
+                      if [ "$compat_response" = "200" ]; then
+                          echo "Compatibility set successfully to $SCHEMA_COMPATIBILITY"
+                      else
+                          echo "Warning: Failed to set compatibility (HTTP $compat_response)"
+                          # Don't fail - schema exists, compatibility setting is optional
+                      fi
+                  fi
+
+                  exit 0
+              fi
+
+              echo "Schema not found (HTTP $response), retrying in ${INTERVAL}s... ($elapsed/${TIMEOUT}s)"
+              sleep $INTERVAL
+              elapsed=$((elapsed + INTERVAL))
+          done
+
+          echo "Timeout waiting for schema subject: $SUBJECT"
+          exit 1
+        env:
+        - name: SCHEMA_REGISTRY_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: schema-registry-credentials
+        - name: SCHEMA_REGISTRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: schema-registry-credentials
+        image: curlimages/curl:8.5.0
+        name: schema-check
+      restartPolicy: Never
+  ttlSecondsAfterFinished: 300

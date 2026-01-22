@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnect
 metadata:
   annotations:
-    config-hash: 17dff32ae8c0b341
+    config-hash: cc7d736281b47904
     strimzi.io/use-connector-resources: "true"
   labels:
     app: m3-kafka
