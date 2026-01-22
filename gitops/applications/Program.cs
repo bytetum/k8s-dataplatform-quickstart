@@ -58,6 +58,7 @@ return await Deployment.RunAsync(() =>
         .Build();
 
     // Debug Connector for Analyst Development
+    // Regex-based dynamic routing for debug.silver.* topics
     // Fail-fast mode with 10s commits for immediate feedback
     // See: docs/DEVOPS-ANALYST-WAY-OF-WORKING.md
     var debugIcebergSinkSilver = new IcebergSinkConnectorBuilder("../manifests")
@@ -69,6 +70,23 @@ return await Deployment.RunAsync(() =>
         .WithCommitInterval(10000) // 10s for fast feedback
         .WithSchemaRegistryCache(cacheSize: 1000, cacheTtlMs: 300000)
         .WithFailFastMode(retryDelayMaxMs: 60000, retryTimeoutMs: 300000)
+        .Build();
+
+    // Silver Valid Example - Explicit topic mapping with schema validation
+    // Topic: silver.m3.valid_example -> Iceberg: m3_silver.valid_example
+    // Uses PreSync schema validation job to ensure schema exists before connector starts
+    var icebergSinkValidExample = new IcebergSinkConnectorBuilder("../manifests")
+        .WithConnectorPrefix("silver-iceberg-sink")
+        .WithConnectorName("valid-example")
+        .WithSourceTopic("silver.m3.valid_example")
+        .WithDestinationTable("m3_silver.valid_example")
+        .WithIdColumns("record_key")
+        .Build();
+
+    var scriptFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
+        .WithDeploymentName("sql-runner-example-script")
+        .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test.sql")
+        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
         .Build();
 
     var flinkSessionMode = new FlinkClusterBuilder("../manifests")
