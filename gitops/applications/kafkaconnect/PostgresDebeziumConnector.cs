@@ -1,4 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using Pulumi.Crds;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
 namespace applications.kafkaconnect;
@@ -17,6 +22,57 @@ internal class PostgresDebeziumConnector : ComponentResource
             Parent = this
         });
 
+        var config = new Dictionary<string, object>
+        {
+            // Database Connection
+            ["database.hostname"] = "${env:POSTGRES_HOST}",
+            ["database.port"] = "${env:POSTGRES_PORT}",
+            ["database.user"] = "${env:POSTGRES_USER}",
+            ["database.password"] = "${env:POSTGRES_PASSWORD}",
+            ["database.dbname"] = "${env:POSTGRES_DB}",
+
+            // Debezium Configuration
+            ["topic.prefix"] = "postgres-cdc",
+            ["table.include.list"] = "public.employees",
+            ["plugin.name"] = "pgoutput",
+            ["slot.name"] = "debezium_test_slot",
+            ["publication.name"] = "dbz_publication",
+
+            // Snapshot Configuration
+            ["snapshot.mode"] = "always",
+
+            // Kafka Converters
+            ["key.converter"] = "org.apache.kafka.connect.json.JsonConverter",
+            ["value.converter"] = "org.apache.kafka.connect.json.JsonConverter",
+            ["key.converter.schemas.enable"] = true,
+            ["value.converter.schemas.enable"] = true,
+
+            // Transforms
+            ["transforms"] = "route,unwrap",
+
+            // Route Transform - redirects messages to bronze-topic
+            ["transforms.route.type"] = "org.apache.kafka.connect.transforms.RegexRouter",
+            ["transforms.route.regex"] = "postgres-cdc.public.employees",
+            ["transforms.route.replacement"] = "bronze.postgres.employees",
+
+            // Unwrap Transform - extracts clean records from CDC envelope
+            ["transforms.unwrap.type"] = "io.debezium.transforms.ExtractNewRecordState",
+            ["transforms.unwrap.drop.tombstones"] = false,
+            ["transforms.unwrap.delete.handling.mode"] = "rewrite",
+            ["transforms.unwrap.add.fields"] = "timestamp",
+
+            // Note: Idempotent producer is enabled at cluster level (KafkaConnectClusterBuilder)
+
+            // Error Handling
+            ["errors.tolerance"] = "all",
+            ["errors.deadletterqueue.topic.name"] = "debezium-errors",
+            ["errors.deadletterqueue.context.headers.enable"] = true,
+
+            // DLQ Producer Configuration - Prevent duplicate CDC errors
+            ["errors.deadletterqueue.producer.acks"] = "all",
+            ["errors.deadletterqueue.producer.enable.idempotence"] = true
+        };
+
         var postgresDebeziumConnector = new Kubernetes.ApiExtensions.CustomResource("postgres-debezium-connector",
             new KafkaConnectorArgs()
             {
@@ -27,69 +83,30 @@ internal class PostgresDebeziumConnector : ComponentResource
                     Labels = new Dictionary<string, string>
                     {
                         { "strimzi.io/cluster", "m3-kafka-connect" }
+                    },
+                    Annotations = new Dictionary<string, string>
+                    {
+                        { "config-hash", ComputeConfigHash(config) }
                     }
                 },
                 Spec = new Dictionary<string, object>
                 {
                     ["class"] = "io.debezium.connector.postgresql.PostgresConnector",
                     ["tasksMax"] = 1,
-                    ["config"] = new Dictionary<string, object>
-                    {
-                        // Database Connection
-                        ["database.hostname"] = "${env:POSTGRES_HOST}",
-                        ["database.port"] = "${env:POSTGRES_PORT}",
-                        ["database.user"] = "${env:POSTGRES_USER}",
-                        ["database.password"] = "${env:POSTGRES_PASSWORD}",
-                        ["database.dbname"] = "${env:POSTGRES_DB}",
-
-                        // Debezium Configuration
-                        ["topic.prefix"] = "postgres-cdc",
-                        ["table.include.list"] = "public.employees",
-                        ["plugin.name"] = "pgoutput",
-                        ["slot.name"] = "debezium_test_slot",
-                        ["publication.name"] = "dbz_publication",
-
-                        // Snapshot Configuration
-                        ["snapshot.mode"] = "always",
-
-                        // Kafka Converters
-                        ["key.converter"] = "org.apache.kafka.connect.json.JsonConverter",
-                        ["value.converter"] = "org.apache.kafka.connect.json.JsonConverter",
-                        ["key.converter.schemas.enable"] = true,
-                        ["value.converter.schemas.enable"] = true,
-
-                        // Transforms
-                        ["transforms"] = "route,unwrap",
-
-                        // Route Transform - redirects messages to bronze-topic
-                        ["transforms.route.type"] = "org.apache.kafka.connect.transforms.RegexRouter",
-                        ["transforms.route.regex"] = "postgres-cdc.public.employees",
-                        ["transforms.route.replacement"] = "bronze.postgres.employees",
-
-                        // Unwrap Transform - extracts clean records from CDC envelope
-                        ["transforms.unwrap.type"] = "io.debezium.transforms.ExtractNewRecordState",
-                        ["transforms.unwrap.drop.tombstones"] = false,
-                        ["transforms.unwrap.delete.handling.mode"] = "rewrite",
-                        ["transforms.unwrap.add.fields"] = "timestamp",
-
-
-                        // Note: Idempotent producer is enabled at cluster level (KafkaConnectClusterBuilder)
-
-                        // Error Handling
-                        ["errors.tolerance"] = "all",
-                        ["errors.deadletterqueue.topic.name"] = "debezium-errors",
-                        ["errors.deadletterqueue.context.headers.enable"] = true,
-
-                        // DLQ Producer Configuration - Prevent duplicate CDC errors
-                        ["errors.deadletterqueue.producer.acks"] = "all",
-                        ["errors.deadletterqueue.producer.enable.idempotence"] = true
-                    }
+                    ["config"] = config
                 }
             }, new CustomResourceOptions
             {
                 Provider = provider,
                 Parent = this
             });
+    }
+
+    private static string ComputeConfigHash(Dictionary<string, object> config)
+    {
+        var configString = string.Join("|", config.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(configString));
+        return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
     }
 
     private class KafkaConnectorArgs : Kubernetes.ApiExtensions.CustomResourceArgs

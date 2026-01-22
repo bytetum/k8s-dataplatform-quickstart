@@ -2,10 +2,10 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   annotations:
-    config-hash: ba9c0969bb03a30c
+    config-hash: cf6d878ae7f1a4b3
   labels:
     strimzi.io/cluster: m3-kafka-connect
-  name: m3-iceberg-sink-cidmas
+  name: iceberg-sink-cidmas
   namespace: kafka-connect
 spec:
   class: io.tabular.iceberg.connect.IcebergSinkConnector
@@ -28,8 +28,8 @@ spec:
     iceberg.control.commit.interval-ms: 60000
     iceberg.control.commit.threads: 2
     iceberg.control.commit.timeout-ms: 30000
-    iceberg.control.group-id-prefix: m3-iceberg-sink-cidmas-control
-    iceberg.control.topic: sink-control-m3-iceberg-sink-cidmas
+    iceberg.control.group-id-prefix: m3-iceberg-cidmas-control
+    iceberg.control.topic: sink-control-iceberg-cidmas
     iceberg.table.m3_bronze.cidmas.id-columns: idsuno
     iceberg.table.m3_bronze.cidmas.partition-by: idcono
     iceberg.tables: m3_bronze.cidmas

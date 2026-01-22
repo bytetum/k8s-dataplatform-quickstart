@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Pulumi;
 using Pulumi.Crds.KafkaConnect;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
@@ -14,6 +17,7 @@ public class IcebergSinkConnectorBuilder
 {
     private string _manifestsRoot = "";
     private string _connectorName = "";
+    private string _connectorPrefix = "m3-iceberg-sink";
     private string _sourceTopic = "";
     private string? _topicsRegex;
     private string _destinationTable = "";
@@ -222,6 +226,16 @@ public class IcebergSinkConnectorBuilder
     }
 
     /// <summary>
+    /// Set the connector name prefix (default: "m3-iceberg-sink").
+    /// The full connector name will be "{prefix}-{connectorName}".
+    /// </summary>
+    public IcebergSinkConnectorBuilder WithConnectorPrefix(string prefix)
+    {
+        _connectorPrefix = prefix;
+        return this;
+    }
+
+    /// <summary>
     /// Set the Kafka Connect cluster name (default: "m3-kafka-connect")
     /// </summary>
     public IcebergSinkConnectorBuilder WithClusterName(string clusterName)
@@ -264,7 +278,7 @@ public class IcebergSinkConnectorBuilder
     public ComponentResource Build()
     {
         var componentResource =
-            new ComponentResource($"m3-iceberg-sink-{_connectorName}", $"m3-iceberg-sink-{_connectorName}");
+            new ComponentResource($"{_connectorPrefix}-{_connectorName}", $"{_connectorPrefix}-{_connectorName}");
 
         var provider = new Pulumi.Kubernetes.Provider("yaml-provider", new()
         {
@@ -273,6 +287,19 @@ public class IcebergSinkConnectorBuilder
         {
             Parent = componentResource
         });
+
+        // Create PreSync schema check job if using explicit topic (not regex)
+        if (!string.IsNullOrEmpty(_sourceTopic))
+        {
+            new SchemaValidationJobBuilder()
+                .WithProvider(provider)
+                .WithParent(componentResource)
+                .WithJobName(_connectorName)
+                .WithSchemaSubject($"{_sourceTopic}-value")
+                .WithSchemaRegistryUrl(_schemaRegistryUrl)
+                .Build();
+        }
+
         var config = new Dictionary<string, object>
         {
             // ========================================================================
@@ -321,8 +348,8 @@ public class IcebergSinkConnectorBuilder
             ["iceberg.control.commit.interval-ms"] = _commitIntervalMs,
             ["iceberg.control.commit.threads"] = 2,
             ["iceberg.control.commit.timeout-ms"] = 30000,
-            ["iceberg.control.topic"] = _controlTopic ?? $"sink-control-iceberg-{_connectorName}",
-            ["iceberg.control.group-id-prefix"] = _controlGroupIdPrefix ?? $"m3-iceberg-{_connectorName}-control",
+            ["iceberg.control.topic"] = _controlTopic ?? $"sink-control-{_connectorPrefix}-{_connectorName}",
+            ["iceberg.control.group-id-prefix"] = _controlGroupIdPrefix ?? $"{_connectorPrefix}-{_connectorName}-control",
 
             // ========================================================================
             // 6. ERROR HANDLING (base configuration)
@@ -420,15 +447,19 @@ public class IcebergSinkConnectorBuilder
             config["errors.deadletterqueue.producer.enable.idempotence"] = true;
         }
 
-        new KafkaConnector($"m3-iceberg-sink-{_connectorName}", new KafkaConnectorArgs
+        new KafkaConnector($"{_connectorPrefix}-{_connectorName}", new KafkaConnectorArgs
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = $"m3-iceberg-sink-{_connectorName}",
+                Name = $"{_connectorPrefix}-{_connectorName}",
                 Namespace = "kafka-connect",
                 Labels = new Dictionary<string, string>
                 {
                     { "strimzi.io/cluster", _clusterName }
+                },
+                Annotations = new Dictionary<string, string>
+                {
+                    { "config-hash", ComputeConfigHash(config) }
                 }
             },
             Spec = new KafkaConnectorSpecArgs
@@ -444,5 +475,12 @@ public class IcebergSinkConnectorBuilder
         });
 
         return componentResource;
+    }
+
+    private static string ComputeConfigHash(Dictionary<string, object> config)
+    {
+        var configString = string.Join("|", config.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(configString));
+        return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
     }
 }

@@ -2,18 +2,18 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
-  name: kafka-connect
+    argocd.argoproj.io/sync-wave: "2"
+  name: sql-runner-example
   namespace: argocd
 spec:
   destination:
-    namespace: kafka-connect
+    namespace: sql-runner-example
     server: https://kubernetes.default.svc
   project: default
   source:
     directory:
       recurse: true
-    path: gitops/manifests/kafka-connect
+    path: gitops/manifests/sql-runner-example
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:

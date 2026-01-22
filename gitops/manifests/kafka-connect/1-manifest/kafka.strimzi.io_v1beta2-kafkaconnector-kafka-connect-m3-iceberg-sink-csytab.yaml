@@ -1,6 +1,8 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
+  annotations:
+    config-hash: d72f89b94ba8f2ba
   labels:
     strimzi.io/cluster: m3-kafka-connect
   name: m3-iceberg-sink-csytab
@@ -26,8 +28,8 @@ spec:
     iceberg.control.commit.interval-ms: 60000
     iceberg.control.commit.threads: 2
     iceberg.control.commit.timeout-ms: 30000
-    iceberg.control.group-id-prefix: m3-iceberg-csytab-control
-    iceberg.control.topic: sink-control-iceberg-csytab
+    iceberg.control.group-id-prefix: m3-iceberg-sink-csytab-control
+    iceberg.control.topic: sink-control-m3-iceberg-sink-csytab
     iceberg.table.m3_bronze.csytab.id-columns: ctstky,ctstco
     iceberg.table.m3_bronze.csytab.partition-by: ctstco
     iceberg.tables: m3_bronze.csytab

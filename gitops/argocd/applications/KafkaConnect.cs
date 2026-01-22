@@ -5,7 +5,7 @@ internal class KafkaConnect
     public KafkaConnect(Kubernetes.Provider provider)
     {
         new ArgoApplicationBuilder("kafka-connect", provider)
-            .SyncWave(2)
+            .SyncWave(3)  // After Flink (wave 2) to ensure schemas exist; PreSync hook validates
             .Build();
     }
 }

@@ -1,5 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Pulumi;
+using Pulumi.Crds;
 using Pulumi.Crds.KafkaConnect;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
@@ -119,62 +124,63 @@ public class KafkaConnectClusterBuilder
         {
             Parent = componentResource
         });
+        // Kafka Connect worker configuration
+        var config = new Dictionary<string, object>
+        {
+            ["group.id"] = $"{_groupIdPrefix}.kafka.connect.init",
+            ["offset.storage.topic"] = $"{_groupIdPrefix}.kafka.connect.offsets",
+            ["config.storage.topic"] = $"{_groupIdPrefix}.kafka.connect.configs",
+            ["status.storage.topic"] = $"{_groupIdPrefix}.kafka.connect.status",
+
+            ["config.providers"] = "env",
+            ["config.providers.env.class"] = "org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+
+            ["offset.storage.replication.factor"] = _replicationFactor,
+            ["config.storage.replication.factor"] = _replicationFactor,
+            ["status.storage.replication.factor"] = _replicationFactor,
+
+            // Session and timeouts
+            ["session.timeout.ms"] = 120000,
+            ["request.timeout.ms"] = 60000,
+            ["heartbeat.interval.ms"] = 3000,
+            ["worker.sync.timeout.ms"] = 3000,
+
+            // Fetching
+            ["fetch.max.wait.ms"] = 10000,
+            ["max.poll.interval.ms"] = 300000,
+            ["metadata.max.age.ms"] = 60000,
+
+            // Consumer tuning
+            ["consumer.group.instance.id"] = $"{_clusterName}-connect-0",
+            ["consumer.fetch.max.wait.ms"] = 10000,
+            ["consumer.fetch.max.bytes"] = 50242880,
+            ["consumer.max.partition.fetch.bytes"] = 50242880,
+            ["consumer.request.timeout.ms"] = 60000,
+            ["consumer.session.timeout.ms"] = 45000,
+            ["consumer.metadata.max.age.ms"] = 60000,
+            ["consumer.retry.backoff.ms"] = 1000,
+
+            // Producer tuning
+            ["producer.batch.size"] = 100000,
+            ["producer.linger.ms"] = 100,
+            ["producer.buffer.memory"] = 128000000,
+            ["producer.request.timeout.ms"] = 60000,
+            ["producer.compression.type"] = "lz4",
+            ["producer.metadata.max.age.ms"] = 60000,
+            ["producer.retry.backoff.ms"] = 1000,
+
+            // Idempotent producer for at-least-once with deduplication
+            // Note: Do NOT set transactional.id - source connectors don't support Kafka transactions
+            ["producer.enable.idempotence"] = true,
+            ["producer.acks"] = "all",
+        };
+
         var spec = new Dictionary<string, object>
         {
             ["replicas"] = _replicas,
             ["bootstrapServers"] = _bootstrapServers,
             ["image"] = _image,
-
-            // Kafka Connect worker configuration
-            ["config"] = new Dictionary<string, object>
-            {
-                ["group.id"] = $"{_groupIdPrefix}.kafka.connect.init",
-                ["offset.storage.topic"] = $"{_groupIdPrefix}.kafka.connect.offsets",
-                ["config.storage.topic"] = $"{_groupIdPrefix}.kafka.connect.configs",
-                ["status.storage.topic"] = $"{_groupIdPrefix}.kafka.connect.status",
-
-                ["config.providers"] = "env",
-                ["config.providers.env.class"] = "org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-
-                ["offset.storage.replication.factor"] = _replicationFactor,
-                ["config.storage.replication.factor"] = _replicationFactor,
-                ["status.storage.replication.factor"] = _replicationFactor,
-
-                // Session and timeouts
-                ["session.timeout.ms"] = 120000,
-                ["request.timeout.ms"] = 60000,
-                ["heartbeat.interval.ms"] = 3000,
-                ["worker.sync.timeout.ms"] = 3000,
-
-                // Fetching
-                ["fetch.max.wait.ms"] = 10000,
-                ["max.poll.interval.ms"] = 300000,
-                ["metadata.max.age.ms"] = 60000,
-
-                // Consumer tuning
-                ["consumer.group.instance.id"] = $"{_clusterName}-connect-0",
-                ["consumer.fetch.max.wait.ms"] = 10000,
-                ["consumer.fetch.max.bytes"] = 50242880,
-                ["consumer.max.partition.fetch.bytes"] = 50242880,
-                ["consumer.request.timeout.ms"] = 60000,
-                ["consumer.session.timeout.ms"] = 45000,
-                ["consumer.metadata.max.age.ms"] = 60000,
-                ["consumer.retry.backoff.ms"] = 1000,
-
-                // Producer tuning
-                ["producer.batch.size"] = 100000,
-                ["producer.linger.ms"] = 100,
-                ["producer.buffer.memory"] = 128000000,
-                ["producer.request.timeout.ms"] = 60000,
-                ["producer.compression.type"] = "lz4",
-                ["producer.metadata.max.age.ms"] = 60000,
-                ["producer.retry.backoff.ms"] = 1000,
-                
-                // Idempotent producer for at-least-once with deduplication
-                // Note: Do NOT set transactional.id - source connectors don't support Kafka transactions
-                ["producer.enable.idempotence"] = true,
-                ["producer.acks"] = "all",
-            },
+            ["config"] = config,
 
             ["resources"] = new Dictionary<string, object>
             {
@@ -212,10 +218,11 @@ public class KafkaConnectClusterBuilder
             }
         };
 
-        // Add metrics configuration if provided
+        // Metrics configuration (optional)
+        Dictionary<string, object>? metricsConfig = null;
         if (!string.IsNullOrEmpty(_metricsConfigMapName) && !string.IsNullOrEmpty(_metricsConfigMapKey))
         {
-            spec["metricsConfig"] = new Dictionary<string, object>
+            metricsConfig = new Dictionary<string, object>
             {
                 ["type"] = "jmxPrometheusExporter",
                 ["valueFrom"] = new Dictionary<string, object>
@@ -227,8 +234,54 @@ public class KafkaConnectClusterBuilder
                     }
                 }
             };
+            spec["metricsConfig"] = metricsConfig;
         }
 
+
+        var kafkaConnectSpec = new KafkaConnectSpecArgs
+        {
+            Replicas = _replicas,
+            BootstrapServers = _bootstrapServers,
+            Image = _image,
+            Config = config,
+            Resources = new ResourceRequirementsArgs
+            {
+                Requests = new InputMap<string>
+                {
+                    { "cpu", _cpuRequest },
+                    { "memory", _memoryRequest }
+                },
+                Limits = new InputMap<string>
+                {
+                    { "cpu", _cpuLimit },
+                    { "memory", _memoryLimit }
+                }
+            },
+            JvmOptions = new InputMap<string>
+            {
+                { "-Xmx", _jvmMaxHeap }
+            },
+            Template = new KafkaConnectTemplateArgs
+            {
+                ConnectContainer = new ConnectContainerArgs
+                {
+                    Env = new InputList<EnvVarArgs>
+                    {
+                        CreateEnvVarArgs("AWS_ACCESS_KEY_ID", "iceberg-bucket-credentials", "AWS_ACCESS_KEY"),
+                        CreateEnvVarArgs("AWS_SECRET_ACCESS_KEY", "iceberg-bucket-credentials", "AWS_SECRET_KEY"),
+                        CreateEnvVarArgs("AWS_REGION", "iceberg-bucket-credentials", "AWS_REGION"),
+                        CreateEnvVarArgs("POLARIS_PASSWORD", "polaris-root-password", "polaris-root-password"),
+                        CreateEnvVarArgs("SCHEMA_REGISTRY_USERNAME", "schema-registry-credentials", "username"),
+                        CreateEnvVarArgs("SCHEMA_REGISTRY_PASSWORD", "schema-registry-credentials", "password"),
+                    }
+                }
+            }
+        };
+
+        if (metricsConfig != null)
+        {
+            kafkaConnectSpec.MetricsConfig = metricsConfig;
+        }
 
         new Pulumi.Crds.KafkaConnect.KafkaConnect(_clusterName, new KafkaConnectArgs
         {
@@ -242,49 +295,11 @@ public class KafkaConnectClusterBuilder
                 },
                 Annotations = new Dictionary<string, string>
                 {
-                    { "strimzi.io/use-connector-resources", "true" }
+                    { "strimzi.io/use-connector-resources", "true" },
+                    { "config-hash", ComputeConfigHash(spec) }
                 }
             },
-            Spec = new KafkaConnectSpecArgs
-            {
-                Replicas = _replicas,
-                BootstrapServers = _bootstrapServers,
-                Image = _image,
-                Config = spec["config"],
-                MetricsConfig = spec.ContainsKey("metricsConfig") ? spec["metricsConfig"] : null,
-                Resources = new ResourceRequirementsArgs
-                {
-                    Requests = new InputMap<string>
-                    {
-                        { "cpu", _cpuRequest },
-                        { "memory", _memoryRequest }
-                    },
-                    Limits = new InputMap<string>
-                    {
-                        { "cpu", _cpuLimit },
-                        { "memory", _memoryLimit }
-                    }
-                },
-                JvmOptions = new InputMap<string>
-                {
-                    { "-Xmx", _jvmMaxHeap }
-                },
-                Template = new KafkaConnectTemplateArgs
-                {
-                    ConnectContainer = new ConnectContainerArgs
-                    {
-                        Env = new InputList<EnvVarArgs>
-                        {
-                            CreateEnvVarArgs("AWS_ACCESS_KEY_ID", "iceberg-bucket-credentials", "AWS_ACCESS_KEY"),
-                            CreateEnvVarArgs("AWS_SECRET_ACCESS_KEY", "iceberg-bucket-credentials", "AWS_SECRET_KEY"),
-                            CreateEnvVarArgs("AWS_REGION", "iceberg-bucket-credentials", "AWS_REGION"),
-                            CreateEnvVarArgs("POLARIS_PASSWORD", "polaris-root-password", "polaris-root-password"),
-                            CreateEnvVarArgs("SCHEMA_REGISTRY_USERNAME", "schema-registry-credentials", "username"),
-                            CreateEnvVarArgs("SCHEMA_REGISTRY_PASSWORD", "schema-registry-credentials", "password"),
-                        }
-                    }
-                }
-            }
+            Spec = kafkaConnectSpec
         }, new CustomResourceOptions
         {
             Provider = provider,
@@ -323,6 +338,24 @@ public class KafkaConnectClusterBuilder
                     Key = secretKey
                 }
             }
+        };
+    }
+
+    private static string ComputeConfigHash(Dictionary<string, object> spec)
+    {
+        var configString = SerializeForHash(spec);
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(configString));
+        return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
+    }
+
+    private static string SerializeForHash(object obj)
+    {
+        return obj switch
+        {
+            Dictionary<string, object> dict => string.Join("|", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={SerializeForHash(kv.Value)}")),
+            Dictionary<string, string> dict => string.Join("|", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}")),
+            IEnumerable<object> list => string.Join(",", list.Select(SerializeForHash)),
+            _ => obj?.ToString() ?? ""
         };
     }
 }

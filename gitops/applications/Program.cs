@@ -61,7 +61,8 @@ return await Deployment.RunAsync(() =>
     // Fail-fast mode with 10s commits for immediate feedback
     // See: docs/DEVOPS-ANALYST-WAY-OF-WORKING.md
     var debugIcebergSinkSilver = new IcebergSinkConnectorBuilder("../manifests")
-        .WithConnectorName("debug-silver")
+        .WithConnectorPrefix("debug-iceberg-sink")
+        .WithConnectorName("silver")
         .WithTopicsRegex(@"^debug\.silver\..*")
         .WithDynamicRouting("iceberg_table")
         .WithDefaultIdColumns("record_key")

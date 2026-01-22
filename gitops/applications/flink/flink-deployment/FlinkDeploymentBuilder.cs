@@ -27,7 +27,6 @@ internal class FlinkDeploymentBuilder
     private string _jarFilePath = "";
     private UpgradeMode _upgradeMode = UpgradeMode.Stateless;
 
-
     public FlinkDeploymentBuilder(string manifestsRoot)
     {
         _manifestRoot = manifestsRoot;
