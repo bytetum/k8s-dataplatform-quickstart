@@ -4,11 +4,11 @@ internal class FlinkDeployment
 {
     public FlinkDeployment(Kubernetes.Provider provider)
     {
-        new ArgoApplicationBuilder("sql-runner-example-script", provider)
+        new ArgoApplicationBuilder("silver.m3.customer_transactions", provider)
             .SyncWave(2)  // Flink must deploy before Kafka Connect to produce schemas
             .Build();
 
-        new ArgoApplicationBuilder("sql-runner-customer-transactions", provider)
+        new ArgoApplicationBuilder("silver.m3.valid_example", provider)
             .SyncWave(2)  // Flink must deploy before Kafka Connect to produce schemas
             .Build();
     }
