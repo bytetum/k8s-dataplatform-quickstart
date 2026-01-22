@@ -7,5 +7,9 @@ internal class FlinkDeployment
         new ArgoApplicationBuilder("sql-runner-example-script", provider)
             .SyncWave(2)  // Flink must deploy before Kafka Connect to produce schemas
             .Build();
+
+        new ArgoApplicationBuilder("sql-runner-customer-transactions", provider)
+            .SyncWave(2)  // Flink must deploy before Kafka Connect to produce schemas
+            .Build();
     }
 }

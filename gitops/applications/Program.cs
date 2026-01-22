@@ -83,9 +83,26 @@ return await Deployment.RunAsync(() =>
         .WithIdColumns("record_key")
         .Build();
 
+    // Silver Customer Transactions - Second example with DECIMAL type
+    // Topic: silver.m3.customer_transactions -> Iceberg: m3_silver.customer_transactions
+    // Uses PreSync schema validation job to ensure schema exists before connector starts
+    var icebergSinkCustomerTransactions = new IcebergSinkConnectorBuilder("../manifests")
+        .WithConnectorPrefix("silver-iceberg-sink")
+        .WithConnectorName("customer-transactions")
+        .WithSourceTopic("silver.m3.customer_transactions")
+        .WithDestinationTable("m3_silver.customer_transactions")
+        .WithIdColumns("record_key")
+        .Build();
+
     var scriptFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
         .WithDeploymentName("sql-runner-example-script")
         .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test.sql")
+        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
+        .Build();
+
+    var scriptFlinkDeployment2 = new FlinkDeploymentBuilder("../manifests")
+        .WithDeploymentName("sql-runner-customer-transactions")
+        .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test_2.sql")
         .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
         .Build();
 

@@ -1,0 +1,99 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "9249"
+    prometheus.io/scrape: "true"
+  labels:
+    app: sql-runner-customer-transactions
+    component: flink
+    metrics: prometheus
+  name: sql-runner-customer-transactions
+  namespace: flink-kubernetes-operator
+spec:
+  flinkConfiguration:
+    execution.checkpointing.dir: s3://local-rocksdb-test/flink-apps/sql-runner-customer-transactions/checkpoints
+    execution.checkpointing.incremental: true
+    execution.checkpointing.interval: 1min
+    execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-apps/sql-runner-customer-transactions/savepoints
+    execution.checkpointing.storage: filesystem
+    high-availability.storageDir: s3://local-rocksdb-test/flink-apps/sql-runner-customer-transactions/ha
+    high-availability.type: kubernetes
+    jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-common/completed-jobs
+    kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
+    metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+    state.backend.rocksdb.localdir: /data/rocksdb
+    state.backend.type: rocksdb
+    taskmanager.numberOfTaskSlots: "1"
+  flinkVersion: v1_20
+  image: flink-custom:test
+  job:
+    args:
+    - /opt/flink/sql/schema_validator_test_2.sql
+    entryClass: ""
+    jarURI: local:///opt/flink/usrlib/runner.jar
+    parallelism: 1
+    upgradeMode: stateless
+  jobManager:
+    resource:
+      cpu: 0.6
+      memory: 1024m
+  podTemplate:
+    spec:
+      containers:
+      - env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AWS_ACCESS_KEY_ID
+              name: flink-bucket-credentials
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: AWS_SECRET_ACCESS_KEY
+              name: flink-bucket-credentials
+        imagePullPolicy: Never
+        name: flink-main-container
+        volumeMounts:
+        - mountPath: /data/rocksdb
+          name: rocksdb-local-dir
+        - mountPath: /opt/flink/sql
+          name: flink-sql
+        - mountPath: /opt/flink/jar
+          name: flink-jar
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - aws s3 cp s3://local-rocksdb-test/schema_validator_test_2.sql /opt/flink/sql/schema_validator_test_2.sql
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AWS_ACCESS_KEY_ID
+              name: flink-bucket-credentials
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: AWS_SECRET_ACCESS_KEY
+              name: flink-bucket-credentials
+        image: amazon/aws-cli:latest
+        name: init-get-jars
+        volumeMounts:
+        - mountPath: /opt/flink/sql
+          name: flink-sql
+        - mountPath: /opt/flink/jar
+          name: flink-jar
+      volumes:
+      - emptyDir: {}
+        name: rocksdb-local-dir
+      - emptyDir: {}
+        name: flink-sql
+      - emptyDir: {}
+        name: flink-jar
+  serviceAccount: flink-sql-gateway-sa
+  taskManager:
+    resource:
+      cpu: 0.6
+      memory: 2048m
