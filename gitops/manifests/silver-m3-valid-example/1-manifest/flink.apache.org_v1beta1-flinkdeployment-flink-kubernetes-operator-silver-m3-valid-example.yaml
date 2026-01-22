@@ -6,19 +6,19 @@ metadata:
     prometheus.io/port: "9249"
     prometheus.io/scrape: "true"
   labels:
-    app: silver.m3.customer-transactions
+    app: silver-m3-valid-example
     component: flink
     metrics: prometheus
-  name: silver.m3.customer-transactions
+  name: silver-m3-valid-example
   namespace: flink-kubernetes-operator
 spec:
   flinkConfiguration:
-    execution.checkpointing.dir: s3://local-rocksdb-test/flink-apps/silver.m3.customer-transactions/checkpoints
+    execution.checkpointing.dir: s3://local-rocksdb-test/flink-apps/silver-m3-valid-example/checkpoints
     execution.checkpointing.incremental: true
     execution.checkpointing.interval: 1min
-    execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-apps/silver.m3.customer-transactions/savepoints
+    execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-apps/silver-m3-valid-example/savepoints
     execution.checkpointing.storage: filesystem
-    high-availability.storageDir: s3://local-rocksdb-test/flink-apps/silver.m3.customer-transactions/ha
+    high-availability.storageDir: s3://local-rocksdb-test/flink-apps/silver-m3-valid-example/ha
     high-availability.type: kubernetes
     jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-common/completed-jobs
     kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
@@ -30,7 +30,7 @@ spec:
   image: flink-custom:test
   job:
     args:
-    - /opt/flink/sql/schema_validator_test_2.sql
+    - /opt/flink/sql/schema_validator_test.sql
     entryClass: ""
     jarURI: local:///opt/flink/usrlib/runner.jar
     parallelism: 1
@@ -66,7 +66,7 @@ spec:
       - command:
         - sh
         - -c
-        - aws s3 cp s3://local-rocksdb-test/schema_validator_test_2.sql /opt/flink/sql/schema_validator_test_2.sql
+        - aws s3 cp s3://local-rocksdb-test/schema_validator_test.sql /opt/flink/sql/schema_validator_test.sql
         env:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:

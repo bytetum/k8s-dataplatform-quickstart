@@ -3,17 +3,17 @@ kind: Application
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-  name: silver.m3.customer-transactions
+  name: silver-m3-customer-transactions
   namespace: argocd
 spec:
   destination:
-    namespace: silver.m3.customer-transactions
+    namespace: silver-m3-customer-transactions
     server: https://kubernetes.default.svc
   project: default
   source:
     directory:
       recurse: true
-    path: gitops/manifests/silver.m3.customer-transactions
+    path: gitops/manifests/silver-m3-customer-transactions
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:
