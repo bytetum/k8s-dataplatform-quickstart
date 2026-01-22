@@ -4,11 +4,11 @@ metadata:
   annotations:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    config-hash: 3ba415dbe3c417a4
+    config-hash: e1b6dfc037a8f48c
   labels:
     app: schema-check
-    target: valid_example
-  name: schema-check-valid_example
+    target: customer-transactions
+  name: schema-check-customer-transactions
   namespace: kafka-connect
 spec:
   backoffLimit: 3
@@ -23,7 +23,7 @@ spec:
           set -e
 
           SCHEMA_REGISTRY_URL="http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094"
-          SUBJECT="silver.m3.valid_example-value"
+          SUBJECT="silver.m3.customer_transactions-value"
           TIMEOUT=300
           INTERVAL=5
           SCHEMA_COMPATIBILITY="BACKWARD"
