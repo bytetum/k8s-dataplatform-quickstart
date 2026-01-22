@@ -27,7 +27,7 @@ spec:
     state.backend.type: rocksdb
     taskmanager.numberOfTaskSlots: "1"
   flinkVersion: v1_20
-  image: flink-test:1.20.2
+  image: flink-custom:test
   job:
     args:
     - /opt/flink/sql/schema_validator_test.sql

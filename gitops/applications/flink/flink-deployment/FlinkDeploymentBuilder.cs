@@ -12,7 +12,7 @@ internal class FlinkDeploymentBuilder
     private string _manifestRoot = "";
     private string _deploymentName = "sql-runner-example";
     private string _namespace = Constants.Namespace;
-    private string _image = "flink-test:1.20.2";
+    private string _image = "flink-custom:test";
     private string _flinkVersion = "v1_20";
     private int _taskSlots = 1;
     private string _jobManagerMemory = "1024m";
