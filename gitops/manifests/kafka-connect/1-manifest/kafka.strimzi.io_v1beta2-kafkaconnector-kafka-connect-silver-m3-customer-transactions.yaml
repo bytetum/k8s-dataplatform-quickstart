@@ -2,10 +2,10 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   annotations:
-    config-hash: 1b8eb32789874961
+    config-hash: 1ad58458ddd7abe5
   labels:
     strimzi.io/cluster: m3-kafka-connect
-  name: silver-m3-customer_transactions
+  name: silver-m3-customer-transactions
   namespace: kafka-connect
 spec:
   class: io.tabular.iceberg.connect.IcebergSinkConnector
@@ -28,8 +28,8 @@ spec:
     iceberg.control.commit.interval-ms: 60000
     iceberg.control.commit.threads: 2
     iceberg.control.commit.timeout-ms: 30000
-    iceberg.control.group-id-prefix: silver-m3-customer_transactions-control
-    iceberg.control.topic: sink-control-silver-m3-customer_transactions
+    iceberg.control.group-id-prefix: silver-m3-customer-transactions-control
+    iceberg.control.topic: sink-control-silver-m3-customer-transactions
     iceberg.table.m3_silver.customer_transactions.id-columns: record_key
     iceberg.tables: m3_silver.customer_transactions
     iceberg.tables.auto-create-enabled: true
