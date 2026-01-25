@@ -171,7 +171,8 @@ Modify `gitops/manifests/trino/values.yaml`:
 
 ---
 
-### [ ] Step: Update WarpStream Manifests
+### [x] Step: Update WarpStream Manifests
+<!-- chat-id: 8900904e-8651-462b-ad67-d020a85b24a0 -->
 
 Modify:
 - `gitops/manifests/warpstream-agent/values.yaml`
@@ -183,6 +184,11 @@ Changes:
 - Remove IAM role ARN
 
 **Verification**: Valid YAML syntax, no S3 references
+
+**Completed**: Both WarpStream manifest files were already updated in a previous commit with:
+- `bucketURL: "azblob://warpstream"` - Using native Azure Blob Storage URL scheme
+- Azure credential env vars (`AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`) from `warpstream-bucket-credentials` secret
+- No S3/AWS references remain in either file
 
 ---
 
