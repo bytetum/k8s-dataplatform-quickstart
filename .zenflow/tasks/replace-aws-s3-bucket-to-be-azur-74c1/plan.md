@@ -18,47 +18,145 @@ Do not make assumptions on important decisions — get clarification first.
 
 ## Workflow Steps
 
-### [ ] Step: Technical Specification
+### [x] Step: Technical Specification
+<!-- chat-id: b76c6b67-09f7-4602-b210-dafbb9e5b33f -->
 
-Assess the task's difficulty, as underestimating it leads to poor outcomes.
-- easy: Straightforward implementation, trivial bug fix or feature
-- medium: Moderate complexity, some edge cases or caveats to consider
-- hard: Complex logic, many caveats, architectural considerations, or high-risk changes
+**Completed**: Created technical specification in `spec.md`
 
-Create a technical specification for the task that is appropriate for the complexity level:
-- Review the existing codebase architecture and identify reusable components.
-- Define the implementation approach based on established patterns in the project.
-- Identify all source code files that will be created or modified.
-- Define any necessary data model, API, or interface changes.
-- Describe verification steps using the project's test and lint commands.
+**Difficulty Assessment**: Hard
+- Multiple components (Flink, Polaris, Kafka Connect, Trino, WarpStream)
+- 12 files requiring modifications across C# Pulumi and YAML manifests
+- Cross-component credential and storage path coordination
 
-Save the output to `{@artifacts_path}/spec.md` with:
-- Technical context (language, dependencies)
-- Implementation approach
-- Source code structure changes
-- Data model / API / interface changes
-- Verification approach
-
-If the task is complex enough, create a detailed implementation plan based on `{@artifacts_path}/spec.md`:
-- Break down the work into concrete tasks (incrementable, testable milestones)
-- Each task should reference relevant contracts and include verification steps
-- Replace the Implementation step below with the planned tasks
-
-Rule of thumb for step size: each step should represent a coherent unit of work (e.g., implement a component, add an API endpoint, write tests for a module). Avoid steps that are too granular (single function).
-
-Save to `{@artifacts_path}/plan.md`. If the feature is trivial and doesn't warrant this breakdown, keep the Implementation step below as is.
+**Summary**: Migration from AWS S3 to Azure Blob Storage requires:
+- Replacing 3 S3 buckets with Azure containers
+- Updating credential systems from AWS to Azure
+- Modifying storage type detection logic in Polaris
+- Replacing AWS CLI with Azure CLI in init containers
 
 ---
 
-### [ ] Step: Implementation
+### [x] Step: Clarify Azure Configuration
 
-Implement the task according to the technical specification and general engineering best practices.
+**Resolved:**
+1. **Storage account name**: Use placeholder `PLACEHOLDER_STORAGE_ACCOUNT` (to be filled in)
+2. **Container names**: `flink`, `iceberg`, `warpstream`
+3. **Authentication**: **Managed Identity** (Azure Workload Identity)
+4. **WarpStream**: **Confirmed** - Native Azure Blob Storage support using `azblob://` URL scheme
 
-1. Break the task into steps where possible.
-2. Implement the required changes in the codebase.
-3. Add and run relevant tests and linters.
-4. Perform basic manual verification if applicable.
-5. After completion, write a report to `{@artifacts_path}/report.md` describing:
-   - What was implemented
-   - How the solution was tested
-   - The biggest issues or challenges encountered
+---
+
+### [ ] Step: Update Secrets Infrastructure
+
+Modify `gitops/applications/infrastructure/Secrets.cs`:
+- Update mock credentials from AWS format to Azure format
+- Add new secret structure for Azure credentials
+
+**Verification**: Build passes with `dotnet build`
+
+---
+
+### [ ] Step: Update Flink Session Mode
+
+Modify `gitops/applications/flink/flink-session-mode/FlinkClusterBuilder.cs`:
+- Update external secret reference from S3 to Azure
+- Replace S3 paths with Azure Blob Storage paths in ConfigMap
+- Replace AWS credential env vars with Azure equivalents
+
+**Verification**:
+- `dotnet build` passes
+- Generated manifests show Azure paths
+
+---
+
+### [ ] Step: Update Flink Deployment Mode
+
+Modify `gitops/applications/flink/flink-deployment/FlinkDeploymentBuilder.cs`:
+- Change `_s3BucketPath` to Azure path
+- Replace AWS CLI container with Azure CLI container
+- Replace `aws s3 cp` commands with `az storage blob download`
+- Update credential env vars
+
+**Verification**:
+- `dotnet build` passes
+- Generated manifests show Azure CLI and commands
+
+---
+
+### [ ] Step: Update Polaris Iceberg Catalog
+
+Modify `gitops/applications/polaris/Polaris.cs`:
+- Change storage location from S3 to Azure
+- Update storage type detection from `s3*` to Azure pattern
+- Replace AWS_ROLE_ARN with Azure credentials
+- Update storage config JSON for Azure
+
+**Verification**:
+- `dotnet build` passes
+- Catalog creator script handles Azure paths correctly
+
+---
+
+### [ ] Step: Update Kafka Connect
+
+Modify `gitops/applications/kafkaconnect/KafkaConnectClusterBuilder.cs`:
+- Replace AWS credential env vars with Azure equivalents
+
+**Verification**: `dotnet build` passes
+
+---
+
+### [ ] Step: Update Trino Manifest
+
+Modify `gitops/manifests/trino/values.yaml`:
+- Replace AWS credential env vars with Azure
+- Replace S3 filesystem config with Azure Blob Storage config
+
+**Verification**: Valid YAML syntax, no S3 references
+
+---
+
+### [ ] Step: Update WarpStream Manifests
+
+Modify:
+- `gitops/manifests/warpstream-agent/values.yaml`
+- `gitops/manifests/warpstream-schema-registry/values.yaml`
+
+Changes:
+- Replace S3 bucket URLs with Azure URLs
+- Replace AWS credentials with Azure credentials
+- Remove IAM role ARN
+
+**Verification**: Valid YAML syntax, no S3 references
+
+---
+
+### [ ] Step: Update Polaris Helm Values
+
+Modify `gitops/manifests/polaris/values.yaml`:
+- Replace AWS_STORAGE_BUCKET with Azure storage path
+- Replace AWS credential env vars with Azure equivalents
+
+**Verification**: Valid YAML syntax, no AWS references
+
+---
+
+### [ ] Step: Final Verification
+
+1. Run `dotnet build` in gitops directory
+2. Search for residual S3/AWS references:
+   - `grep -r "s3://" gitops/`
+   - `grep -r "AWS_ACCESS_KEY" gitops/`
+   - `grep -r "amazonaws" gitops/`
+3. Verify all generated manifests use Azure paths
+4. Document any remaining items that need manual updates
+
+---
+
+### [ ] Step: Write Report
+
+Write completion report to `report.md`:
+- What was implemented
+- How the solution was tested
+- Challenges encountered
+- Any remaining manual steps needed
