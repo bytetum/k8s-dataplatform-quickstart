@@ -37,7 +37,7 @@ internal class Secrets : ComponentResource
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4",
-                                Value = "{\"AWS_ACCESS_KEY\": \"AWS_ACCESS_KEY\", \"AWS_SECRET_KEY\": \"AWS_SECRET_KEY\", \"AWS_ROLE_ARN\": \"AWS_ROLE_ARN\", \"AWS_REGION\": \"AWS_REGION\"}",
+                                Value = "{\"AZURE_STORAGE_ACCOUNT_NAME\": \"PLACEHOLDER_STORAGE_ACCOUNT\", \"AZURE_TENANT_ID\": \"PLACEHOLDER_TENANT_ID\", \"AZURE_CLIENT_ID\": \"PLACEHOLDER_CLIENT_ID\"}",
                                 Version = "latest_enabled"
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
@@ -63,7 +63,7 @@ internal class Secrets : ComponentResource
 							new ClusterSecretStoreProviderDataFakeArgs
 							{
 								Key = "id:827b85c8-babe-4a43-8af2-dce1dd530081",
-                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}",
+                                Value = "{\"AZURE_STORAGE_ACCOUNT_NAME\": \"PLACEHOLDER_STORAGE_ACCOUNT\", \"AZURE_TENANT_ID\": \"PLACEHOLDER_TENANT_ID\", \"AZURE_CLIENT_ID\": \"PLACEHOLDER_CLIENT_ID\"}",
 								Version = "latest_enabled"
 							},
 							new ClusterSecretStoreProviderDataFakeArgs
@@ -82,6 +82,12 @@ internal class Secrets : ComponentResource
 							{
 								Key = "id:schema-registry-credentials",
 								Value = "{\"username\": \"ccun_291350ada8541780bdbc5663f2d22855a4da5bf905a576bac6c8dfa95c89db71\", \"password\": \"ccp_956975877bc5eeb62ce21d18c49d320a3d128cb9d0c81278999a742f6272090e\"}",
+								Version = "latest_enabled"
+							},
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:flink-azure-credentials-secret",
+								Value = "{\"AZURE_STORAGE_ACCOUNT_NAME\": \"PLACEHOLDER_STORAGE_ACCOUNT\", \"AZURE_TENANT_ID\": \"PLACEHOLDER_TENANT_ID\", \"AZURE_CLIENT_ID\": \"PLACEHOLDER_CLIENT_ID\"}",
 								Version = "latest_enabled"
 							},
                         }

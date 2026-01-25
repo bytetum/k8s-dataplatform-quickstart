@@ -46,13 +46,22 @@ Do not make assumptions on important decisions — get clarification first.
 
 ---
 
-### [ ] Step: Update Secrets Infrastructure
+### [x] Step: Update Secrets Infrastructure
+<!-- chat-id: aa6b03c8-a5c1-4d71-bc7c-d13181170f31 -->
 
 Modify `gitops/applications/infrastructure/Secrets.cs`:
 - Update mock credentials from AWS format to Azure format
 - Add new secret structure for Azure credentials
 
 **Verification**: Build passes with `dotnet build`
+
+**Completed**: Updated `Secrets.cs` with the following changes:
+- Changed iceberg bucket credentials (`id:c2f85be8-7fd0-402d-8229-6de987bcbbb4`) from AWS format to Azure format
+- Changed warpstream credentials (`id:827b85c8-babe-4a43-8af2-dce1dd530081`) from Scaleway/AWS format to Azure format
+- Added new Flink Azure credentials secret (`id:flink-azure-credentials-secret`)
+- All Azure credentials now use: `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` placeholders
+
+**Note**: Build has pre-existing errors unrelated to this change (KafkaConnect namespace missing). Secrets.cs compiles without errors.
 
 ---
 
