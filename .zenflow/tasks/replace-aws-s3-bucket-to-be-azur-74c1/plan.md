@@ -93,7 +93,7 @@ Modify `gitops/applications/flink/flink-session-mode/FlinkClusterBuilder.cs`:
 
 ---
 
-### [ ] Step: Update Flink Deployment Mode
+### [x] Step: Update Flink Deployment Mode
 <!-- chat-id: 771e02e3-4bb6-4b01-a547-0074b84c989b -->
 
 Modify `gitops/applications/flink/flink-deployment/FlinkDeploymentBuilder.cs`:
@@ -105,6 +105,18 @@ Modify `gitops/applications/flink/flink-deployment/FlinkDeploymentBuilder.cs`:
 **Verification**:
 - `dotnet build` passes
 - Generated manifests show Azure CLI and commands
+
+**Completed**: Updated `FlinkDeploymentBuilder.cs` with the following changes:
+- Renamed `_s3BucketPath` to `_azureBlobPath` and changed value from `s3://local-rocksdb-test` to `abfss://flink@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net`
+- Updated all Flink configuration paths (checkpoints, savepoints, HA storage, completed-jobs) to use Azure Blob Storage format
+- Replaced `amazon/aws-cli:latest` container image with `mcr.microsoft.com/azure-cli:latest`
+- Replaced AWS credential env vars (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) with Azure equivalents (`AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`) in:
+  - Main flink container
+  - Init container
+- Replaced `aws s3 cp` commands with `az storage blob download --account-name $AZURE_STORAGE_ACCOUNT_NAME --container-name flink --auth-mode login`
+- Added helper method `GetBlobName()` to extract blob name from Azure paths
+
+**Note**: Build has pre-existing errors unrelated to this change (KafkaConnect namespace missing). FlinkDeploymentBuilder.cs compiles without errors.
 
 ---
 
