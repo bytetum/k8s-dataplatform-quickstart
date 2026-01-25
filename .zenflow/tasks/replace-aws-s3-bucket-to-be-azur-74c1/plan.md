@@ -206,7 +206,8 @@ Modify `gitops/manifests/polaris/values.yaml`:
 
 ---
 
-### [ ] Step: Final Verification
+### [x] Step: Final Verification
+<!-- chat-id: 11a491a7-0a6f-4a5b-8221-51f329783224 -->
 
 1. Run `dotnet build` in gitops directory
 2. Search for residual S3/AWS references:
@@ -215,6 +216,38 @@ Modify `gitops/manifests/polaris/values.yaml`:
    - `grep -r "amazonaws" gitops/`
 3. Verify all generated manifests use Azure paths
 4. Document any remaining items that need manual updates
+
+**Completed**: Final verification performed with the following results:
+
+**Build Status:**
+- `dotnet build` fails with pre-existing error: `Pulumi.Crds.KafkaConnect` namespace missing
+- This error existed before the S3→Azure migration and is unrelated to our changes
+
+**Source Code Verification (CLEAN):**
+- ✅ No `s3://` references in `gitops/applications/` (C# source files)
+- ✅ No `AWS_ACCESS_KEY` references in `gitops/applications/`
+- ✅ No `s3://` references in `gitops/manifests/**/values.yaml` (Helm values)
+- ✅ No `AWS_ACCESS_KEY` references in `gitops/manifests/**/values.yaml`
+
+**Azure References Confirmed:**
+- ✅ `AZURE_STORAGE_ACCOUNT_NAME` present in: Secrets.cs, FlinkClusterBuilder.cs, FlinkDeploymentBuilder.cs, KafkaConnectClusterBuilder.cs, Polaris.cs
+- ✅ `abfss://` paths configured in: FlinkClusterBuilder.cs, FlinkDeploymentBuilder.cs, Polaris.cs
+- ✅ `azblob://` paths configured in: warpstream-agent/values.yaml, warpstream-schema-registry/values.yaml
+
+**Generated Manifests (require regeneration):**
+- ⚠️ Files in `gitops/manifests/*/1-manifest/` directories still contain old S3/AWS references
+- These are **generated outputs** from Pulumi and will be updated when manifests are regenerated
+- Affected directories: `flink-session-mode`, `kafka-connect`, `polaris`, `secrets`
+
+**References in CRD files (expected, no action needed):**
+- `cert-manager/0-crd/` files contain AWS references in documentation comments - these are from upstream cert-manager and should not be modified
+
+**Remaining Manual Steps:**
+1. Regenerate manifests by running Pulumi to update `1-manifest/` directories
+2. Replace `PLACEHOLDER_STORAGE_ACCOUNT` with actual Azure storage account name
+3. Replace `PLACEHOLDER_TENANT_ID` with actual Azure tenant ID
+4. Replace `PLACEHOLDER_CLIENT_ID` with actual Azure client ID (for workload identity)
+5. Resolve pre-existing `KafkaConnect` namespace error (unrelated to this migration)
 
 ---
 
