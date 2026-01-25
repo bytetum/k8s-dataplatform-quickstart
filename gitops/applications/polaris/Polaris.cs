@@ -52,7 +52,7 @@ public class Polaris : ComponentResource
                                 new EnvVarArgs
                                 {
                                     Name = "STORAGE_LOCATION",
-                                    Value = "s3://local-iceberg-test/"
+                                    Value = "abfss://iceberg@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/"
                                 },
                                 new EnvVarArgs
                                 {
@@ -73,13 +73,37 @@ public class Polaris : ComponentResource
                                 },
                                 new EnvVarArgs
                                 {
-                                    Name = "AWS_ROLE_ARN",
+                                    Name = "AZURE_STORAGE_ACCOUNT_NAME",
                                     ValueFrom = new EnvVarSourceArgs
                                     {
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "iceberg-bucket-credentials",
-                                            Key = "AWS_ROLE_ARN"
+                                            Key = "AZURE_STORAGE_ACCOUNT_NAME"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "AZURE_TENANT_ID",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "iceberg-bucket-credentials",
+                                            Key = "AZURE_TENANT_ID"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "AZURE_CLIENT_ID",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "iceberg-bucket-credentials",
+                                            Key = "AZURE_CLIENT_ID"
                                         }
                                     }
                                 }
@@ -105,20 +129,24 @@ public class Polaris : ComponentResource
                                 echo
                                 echo "Obtained access token: ${token}"
 
-                                if [[ "$STORAGE_LOCATION" == s3* ]]; then
+                                if [[ "$STORAGE_LOCATION" == abfss://* ]] || [[ "$STORAGE_LOCATION" == wasbs://* ]] || [[ "$STORAGE_LOCATION" == az://* ]]; then
+                                    STORAGE_TYPE="AZURE"
+                                elif [[ "$STORAGE_LOCATION" == s3* ]]; then
                                     STORAGE_TYPE="S3"
                                 else
-                                    echo "Error: Only S3 storage is supported. STORAGE_LOCATION must start with 's3'."
+                                    echo "Error: Unsupported storage type. STORAGE_LOCATION must start with 'abfss://', 'wasbs://', 'az://', or 's3'."
                                     exit 1
                                 fi
-                                
+
                                 echo "Using StorageType: $STORAGE_TYPE"
 
                                 STORAGE_CONFIG_INFO="{\"storageType\": \"$STORAGE_TYPE\", \"allowedLocations\": [\"$STORAGE_LOCATION\"]}"
-                                if [ -n "${AWS_ROLE_ARN}" ]; then
-                                    STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg roleArn "$AWS_ROLE_ARN" '. + {roleArn: $roleArn}')
-                                else
-                                    echo "Warning: AWS_ROLE_ARN not set for S3 storage"
+                                if [ "$STORAGE_TYPE" = "AZURE" ]; then
+                                    if [ -n "${AZURE_TENANT_ID}" ]; then
+                                        STORAGE_CONFIG_INFO=$(echo "$STORAGE_CONFIG_INFO" | jq --arg tenantId "$AZURE_TENANT_ID" '. + {tenantId: $tenantId}')
+                                    fi
+                                elif [ "$STORAGE_TYPE" = "S3" ]; then
+                                    echo "Warning: S3 storage detected but AWS_ROLE_ARN is no longer configured"
                                 fi
 
                                 response=$(curl -s -w "\n%{http_code}" \

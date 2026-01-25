@@ -120,7 +120,8 @@ Modify `gitops/applications/flink/flink-deployment/FlinkDeploymentBuilder.cs`:
 
 ---
 
-### [ ] Step: Update Polaris Iceberg Catalog
+### [x] Step: Update Polaris Iceberg Catalog
+<!-- chat-id: 62b34514-33bd-4761-bf97-7fc8f43f6194 -->
 
 Modify `gitops/applications/polaris/Polaris.cs`:
 - Change storage location from S3 to Azure
@@ -131,6 +132,14 @@ Modify `gitops/applications/polaris/Polaris.cs`:
 **Verification**:
 - `dotnet build` passes
 - Catalog creator script handles Azure paths correctly
+
+**Completed**: Updated `Polaris.cs` with the following changes:
+- Changed storage location from `s3://local-iceberg-test/` to `abfss://iceberg@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/`
+- Replaced `AWS_ROLE_ARN` env var with Azure credentials (`AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`)
+- Updated storage type detection in shell script to support Azure patterns (`abfss://`, `wasbs://`, `az://`) in addition to S3
+- Updated storage config JSON to add `tenantId` for Azure storage type instead of `roleArn` for S3
+
+**Note**: Build has pre-existing errors unrelated to this change (KafkaConnect namespace missing). Polaris.cs compiles without errors.
 
 ---
 
