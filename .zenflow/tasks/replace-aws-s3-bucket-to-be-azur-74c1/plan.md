@@ -94,6 +94,7 @@ Modify `gitops/applications/flink/flink-session-mode/FlinkClusterBuilder.cs`:
 ---
 
 ### [ ] Step: Update Flink Deployment Mode
+<!-- chat-id: 771e02e3-4bb6-4b01-a547-0074b84c989b -->
 
 Modify `gitops/applications/flink/flink-deployment/FlinkDeploymentBuilder.cs`:
 - Change `_s3BucketPath` to Azure path

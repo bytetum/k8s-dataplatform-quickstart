@@ -22,7 +22,7 @@ internal class FlinkDeploymentBuilder
     private int _jobParallelism = 1;
     private string _kafkaBootstrapServers = "warpstream-agent.default.svc.cluster.local:9092";
     private string _sqlFilePath = "";
-    private string _s3BucketPath = "s3://local-rocksdb-test";
+    private string _azureBlobPath = "abfss://flink@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net";
     private string _entryClass = "";
     private string _jarFilePath = "";
     private UpgradeMode _upgradeMode = UpgradeMode.Stateless;
@@ -174,18 +174,18 @@ internal class FlinkDeploymentBuilder
                         TaskManagerNumberOfTaskSlots = _taskSlots.ToString(),
                         
                         HighAvailabilityType = "kubernetes",
-                        HighAvailabilityStorageDir = $"{_s3BucketPath}/flink-apps/{_deploymentName}/ha",
+                        HighAvailabilityStorageDir = $"{_azureBlobPath}/flink-apps/{_deploymentName}/ha",
 
                         ExecutionCheckpointingInterval = "1min",
                         ExecutionCheckpointingStorage = "filesystem",
                         ExecutionCheckpointingDir =
-                            $"{_s3BucketPath}/flink-apps/{_deploymentName}/checkpoints",
+                            $"{_azureBlobPath}/flink-apps/{_deploymentName}/checkpoints",
                         ExecutionCheckpointingSavepointDir =
-                            $"{_s3BucketPath}/flink-apps/{_deploymentName}/savepoints",
+                            $"{_azureBlobPath}/flink-apps/{_deploymentName}/savepoints",
                         StateBackendType = "rocksdb",
                         ExecutionCheckpointingIncremental = true,
                         StateBackendRocksDbLocalDir = "/data/rocksdb",
-                        JobManagerArchiveFsDir = $"{_s3BucketPath}/flink-common/completed-jobs",
+                        JobManagerArchiveFsDir = $"{_azureBlobPath}/flink-common/completed-jobs",
                         KafkaBootstrapServers = _kafkaBootstrapServers,
                         
                         // Prometheus metrics reporter configuration
@@ -222,25 +222,37 @@ internal class FlinkDeploymentBuilder
                                     {
                                         new EnvVarArgs
                                         {
-                                            Name = "AWS_ACCESS_KEY_ID",
+                                            Name = "AZURE_STORAGE_ACCOUNT_NAME",
                                             ValueFrom = new EnvVarSourceArgs
                                             {
                                                 SecretKeyRef = new SecretKeySelectorArgs
                                                 {
                                                     Name = "flink-bucket-credentials",
-                                                    Key = "AWS_ACCESS_KEY_ID"
+                                                    Key = "AZURE_STORAGE_ACCOUNT_NAME"
                                                 }
                                             }
                                         },
                                         new EnvVarArgs
                                         {
-                                            Name = "AWS_SECRET_ACCESS_KEY",
+                                            Name = "AZURE_TENANT_ID",
                                             ValueFrom = new EnvVarSourceArgs
                                             {
                                                 SecretKeyRef = new SecretKeySelectorArgs
                                                 {
                                                     Name = "flink-bucket-credentials",
-                                                    Key = "AWS_SECRET_ACCESS_KEY"
+                                                    Key = "AZURE_TENANT_ID"
+                                                }
+                                            }
+                                        },
+                                        new EnvVarArgs
+                                        {
+                                            Name = "AZURE_CLIENT_ID",
+                                            ValueFrom = new EnvVarSourceArgs
+                                            {
+                                                SecretKeyRef = new SecretKeySelectorArgs
+                                                {
+                                                    Name = "flink-bucket-credentials",
+                                                    Key = "AZURE_CLIENT_ID"
                                                 }
                                             }
                                         }
@@ -270,30 +282,42 @@ internal class FlinkDeploymentBuilder
                                 new ContainerArgs
                                 {
                                     Name = "init-get-jars",
-                                    Image = "amazon/aws-cli:latest",
+                                    Image = "mcr.microsoft.com/azure-cli:latest",
                                     Env = new InputList<EnvVarArgs>
                                     {
                                         new EnvVarArgs
                                         {
-                                            Name = "AWS_ACCESS_KEY_ID",
+                                            Name = "AZURE_STORAGE_ACCOUNT_NAME",
                                             ValueFrom = new EnvVarSourceArgs
                                             {
                                                 SecretKeyRef = new SecretKeySelectorArgs
                                                 {
                                                     Name = "flink-bucket-credentials",
-                                                    Key = "AWS_ACCESS_KEY_ID"
+                                                    Key = "AZURE_STORAGE_ACCOUNT_NAME"
                                                 }
                                             }
                                         },
                                         new EnvVarArgs
                                         {
-                                            Name = "AWS_SECRET_ACCESS_KEY",
+                                            Name = "AZURE_TENANT_ID",
                                             ValueFrom = new EnvVarSourceArgs
                                             {
                                                 SecretKeyRef = new SecretKeySelectorArgs
                                                 {
                                                     Name = "flink-bucket-credentials",
-                                                    Key = "AWS_SECRET_ACCESS_KEY"
+                                                    Key = "AZURE_TENANT_ID"
+                                                }
+                                            }
+                                        },
+                                        new EnvVarArgs
+                                        {
+                                            Name = "AZURE_CLIENT_ID",
+                                            ValueFrom = new EnvVarSourceArgs
+                                            {
+                                                SecretKeyRef = new SecretKeySelectorArgs
+                                                {
+                                                    Name = "flink-bucket-credentials",
+                                                    Key = "AZURE_CLIENT_ID"
                                                 }
                                             }
                                         }
@@ -302,9 +326,10 @@ internal class FlinkDeploymentBuilder
                                     {
                                         "sh", "-c",
                                         // Download JAR if jarFilePath is set, otherwise download SQL script
+                                        // Using az storage blob download with managed identity authentication
                                         !string.IsNullOrEmpty(_jarFilePath)
-                                            ? $"aws s3 cp {_jarFilePath} /opt/flink/jar/{System.IO.Path.GetFileName(_jarFilePath)}"
-                                            : $"aws s3 cp {_sqlFilePath} /opt/flink/sql/{System.IO.Path.GetFileName(_sqlFilePath)}"
+                                            ? $"az storage blob download --account-name $AZURE_STORAGE_ACCOUNT_NAME --container-name flink --name {GetBlobName(_jarFilePath)} --file /opt/flink/jar/{System.IO.Path.GetFileName(_jarFilePath)} --auth-mode login"
+                                            : $"az storage blob download --account-name $AZURE_STORAGE_ACCOUNT_NAME --container-name flink --name {GetBlobName(_sqlFilePath)} --file /opt/flink/sql/{System.IO.Path.GetFileName(_sqlFilePath)} --auth-mode login"
                                     },
                                     VolumeMounts = new InputList<VolumeMountArgs>
                                     {
@@ -370,7 +395,29 @@ internal class FlinkDeploymentBuilder
 
         return flinkDeploymentComponent;
     }
-    
+
+    /// <summary>
+    /// Extracts the blob name from an Azure Blob Storage path.
+    /// For abfss:// URLs, extracts the path portion after the container.
+    /// For simple paths, returns the path as-is.
+    /// </summary>
+    private static string GetBlobName(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return path;
+
+        // Handle abfss:// URL format: abfss://container@account.dfs.core.windows.net/path/to/blob
+        if (path.StartsWith("abfss://", StringComparison.OrdinalIgnoreCase))
+        {
+            var uri = new Uri(path);
+            // Remove leading slash from path
+            return uri.AbsolutePath.TrimStart('/');
+        }
+
+        // For simple paths, return as-is
+        return path;
+    }
+
     public enum UpgradeMode
     {
         Stateless,
