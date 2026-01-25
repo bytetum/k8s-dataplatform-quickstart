@@ -5,21 +5,26 @@ config:
   agentKeySecretKeyRef:
     name: warpstream-agent-apikey
     key: agent_key
-  bucketURL: "s3://local-warpstream-test?region=ap-southeast-1"
+  bucketURL: "azblob://warpstream"
   virtualClusterID: "vci_6a0d7057_e98d_4c8d_8fd1_c8aff07c88cb"
   region: "us-east-1"
 
 extraEnv:
-  - name: AWS_ACCESS_KEY_ID
+  - name: AZURE_STORAGE_ACCOUNT_NAME
     valueFrom:
       secretKeyRef:
         name: warpstream-bucket-credentials
-        key: SCALEWAY_ACCESS_KEY
-  - name: AWS_SECRET_ACCESS_KEY
+        key: AZURE_STORAGE_ACCOUNT_NAME
+  - name: AZURE_TENANT_ID
     valueFrom:
       secretKeyRef:
         name: warpstream-bucket-credentials
-        key: SCALEWAY_SECRET_KEY
+        key: AZURE_TENANT_ID
+  - name: AZURE_CLIENT_ID
+    valueFrom:
+      secretKeyRef:
+        name: warpstream-bucket-credentials
+        key: AZURE_CLIENT_ID
 
   - name: WARPSTREAM_TEST_MODE
     value: "true"
@@ -27,8 +32,7 @@ extraEnv:
   - name: WARPSTREAM_IS_DEMO_OR_PLAYGROUND
     value: "True"
     
-  - name: WARPSTREAM_BUCKET_ASSUME_ROLE_ARN_DEFAULT
-    value: arn:aws:iam::938635786472:role/local-warpstream-test
+
     
 service:
   type: ClusterIP

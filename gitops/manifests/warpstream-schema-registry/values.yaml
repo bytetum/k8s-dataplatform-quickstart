@@ -7,21 +7,26 @@ config:
   agentKeySecretKeyRef:
     name: warpstream-schema-registry-secrets
     key: agent_key
-  bucketURL: "s3://local-warpstream-test?region=ap-southeast-1"
+  bucketURL: "azblob://warpstream"
   virtualClusterID: "vci_sr_6a2b68c3_ed05_4454_b045_ed6b4b223f52"
   region: "us-east-1"
 
 extraEnv:
-  - name: AWS_ACCESS_KEY_ID
+  - name: AZURE_STORAGE_ACCOUNT_NAME
     valueFrom:
       secretKeyRef:
         name: warpstream-bucket-credentials
-        key: SCALEWAY_ACCESS_KEY
-  - name: AWS_SECRET_ACCESS_KEY
+        key: AZURE_STORAGE_ACCOUNT_NAME
+  - name: AZURE_TENANT_ID
     valueFrom:
       secretKeyRef:
         name: warpstream-bucket-credentials
-        key: SCALEWAY_SECRET_KEY
+        key: AZURE_TENANT_ID
+  - name: AZURE_CLIENT_ID
+    valueFrom:
+      secretKeyRef:
+        name: warpstream-bucket-credentials
+        key: AZURE_CLIENT_ID
 
   # BASIC AUTHENTICATION CONFIGURATION
   - name: WARPSTREAM_SCHEMA_REGISTRY_BASIC_AUTH_ENABLED

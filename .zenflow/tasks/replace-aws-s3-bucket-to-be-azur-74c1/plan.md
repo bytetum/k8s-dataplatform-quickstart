@@ -143,23 +143,31 @@ Modify `gitops/applications/polaris/Polaris.cs`:
 
 ---
 
-### [ ] Step: Update Kafka Connect
-<!-- chat-id: 61eabc4b-9f53-47e2-92b4-9ddf7d4c2f8d -->
+### [x] Step: Update Kafka Connect
 
 Modify `gitops/applications/kafkaconnect/KafkaConnectClusterBuilder.cs`:
 - Replace AWS credential env vars with Azure equivalents
 
 **Verification**: `dotnet build` passes
 
+**Completed**: Updated `KafkaConnectClusterBuilder.cs` with the following changes:
+- Replaced AWS credential env vars (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`) with Azure equivalents (`AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`) in both spec dictionary and object args.
+
+**Note**: Build continues to fail with pre-existing `Pulumi.Crds.KafkaConnect` missing namespace error.
+
 ---
 
-### [ ] Step: Update Trino Manifest
+### [x] Step: Update Trino Manifest
 
 Modify `gitops/manifests/trino/values.yaml`:
 - Replace AWS credential env vars with Azure
 - Replace S3 filesystem config with Azure Blob Storage config
 
 **Verification**: Valid YAML syntax, no S3 references
+
+**Completed**: Updated `values.yaml` with the following changes:
+- Replaced AWS env vars with `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`.
+- Replaced `fs.native-s3.enabled=true` block with `fs.native-azure.enabled=true`.
 
 ---
 

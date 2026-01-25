@@ -201,9 +201,9 @@ public class KafkaConnectClusterBuilder
                 {
                     ["env"] = new List<Dictionary<string, object>>
                     {
-                        CreateEnvVar("AWS_ACCESS_KEY_ID", "iceberg-bucket-credentials", "AWS_ACCESS_KEY"),
-                        CreateEnvVar("AWS_SECRET_ACCESS_KEY", "iceberg-bucket-credentials", "AWS_SECRET_KEY"),
-                        CreateEnvVar("AWS_REGION", "iceberg-bucket-credentials", "AWS_REGION"),
+                        CreateEnvVar("AZURE_STORAGE_ACCOUNT_NAME", "iceberg-bucket-credentials", "AZURE_STORAGE_ACCOUNT_NAME"),
+                        CreateEnvVar("AZURE_TENANT_ID", "iceberg-bucket-credentials", "AZURE_TENANT_ID"),
+                        CreateEnvVar("AZURE_CLIENT_ID", "iceberg-bucket-credentials", "AZURE_CLIENT_ID"),
                         CreateEnvVar("POLARIS_PASSWORD", "polaris-root-password", "polaris-root-password"),
                         CreateEnvVar("SCHEMA_REGISTRY_USERNAME", "schema-registry-credentials", "username"),
                         CreateEnvVar("SCHEMA_REGISTRY_PASSWORD", "schema-registry-credentials", "password"),
@@ -275,9 +275,9 @@ public class KafkaConnectClusterBuilder
                     {
                         Env = new InputList<EnvVarArgs>
                         {
-                            CreateEnvVarArgs("AWS_ACCESS_KEY_ID", "iceberg-bucket-credentials", "AWS_ACCESS_KEY"),
-                            CreateEnvVarArgs("AWS_SECRET_ACCESS_KEY", "iceberg-bucket-credentials", "AWS_SECRET_KEY"),
-                            CreateEnvVarArgs("AWS_REGION", "iceberg-bucket-credentials", "AWS_REGION"),
+                            CreateEnvVarArgs("AZURE_STORAGE_ACCOUNT_NAME", "iceberg-bucket-credentials", "AZURE_STORAGE_ACCOUNT_NAME"),
+                            CreateEnvVarArgs("AZURE_TENANT_ID", "iceberg-bucket-credentials", "AZURE_TENANT_ID"),
+                            CreateEnvVarArgs("AZURE_CLIENT_ID", "iceberg-bucket-credentials", "AZURE_CLIENT_ID"),
                             CreateEnvVarArgs("POLARIS_PASSWORD", "polaris-root-password", "polaris-root-password"),
                             CreateEnvVarArgs("SCHEMA_REGISTRY_USERNAME", "schema-registry-credentials", "username"),
                             CreateEnvVarArgs("SCHEMA_REGISTRY_PASSWORD", "schema-registry-credentials", "password"),

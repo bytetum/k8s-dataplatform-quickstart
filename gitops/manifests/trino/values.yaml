@@ -13,21 +13,21 @@ env:
       secretKeyRef:
         name: trino-polaris-credentials
         key: polaris-root-password
-  - name: AWS_ACCESS_KEY_ID
+  - name: AZURE_STORAGE_ACCOUNT_NAME
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: AWS_ACCESS_KEY
-  - name: AWS_SECRET_ACCESS_KEY
+        key: AZURE_STORAGE_ACCOUNT_NAME
+  - name: AZURE_TENANT_ID
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: AWS_SECRET_KEY
-  - name: AWS_REGION
+        key: AZURE_TENANT_ID
+  - name: AZURE_CLIENT_ID
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: AWS_REGION
+        key: AZURE_CLIENT_ID
 
 worker:
   replicas: 1
@@ -52,9 +52,7 @@ catalogs:
     iceberg.rest-catalog.oauth2.credential=root:${ENV:POLARIS_ROOT_PASSWORD}
     iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
     iceberg.rest-catalog.oauth2.server-uri=http://polaris.polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
-    fs.native-s3.enabled=true
-    s3.endpoint=https://s3.amazonaws.com
-    s3.region=eu-west-3
+    fs.native-azure.enabled=true
 
   # Keep the default test catalogs for verification
   tpch: |
