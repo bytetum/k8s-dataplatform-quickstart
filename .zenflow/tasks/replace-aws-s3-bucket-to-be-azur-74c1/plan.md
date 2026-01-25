@@ -66,6 +66,7 @@ Modify `gitops/applications/infrastructure/Secrets.cs`:
 ---
 
 ### [ ] Step: Update Flink Session Mode
+<!-- chat-id: c6fb789f-47ae-4c32-a825-7b0637d8a033 -->
 
 Modify `gitops/applications/flink/flink-session-mode/FlinkClusterBuilder.cs`:
 - Update external secret reference from S3 to Azure

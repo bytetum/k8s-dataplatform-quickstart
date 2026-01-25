@@ -112,7 +112,7 @@ internal class FlinkClusterBuilder
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:flink-s3-credentials-secret"
+                        Key = "id:flink-azure-credentials-secret"
                     }
                 }
             }
@@ -289,14 +289,14 @@ internal class FlinkClusterBuilder
 
                          execution.checkpointing.interval: 1min
                          execution.checkpointing.storage: filesystem
-                         execution.checkpointing.dir: s3://local-rocksdb-test/flink-session-mode/checkpoints
+                         execution.checkpointing.dir: abfss://flink@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/flink-session-mode/checkpoints
 
                          state.backend.type: rocksdb
                          execution.checkpointing.incremental: true
-                         execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-session-mode/savepoints
+                         execution.checkpointing.savepoint-dir: abfss://flink@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/flink-session-mode/savepoints
                          state.backend.rocksdb.localdir: /data/rocksdb
-                         jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-session-mode/completed-jobs
-                         high-availability.storageDir: s3://local-rocksdb-test/flink-session-mode/ha
+                         jobmanager.archive.fs.dir: abfss://flink@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/flink-session-mode/completed-jobs
+                         high-availability.storageDir: abfss://flink@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/flink-session-mode/ha
                          kubernetes.cluster-id: flink-session-cluster-01
                          high-availability.type: kubernetes
 
@@ -396,25 +396,37 @@ internal class FlinkClusterBuilder
                             {
                                 new EnvVarArgs
                                 {
-                                    Name = "AWS_ACCESS_KEY_ID",
+                                    Name = "AZURE_STORAGE_ACCOUNT_NAME",
                                     ValueFrom = new EnvVarSourceArgs
                                     {
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_ACCESS_KEY_ID"
+                                            Key = "AZURE_STORAGE_ACCOUNT_NAME"
                                         }
                                     }
                                 },
                                 new EnvVarArgs
                                 {
-                                    Name = "AWS_SECRET_ACCESS_KEY",
+                                    Name = "AZURE_TENANT_ID",
                                     ValueFrom = new EnvVarSourceArgs
                                     {
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_SECRET_ACCESS_KEY"
+                                            Key = "AZURE_TENANT_ID"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "AZURE_CLIENT_ID",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "flink-bucket-credentials",
+                                            Key = "AZURE_CLIENT_ID"
                                         }
                                     }
                                 },
@@ -530,25 +542,37 @@ internal class FlinkClusterBuilder
                             {
                                 new EnvVarArgs
                                 {
-                                    Name = "AWS_ACCESS_KEY_ID",
+                                    Name = "AZURE_STORAGE_ACCOUNT_NAME",
                                     ValueFrom = new EnvVarSourceArgs
                                     {
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_ACCESS_KEY_ID"
+                                            Key = "AZURE_STORAGE_ACCOUNT_NAME"
                                         }
                                     }
                                 },
                                 new EnvVarArgs
                                 {
-                                    Name = "AWS_SECRET_ACCESS_KEY",
+                                    Name = "AZURE_TENANT_ID",
                                     ValueFrom = new EnvVarSourceArgs
                                     {
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_SECRET_ACCESS_KEY"
+                                            Key = "AZURE_TENANT_ID"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "AZURE_CLIENT_ID",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "flink-bucket-credentials",
+                                            Key = "AZURE_CLIENT_ID"
                                         }
                                     }
                                 },
@@ -639,25 +663,37 @@ internal class FlinkClusterBuilder
                             {
                                 new EnvVarArgs
                                 {
-                                    Name = "AWS_ACCESS_KEY_ID",
+                                    Name = "AZURE_STORAGE_ACCOUNT_NAME",
                                     ValueFrom = new EnvVarSourceArgs
                                     {
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_ACCESS_KEY_ID"
+                                            Key = "AZURE_STORAGE_ACCOUNT_NAME"
                                         }
                                     }
                                 },
                                 new EnvVarArgs
                                 {
-                                    Name = "AWS_SECRET_ACCESS_KEY",
+                                    Name = "AZURE_TENANT_ID",
                                     ValueFrom = new EnvVarSourceArgs
                                     {
                                         SecretKeyRef = new SecretKeySelectorArgs
                                         {
                                             Name = "flink-bucket-credentials",
-                                            Key = "AWS_SECRET_ACCESS_KEY"
+                                            Key = "AZURE_TENANT_ID"
+                                        }
+                                    }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "AZURE_CLIENT_ID",
+                                    ValueFrom = new EnvVarSourceArgs
+                                    {
+                                        SecretKeyRef = new SecretKeySelectorArgs
+                                        {
+                                            Name = "flink-bucket-credentials",
+                                            Key = "AZURE_CLIENT_ID"
                                         }
                                     }
                                 },
