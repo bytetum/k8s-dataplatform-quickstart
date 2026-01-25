@@ -6,23 +6,23 @@ metrics:
     {}
 
 extraEnv:
-  - name: AWS_STORAGE_BUCKET
-    value: s3://local-iceberg-test/
-  - name: AWS_REGION
+  - name: AZURE_STORAGE_BUCKET
+    value: abfss://iceberg@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/
+  - name: AZURE_STORAGE_ACCOUNT_NAME
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: AWS_REGION
-  - name: AWS_ACCESS_KEY_ID
+        key: AZURE_STORAGE_ACCOUNT_NAME
+  - name: AZURE_TENANT_ID
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: AWS_ACCESS_KEY
-  - name: AWS_SECRET_ACCESS_KEY
+        key: AZURE_TENANT_ID
+  - name: AZURE_CLIENT_ID
     valueFrom:
       secretKeyRef:
         name: iceberg-bucket-credentials
-        key: AWS_SECRET_KEY
+        key: AZURE_CLIENT_ID
 
   - name: POLARIS_PERSISTENCE_TYPE
     value: relational-jdbc

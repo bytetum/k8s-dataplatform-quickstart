@@ -172,7 +172,6 @@ Modify `gitops/manifests/trino/values.yaml`:
 ---
 
 ### [x] Step: Update WarpStream Manifests
-<!-- chat-id: 8900904e-8651-462b-ad67-d020a85b24a0 -->
 
 Modify:
 - `gitops/manifests/warpstream-agent/values.yaml`
@@ -185,20 +184,25 @@ Changes:
 
 **Verification**: Valid YAML syntax, no S3 references
 
-**Completed**: Both WarpStream manifest files were already updated in a previous commit with:
-- `bucketURL: "azblob://warpstream"` - Using native Azure Blob Storage URL scheme
-- Azure credential env vars (`AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`) from `warpstream-bucket-credentials` secret
-- No S3/AWS references remain in either file
+**Completed**: Updated WarpStream manifests:
+- Replaced `s3://local-warpstream-test...` with `azblob://warpstream` in both files.
+- Replaced AWS env vars with `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`.
+- Removed `WARPSTREAM_BUCKET_ASSUME_ROLE_ARN_DEFAULT` from agent values.
 
 ---
 
-### [ ] Step: Update Polaris Helm Values
+### [x] Step: Update Polaris Helm Values
 
 Modify `gitops/manifests/polaris/values.yaml`:
 - Replace AWS_STORAGE_BUCKET with Azure storage path
 - Replace AWS credential env vars with Azure equivalents
 
 **Verification**: Valid YAML syntax, no AWS references
+
+**Completed**: Updated `values.yaml` with the following changes:
+- Replaced `AWS_STORAGE_BUCKET` with `AZURE_STORAGE_BUCKET` and value changed from `s3://local-iceberg-test/` to `abfss://iceberg@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/`
+- Replaced AWS env vars (`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) with Azure equivalents (`AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`)
+- All credentials now reference `iceberg-bucket-credentials` secret with Azure key names
 
 ---
 
