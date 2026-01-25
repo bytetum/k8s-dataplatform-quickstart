@@ -65,7 +65,7 @@ Modify `gitops/applications/infrastructure/Secrets.cs`:
 
 ---
 
-### [ ] Step: Update Flink Session Mode
+### [x] Step: Update Flink Session Mode
 <!-- chat-id: c6fb789f-47ae-4c32-a825-7b0637d8a033 -->
 
 Modify `gitops/applications/flink/flink-session-mode/FlinkClusterBuilder.cs`:
@@ -76,6 +76,20 @@ Modify `gitops/applications/flink/flink-session-mode/FlinkClusterBuilder.cs`:
 **Verification**:
 - `dotnet build` passes
 - Generated manifests show Azure paths
+
+**Completed**: Updated `FlinkClusterBuilder.cs` with the following changes:
+- Changed external secret key from `id:flink-s3-credentials-secret` to `id:flink-azure-credentials-secret`
+- Replaced S3 paths with Azure Blob Storage paths using `abfss://flink@PLACEHOLDER_STORAGE_ACCOUNT.dfs.core.windows.net/flink-session-mode/...` format for:
+  - checkpoints
+  - savepoints
+  - completed-jobs
+  - high-availability storage
+- Replaced AWS credential env vars (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) with Azure equivalents (`AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`) in:
+  - JobManager deployment
+  - TaskManager deployment
+  - SQL Gateway deployment
+
+**Note**: Build has pre-existing errors unrelated to this change (KafkaConnect namespace missing). FlinkClusterBuilder.cs compiles without errors.
 
 ---
 
