@@ -144,6 +144,7 @@ Modify `gitops/applications/polaris/Polaris.cs`:
 ---
 
 ### [ ] Step: Update Kafka Connect
+<!-- chat-id: 61eabc4b-9f53-47e2-92b4-9ddf7d4c2f8d -->
 
 Modify `gitops/applications/kafkaconnect/KafkaConnectClusterBuilder.cs`:
 - Replace AWS credential env vars with Azure equivalents
