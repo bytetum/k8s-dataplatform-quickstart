@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Pulumi.Crds;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
@@ -22,55 +22,67 @@ internal class PostgresDebeziumConnector : ComponentResource
             Parent = this
         });
 
+        var schemaRegistryUrl = "http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094";
+        var schemaRegistryAuth = "${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}";
+
         var config = new Dictionary<string, object>
         {
-            // Database Connection
+            // Database connection
             ["database.hostname"] = "${env:POSTGRES_HOST}",
             ["database.port"] = "${env:POSTGRES_PORT}",
             ["database.user"] = "${env:POSTGRES_USER}",
             ["database.password"] = "${env:POSTGRES_PASSWORD}",
             ["database.dbname"] = "${env:POSTGRES_DB}",
 
-            // Debezium Configuration
-            ["topic.prefix"] = "postgres-cdc",
-            ["table.include.list"] = "public.employees",
-            ["plugin.name"] = "pgoutput",
-            ["slot.name"] = "debezium_test_slot",
-            ["publication.name"] = "dbz_publication",
+            // Connector identity
+            ["topic.prefix"] = "m3-cdc",
 
-            // Snapshot Configuration
+            // Snapshot strategy
             ["snapshot.mode"] = "always",
 
-            // Kafka Converters
-            ["key.converter"] = "org.apache.kafka.connect.json.JsonConverter",
-            ["value.converter"] = "org.apache.kafka.connect.json.JsonConverter",
+            // Table selection
+            ["table.include.list"] = "public.CSYTAB,public.CIDMAS,public.CIDVEN",
+
+            // Replication configuration
+            ["plugin.name"] = "pgoutput",
+            ["publication.name"] = "dbz_m3_publication",
+            ["slot.name"] = "m3_debezium_slot",
+
+            // SMT chain (Single Message Transforms)
+            ["transforms"] = "unwrap,route",
+
+            ["transforms.unwrap.type"] = "io.debezium.transforms.ExtractNewRecordState",
+            ["transforms.unwrap.add.fields"] = "op,source.ts_ms",
+            ["transforms.unwrap.add.headers"] = "op,source.ts_ms",
+            ["transforms.unwrap.delete.handling.mode"] = "rewrite",
+            ["transforms.unwrap.drop.tombstones"] = true,
+
+            ["transforms.route.type"] = "org.apache.kafka.connect.transforms.RegexRouter",
+            ["transforms.route.regex"] = "m3-cdc.public.(.*)",
+            ["transforms.route.replacement"] = "bronze.m3.$1",
+
+            // Schema handling (Avro with Schema Registry)
+            ["key.converter"] = "io.confluent.connect.avro.AvroConverter",
+            ["key.converter.schema.registry.url"] = schemaRegistryUrl,
+            ["key.converter.schema.registry.basic.auth.user.info"] = schemaRegistryAuth,
+            ["key.converter.schema.registry.basic.auth.credentials.source"] = "USER_INFO",
             ["key.converter.schemas.enable"] = true,
+
+            ["value.converter"] = "io.confluent.connect.avro.AvroConverter",
+            ["value.converter.schema.registry.url"] = schemaRegistryUrl,
+            ["value.converter.schema.registry.basic.auth.user.info"] = schemaRegistryAuth,
+            ["value.converter.schema.registry.basic.auth.credentials.source"] = "USER_INFO",
             ["value.converter.schemas.enable"] = true,
 
-            // Transforms
-            ["transforms"] = "route,unwrap",
-
-            // Route Transform - redirects messages to bronze-topic
-            ["transforms.route.type"] = "org.apache.kafka.connect.transforms.RegexRouter",
-            ["transforms.route.regex"] = "postgres-cdc.public.employees",
-            ["transforms.route.replacement"] = "bronze.postgres.employees",
-
-            // Unwrap Transform - extracts clean records from CDC envelope
-            ["transforms.unwrap.type"] = "io.debezium.transforms.ExtractNewRecordState",
-            ["transforms.unwrap.drop.tombstones"] = false,
-            ["transforms.unwrap.delete.handling.mode"] = "rewrite",
-            ["transforms.unwrap.add.fields"] = "timestamp",
-
-            // Note: Idempotent producer is enabled at cluster level (KafkaConnectClusterBuilder)
-
-            // Error Handling
+            // Error handling
             ["errors.tolerance"] = "all",
-            ["errors.deadletterqueue.topic.name"] = "debezium-errors",
+            ["errors.deadletterqueue.topic.name"] = "m3-debezium-errors",
             ["errors.deadletterqueue.context.headers.enable"] = true,
 
-            // DLQ Producer Configuration - Prevent duplicate CDC errors
-            ["errors.deadletterqueue.producer.acks"] = "all",
-            ["errors.deadletterqueue.producer.enable.idempotence"] = true
+            // Performance tuning
+            ["max.batch.size"] = 2048,
+            ["max.queue.size"] = 8192,
+            ["poll.interval.ms"] = 1000
         };
 
         var postgresDebeziumConnector = new Kubernetes.ApiExtensions.CustomResource("postgres-debezium-connector",
@@ -104,8 +116,8 @@ internal class PostgresDebeziumConnector : ComponentResource
 
     private static string ComputeConfigHash(Dictionary<string, object> config)
     {
-        var configString = string.Join("|", config.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
-        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(configString));
+        var json = JsonSerializer.Serialize(config);
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(json));
         return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
     }
 
