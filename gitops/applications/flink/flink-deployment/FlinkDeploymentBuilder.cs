@@ -1,4 +1,5 @@
 using System;
+using applications.kafkaconnect;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 using Pulumi.Crds.FlinkDeployment;
@@ -26,6 +27,15 @@ internal class FlinkDeploymentBuilder
     private string _entryClass = "";
     private string _jarFilePath = "";
     private UpgradeMode _upgradeMode = UpgradeMode.Stateless;
+
+    // DD130 Naming Convention fields
+    private NamingConventionHelper.DataLayer? _targetLayer;
+    private string? _domain;
+    private string? _subdomain;
+    private string? _dataset;
+    private string? _processingStage;
+    private string? _environment;
+    private int? _version;
 
     public FlinkDeploymentBuilder(string manifestsRoot)
     {
@@ -126,10 +136,44 @@ internal class FlinkDeploymentBuilder
         _upgradeMode = upgradeMode;
         return this;
     }
+    
+    public FlinkDeploymentBuilder WithNaming(
+        NamingConventionHelper.DataLayer targetLayer,
+        string domain,
+        string dataset,
+        string? subdomain = null,
+        string? processingStage = null,
+        int? version = null,
+        string? environment = null)
+    {
+        _targetLayer = targetLayer;
+        _domain = domain;
+        _dataset = dataset;
+        _subdomain = subdomain;
+        _processingStage = processingStage;
+        _version = version;
+        _environment = environment;
+        return this;
+    }
 
     public ComponentResource Build()
     {
-        var flinkDeploymentComponent = new ComponentResource(_deploymentName, _deploymentName);
+        // DD130 NAMING: Derive deployment name from components if WithNaming() was used
+        if (_targetLayer.HasValue && !string.IsNullOrEmpty(_domain) && !string.IsNullOrEmpty(_dataset))
+        {
+            _deploymentName = NamingConventionHelper.ToFlinkJobName(
+                _targetLayer.Value,
+                _domain,
+                _dataset,
+                _subdomain,
+                _processingStage,
+                _version,
+                _environment);
+        }
+
+        // Use "flink-" prefix for ComponentResource to avoid URN collision with connectors
+        var componentName = $"flink-{_deploymentName}";
+        var flinkDeploymentComponent = new ComponentResource(componentName, componentName);
 
         var manifestsPath = $"{_manifestRoot}/{_deploymentName}";
         var provider = new Pulumi.Kubernetes.Provider("yaml-provider", new()

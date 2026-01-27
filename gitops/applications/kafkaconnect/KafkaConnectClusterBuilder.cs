@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Pulumi;
 using Pulumi.Crds;
 using Pulumi.Crds.KafkaConnect;
@@ -11,18 +11,15 @@ using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
 namespace applications.kafkaconnect;
 
-/// <summary>
-/// Builder for creating KafkaConnect cluster resources with sensible defaults.
-/// Simplifies the creation of Kafka Connect clusters with proper configuration.
-/// </summary>
 public class KafkaConnectClusterBuilder
 {
+    private readonly string _manifestsRoot;
     private readonly string _clusterName;
     private string _bootstrapServers = "warpstream-agent.warpstream.svc.cluster.local:9092";
     private string _image = "ttl.sh/hxt-kafka-connect-amd64:24h";
     private int _replicas = 1;
     private string _namespace = "kafka-connect";
-    
+
     // Metrics configuration
     private string? _metricsConfigMapName;
     private string? _metricsConfigMapKey;
@@ -38,55 +35,37 @@ public class KafkaConnectClusterBuilder
     private string _groupIdPrefix;
     private int _replicationFactor = 1;
 
-    /// <summary>
-    /// Create a new Kafka Connect cluster builder.
-    /// </summary>
-    /// <param name="clusterName">Name of the Kafka Connect cluster (e.g., "m3-kafka-connect")</param>
-    public KafkaConnectClusterBuilder(string clusterName)
+    public KafkaConnectClusterBuilder(string manifestsRoot, string clusterName)
     {
+        _manifestsRoot = manifestsRoot;
         _clusterName = clusterName;
         _groupIdPrefix = clusterName.Replace("-kafka-connect", "");
     }
 
-    /// <summary>
-    /// Set the Kafka bootstrap servers
-    /// </summary>
     public KafkaConnectClusterBuilder WithBootstrapServers(string bootstrapServers)
     {
         _bootstrapServers = bootstrapServers;
         return this;
     }
 
-    /// <summary>
-    /// Set the Kafka Connect container image
-    /// </summary>
     public KafkaConnectClusterBuilder WithImage(string image)
     {
         _image = image;
         return this;
     }
 
-    /// <summary>
-    /// Set the number of replicas (default: 1)
-    /// </summary>
     public KafkaConnectClusterBuilder WithReplicas(int replicas)
     {
         _replicas = replicas;
         return this;
     }
 
-    /// <summary>
-    /// Set the namespace (default: "kafka-connect")
-    /// </summary>
     public KafkaConnectClusterBuilder WithNamespace(string ns)
     {
         _namespace = ns;
         return this;
     }
 
-    /// <summary>
-    /// Configure Prometheus metrics via JMX Exporter
-    /// </summary>
     public KafkaConnectClusterBuilder WithMetricsConfig(string configMapName, string configMapKey)
     {
         _metricsConfigMapName = configMapName;
@@ -94,9 +73,6 @@ public class KafkaConnectClusterBuilder
         return this;
     }
 
-    /// <summary>
-    /// Set resource requests and limits
-    /// </summary>
     public KafkaConnectClusterBuilder WithResources(
         string cpuRequest, string memoryRequest,
         string cpuLimit, string memoryLimit,
@@ -110,16 +86,13 @@ public class KafkaConnectClusterBuilder
         return this;
     }
 
-    /// <summary>
-    /// Build and create the KafkaConnect cluster resource.
-    /// </summary>
-    public ComponentResource Build(string manifestsRoot)
+    public ComponentResource Build()
     {
         var componentResource = new ComponentResource(_clusterName, _clusterName);
 
         var provider = new Pulumi.Kubernetes.Provider("yaml-provider", new()
         {
-            RenderYamlToDirectory = $"{manifestsRoot}/kafka-connect"
+            RenderYamlToDirectory = $"{_manifestsRoot}/kafka-connect"
         }, new CustomResourceOptions
         {
             Parent = componentResource
@@ -343,19 +316,8 @@ public class KafkaConnectClusterBuilder
 
     private static string ComputeConfigHash(Dictionary<string, object> spec)
     {
-        var configString = SerializeForHash(spec);
-        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(configString));
+        var json = JsonSerializer.Serialize(spec);
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(json));
         return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
-    }
-
-    private static string SerializeForHash(object obj)
-    {
-        return obj switch
-        {
-            Dictionary<string, object> dict => string.Join("|", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={SerializeForHash(kv.Value)}")),
-            Dictionary<string, string> dict => string.Join("|", dict.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}")),
-            IEnumerable<object> list => string.Join(",", list.Select(SerializeForHash)),
-            _ => obj?.ToString() ?? ""
-        };
     }
 }

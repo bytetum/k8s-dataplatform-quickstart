@@ -3,16 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Pulumi;
 using Pulumi.Crds.KafkaConnect;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
 namespace applications.kafkaconnect;
 
-/// <summary>
-/// Builder for creating Iceberg Sink Connectors with sensible defaults.
-/// Only requires table-specific configuration; all common settings are pre-configured.
-/// </summary>
 public class IcebergSinkConnectorBuilder
 {
     private string _manifestsRoot = "";
@@ -27,6 +24,16 @@ public class IcebergSinkConnectorBuilder
     private string _clusterName = "m3-kafka-connect";
     private int _tasksMax = 1;
     private bool _upsertModeEnabled = true;
+
+    // DD130 Naming Convention fields
+    private NamingConventionHelper.DataLayer? _layer;
+    private string? _domain;
+    private string? _subdomain;
+    private string? _dataset;
+    private string? _processingStage;
+    private string? _environment;
+    private NamingConventionHelper.SchemaCompatibility? _schemaCompatibility;
+    private bool _autoSetCompatibility = true;
 
     // Dynamic Routing Configuration
     private bool _dynamicRoutingEnabled = false;
@@ -62,29 +69,17 @@ public class IcebergSinkConnectorBuilder
     private string _catalogName = "ao_catalog";
     private string _dlqTopic = "m3.iceberg.dlq";
 
-    /// <summary>
-    /// Create a new Iceberg Sink Connector builder.
-    /// </summary>
-    /// <param name="manifestsRoot">Root directory for generated manifests</param>
     public IcebergSinkConnectorBuilder(string manifestsRoot)
     {
         _manifestsRoot = manifestsRoot;
     }
 
-    /// <summary>
-    /// Set the connector name (required).
-    /// </summary>
-    /// <param name="connectorName">Unique name for this connector (e.g., "cidmas")</param>
     public IcebergSinkConnectorBuilder WithConnectorName(string connectorName)
     {
         _connectorName = connectorName;
         return this;
     }
 
-    /// <summary>
-    /// Set the source Kafka topic (required).
-    /// </summary>
-    /// <param name="sourceTopic">Source Kafka topic (e.g., "bronze.m3.cidmas")</param>
     public IcebergSinkConnectorBuilder WithSourceTopic(string sourceTopic)
     {
         _sourceTopic = sourceTopic;
@@ -92,11 +87,6 @@ public class IcebergSinkConnectorBuilder
         return this;
     }
 
-    /// <summary>
-    /// Set the source Kafka topics using a regex pattern.
-    /// Mutually exclusive with WithSourceTopic.
-    /// </summary>
-    /// <param name="topicsRegex">Regex pattern for topics (e.g., "silver\\.m3\\..*")</param>
     public IcebergSinkConnectorBuilder WithTopicsRegex(string topicsRegex)
     {
         _topicsRegex = topicsRegex;
@@ -104,62 +94,36 @@ public class IcebergSinkConnectorBuilder
         return this;
     }
 
-    /// <summary>
-    /// Set the destination Iceberg table (required for single-topic connectors).
-    /// For regex-based connectors, tables are auto-created based on topic names.
-    /// </summary>
-    /// <param name="destinationTable">Destination Iceberg table (e.g., "m3_bronze.cidmas")</param>
     public IcebergSinkConnectorBuilder WithDestinationTable(string destinationTable)
     {
         _destinationTable = destinationTable;
         return this;
     }
 
-    /// <summary>
-    /// Set the ID columns for upsert mode (comma-separated).
-    /// Example: "idcono,idsuno" or "iisuno"
-    /// </summary>
     public IcebergSinkConnectorBuilder WithIdColumns(params string[] idColumns)
     {
         _idColumns = string.Join(",", idColumns);
         return this;
     }
 
-    /// <summary>
-    /// Set the default ID columns for all tables (global upsert strategy).
-    /// Example: "record_key" or "id"
-    /// </summary>
     public IcebergSinkConnectorBuilder WithDefaultIdColumns(string defaultIdColumns)
     {
         _defaultIdColumns = defaultIdColumns;
         return this;
     }
 
-    /// <summary>
-    /// Set the partition column for the Iceberg table.
-    /// Example: "idcono" or "iisugr"
-    /// </summary>
     public IcebergSinkConnectorBuilder WithPartitionBy(string partitionColumn)
     {
         _partitionBy = partitionColumn;
         return this;
     }
 
-    /// <summary>
-    /// Enable or disable upsert mode (default: true).
-    /// Set to false for append-only event streams.
-    /// </summary>
     public IcebergSinkConnectorBuilder WithUpsertMode(bool enabled)
     {
         _upsertModeEnabled = enabled;
         return this;
     }
 
-    /// <summary>
-    /// Configure RegexRouter SMT to transform topic names to table names.
-    /// Example: pattern="silver\\.m3\\.(.*)", replacement="$1"
-    /// Transforms "silver.m3.customer_summary" → "customer_summary"
-    /// </summary>
     public IcebergSinkConnectorBuilder WithRegexRouter(string pattern, string replacement)
     {
         _regexRouterPattern = pattern;
@@ -167,11 +131,6 @@ public class IcebergSinkConnectorBuilder
         return this;
     }
 
-    /// <summary>
-    /// Enable dynamic routing based on a field in each Kafka record.
-    /// Each record must contain the specified field with the target Iceberg table name.
-    /// Example: routeField="iceberg_table" expects records like {"iceberg_table": "m3_silver.product", ...}
-    /// </summary>
     public IcebergSinkConnectorBuilder WithDynamicRouting(string routeField)
     {
         _dynamicRoutingEnabled = true;
@@ -179,11 +138,6 @@ public class IcebergSinkConnectorBuilder
         return this;
     }
 
-    /// <summary>
-    /// Configure schema registry caching to prevent 404 errors during schema propagation.
-    /// </summary>
-    /// <param name="cacheSize">Number of schemas to cache (default: 1000)</param>
-    /// <param name="cacheTtlMs">Cache TTL in milliseconds (default: 300000 = 5 minutes)</param>
     public IcebergSinkConnectorBuilder WithSchemaRegistryCache(int cacheSize = 1000, int cacheTtlMs = 300000)
     {
         _cacheSize = cacheSize;
@@ -191,12 +145,6 @@ public class IcebergSinkConnectorBuilder
         return this;
     }
 
-    /// <summary>
-    /// Enable fail-fast mode (errors.tolerance=none) instead of DLQ-based error handling.
-    /// Use this when you want the connector to fail immediately on schema errors.
-    /// </summary>
-    /// <param name="retryDelayMaxMs">Maximum retry delay in ms (default: 60000)</param>
-    /// <param name="retryTimeoutMs">Total retry timeout in ms (default: 300000)</param>
     public IcebergSinkConnectorBuilder WithFailFastMode(int retryDelayMaxMs = 60000, int retryTimeoutMs = 300000)
     {
         _failFastMode = true;
@@ -205,9 +153,6 @@ public class IcebergSinkConnectorBuilder
         return this;
     }
 
-    /// <summary>
-    /// Set custom control topic and group ID prefix for commit coordination.
-    /// </summary>
     public IcebergSinkConnectorBuilder WithControlTopic(string controlTopic, string groupIdPrefix)
     {
         _controlTopic = controlTopic;
@@ -215,47 +160,30 @@ public class IcebergSinkConnectorBuilder
         return this;
     }
 
-    /// <summary>
-    /// Set the commit interval in milliseconds.
-    /// Default is 60000ms (1 minute). Use 10000ms (10s) for debug connectors.
-    /// </summary>
     public IcebergSinkConnectorBuilder WithCommitInterval(int intervalMs)
     {
         _commitIntervalMs = intervalMs;
         return this;
     }
 
-    /// <summary>
-    /// Set the connector name prefix (default: "m3-iceberg-sink").
-    /// The full connector name will be "{prefix}-{connectorName}".
-    /// </summary>
     public IcebergSinkConnectorBuilder WithConnectorPrefix(string prefix)
     {
         _connectorPrefix = prefix;
         return this;
     }
 
-    /// <summary>
-    /// Set the Kafka Connect cluster name (default: "m3-kafka-connect")
-    /// </summary>
     public IcebergSinkConnectorBuilder WithClusterName(string clusterName)
     {
         _clusterName = clusterName;
         return this;
     }
 
-    /// <summary>
-    /// Set the maximum number of tasks (default: 1)
-    /// </summary>
     public IcebergSinkConnectorBuilder WithTasksMax(int tasksMax)
     {
         _tasksMax = tasksMax;
         return this;
     }
 
-    /// <summary>
-    /// Override the schema registry URL
-    /// </summary>
     public IcebergSinkConnectorBuilder WithSchemaRegistry(string url, string auth)
     {
         _schemaRegistryUrl = url;
@@ -263,20 +191,105 @@ public class IcebergSinkConnectorBuilder
         return this;
     }
 
-    /// <summary>
-    /// Override the DLQ topic name (default: "m3.iceberg.dlq")
-    /// </summary>
     public IcebergSinkConnectorBuilder WithDlqTopic(string dlqTopic)
     {
         _dlqTopic = dlqTopic;
         return this;
     }
 
-    /// <summary>
-    /// Build and create the KafkaConnector resource.
-    /// </summary>
+    public IcebergSinkConnectorBuilder WithNaming(
+        NamingConventionHelper.DataLayer layer,
+        string domain,
+        string dataset,
+        string? subdomain = null,
+        string? processingStage = null,
+        string? environment = null)
+    {
+        _layer = layer;
+        _domain = domain;
+        _dataset = dataset;
+        _subdomain = subdomain;
+        _processingStage = processingStage;
+        _environment = environment;
+        return this;
+    }
+
+    public IcebergSinkConnectorBuilder WithSchemaCompatibility(NamingConventionHelper.SchemaCompatibility compatibility)
+    {
+        _schemaCompatibility = compatibility;
+        return this;
+    }
+
+    public IcebergSinkConnectorBuilder WithAutoSetCompatibility(bool enabled)
+    {
+        _autoSetCompatibility = enabled;
+        return this;
+    }
+
     public ComponentResource Build()
     {
+        // ========================================================================
+        // DD130 NAMING: Derive names from components if WithNaming() was used
+        // ========================================================================
+        NamingConventionHelper.TopicComponents? parsedComponents = null;
+
+        if (_layer.HasValue && !string.IsNullOrEmpty(_domain) && !string.IsNullOrEmpty(_dataset))
+        {
+            // Build from explicit DD130 components
+            parsedComponents = new NamingConventionHelper.TopicComponents(
+                _environment, _layer.Value, _domain, _subdomain, _dataset, _processingStage);
+
+            // Auto-derive topic, table, connector name, and DLQ if not explicitly set
+            if (string.IsNullOrEmpty(_sourceTopic) && string.IsNullOrEmpty(_topicsRegex))
+            {
+                _sourceTopic = NamingConventionHelper.ToTopicName(parsedComponents);
+            }
+            if (string.IsNullOrEmpty(_destinationTable))
+            {
+                _destinationTable = NamingConventionHelper.ToIcebergTable(parsedComponents);
+            }
+            if (string.IsNullOrEmpty(_connectorName))
+            {
+                // Sanitize for Kubernetes RFC 1123: replace underscores with hyphens
+                var sanitizedDataset = _dataset!.Replace("_", "-");
+                var sanitizedStage = _processingStage?.Replace("_", "-");
+                _connectorName = $"{sanitizedDataset}{(sanitizedStage != null ? $"-{sanitizedStage}" : "")}";
+            }
+            // Update connector prefix to follow DD130 pattern
+            _connectorPrefix = $"{_layer.Value.ToString().ToLowerInvariant()}-{_domain}";
+        }
+        else if (!string.IsNullOrEmpty(_sourceTopic))
+        {
+            // Parse from existing topic name to derive components
+            try
+            {
+                parsedComponents = NamingConventionHelper.ParseTopic(_sourceTopic);
+
+                // Auto-derive destination table if not set
+                if (string.IsNullOrEmpty(_destinationTable))
+                {
+                    _destinationTable = NamingConventionHelper.ToIcebergTable(parsedComponents);
+                }
+            }
+            catch (ArgumentException)
+            {
+                // Topic doesn't follow DD130 format, continue with explicit values
+            }
+        }
+
+        // Determine schema compatibility (explicit > auto-derived from layer > null)
+        var effectiveCompatibility = _schemaCompatibility
+            ?? (parsedComponents != null
+                ? NamingConventionHelper.GetDefaultCompatibility(parsedComponents.Layer)
+                : (NamingConventionHelper.SchemaCompatibility?)null);
+
+        // Auto-derive DLQ topic if not explicitly set and using explicit topic
+        var effectiveDlqTopic = !string.IsNullOrEmpty(_dlqTopic) && _dlqTopic != "m3.iceberg.dlq"
+            ? _dlqTopic
+            : (!string.IsNullOrEmpty(_sourceTopic)
+                ? NamingConventionHelper.ToDlqTopic(_sourceTopic)
+                : _dlqTopic);
+
         var componentResource =
             new ComponentResource($"{_connectorPrefix}-{_connectorName}", $"{_connectorPrefix}-{_connectorName}");
 
@@ -291,13 +304,21 @@ public class IcebergSinkConnectorBuilder
         // Create PreSync schema check job if using explicit topic (not regex)
         if (!string.IsNullOrEmpty(_sourceTopic))
         {
-            new SchemaValidationJobBuilder()
+            var schemaJobBuilder = new SchemaValidationJobBuilder()
                 .WithProvider(provider)
                 .WithParent(componentResource)
                 .WithJobName(_connectorName)
                 .WithSchemaSubject($"{_sourceTopic}-value")
                 .WithSchemaRegistryUrl(_schemaRegistryUrl)
-                .Build();
+                .WithAutoSetCompatibility(_autoSetCompatibility);
+
+            // Set compatibility if determined
+            if (effectiveCompatibility.HasValue)
+            {
+                schemaJobBuilder.WithSchemaCompatibility(effectiveCompatibility.Value);
+            }
+
+            schemaJobBuilder.Build();
         }
 
         var config = new Dictionary<string, object>
@@ -441,7 +462,7 @@ public class IcebergSinkConnectorBuilder
         else
         {
             config["errors.tolerance"] = "all";
-            config["errors.deadletterqueue.topic.name"] = _dlqTopic;
+            config["errors.deadletterqueue.topic.name"] = effectiveDlqTopic;
             config["errors.deadletterqueue.context.headers.enable"] = true;
             config["errors.deadletterqueue.producer.acks"] = "all";
             config["errors.deadletterqueue.producer.enable.idempotence"] = true;
@@ -479,8 +500,8 @@ public class IcebergSinkConnectorBuilder
 
     private static string ComputeConfigHash(Dictionary<string, object> config)
     {
-        var configString = string.Join("|", config.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}={kv.Value}"));
-        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(configString));
+        var json = JsonSerializer.Serialize(config);
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(json));
         return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
     }
 }

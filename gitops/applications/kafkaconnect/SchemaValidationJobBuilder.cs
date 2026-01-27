@@ -1,6 +1,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Pulumi;
 using Pulumi.Kubernetes.Batch.V1;
 using Pulumi.Kubernetes.Types.Inputs.Batch.V1;
@@ -9,11 +10,6 @@ using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
 namespace applications.kafkaconnect;
 
-/// <summary>
-/// Builder for creating a Kubernetes Job that validates schema existence in Schema Registry.
-/// Used as an ArgoCD PreSync hook - the sync will not proceed until this job succeeds.
-/// This removes the need for sync wave configuration as ArgoCD handles ordering natively.
-/// </summary>
 public class SchemaValidationJobBuilder
 {
     private Pulumi.Kubernetes.Provider _provider = null!;
@@ -25,94 +21,84 @@ public class SchemaValidationJobBuilder
     private int _timeoutSeconds = 300;
     private int _retryIntervalSeconds = 5;
     private int _backoffLimit = 3;
+    private NamingConventionHelper.SchemaCompatibility? _schemaCompatibility;
+    private bool _autoSetCompatibility = true;
 
-    /// <summary>
-    /// Set the Kubernetes provider for YAML generation.
-    /// </summary>
     public SchemaValidationJobBuilder WithProvider(Pulumi.Kubernetes.Provider provider)
     {
         _provider = provider;
         return this;
     }
 
-    /// <summary>
-    /// Set the parent resource for Pulumi resource hierarchy.
-    /// </summary>
     public SchemaValidationJobBuilder WithParent(Resource parent)
     {
         _parent = parent;
         return this;
     }
 
-    /// <summary>
-    /// Set the job name (required). Usually matches the connector or Flink deployment name.
-    /// </summary>
     public SchemaValidationJobBuilder WithJobName(string jobName)
     {
-        _jobName = jobName;
+        // Sanitize for Kubernetes RFC 1123: replace underscores with hyphens
+        _jobName = jobName.Replace("_", "-");
         return this;
     }
 
-    /// <summary>
-    /// Set the namespace for the job (default: kafka-connect)
-    /// </summary>
     public SchemaValidationJobBuilder WithNamespace(string ns)
     {
         _namespace = ns;
         return this;
     }
 
-    /// <summary>
-    /// Set the schema subject to validate (required).
-    /// Example: "silver.m3.cidmas-value" for Avro value schema
-    /// </summary>
     public SchemaValidationJobBuilder WithSchemaSubject(string schemaSubject)
     {
         _schemaSubject = schemaSubject;
         return this;
     }
 
-    /// <summary>
-    /// Set the Schema Registry URL
-    /// </summary>
     public SchemaValidationJobBuilder WithSchemaRegistryUrl(string url)
     {
         _schemaRegistryUrl = url;
         return this;
     }
 
-    /// <summary>
-    /// Set the timeout in seconds for waiting for schema (default: 300)
-    /// </summary>
     public SchemaValidationJobBuilder WithTimeout(int timeoutSeconds)
     {
         _timeoutSeconds = timeoutSeconds;
         return this;
     }
 
-    /// <summary>
-    /// Set the retry interval in seconds (default: 5)
-    /// </summary>
     public SchemaValidationJobBuilder WithRetryInterval(int retryIntervalSeconds)
     {
         _retryIntervalSeconds = retryIntervalSeconds;
         return this;
     }
 
-    /// <summary>
-    /// Set the Kubernetes Job backoff limit (default: 3)
-    /// </summary>
     public SchemaValidationJobBuilder WithBackoffLimit(int backoffLimit)
     {
         _backoffLimit = backoffLimit;
         return this;
     }
 
-    /// <summary>
-    /// Build and create the validation Job resource as an ArgoCD PreSync hook.
-    /// </summary>
+    public SchemaValidationJobBuilder WithSchemaCompatibility(NamingConventionHelper.SchemaCompatibility compatibility)
+    {
+        _schemaCompatibility = compatibility;
+        return this;
+    }
+
+    public SchemaValidationJobBuilder WithAutoSetCompatibility(bool enabled)
+    {
+        _autoSetCompatibility = enabled;
+        return this;
+    }
+
     public Job Build()
     {
+        // Determine compatibility string for shell script
+        var compatibilityValue = _schemaCompatibility.HasValue
+            ? NamingConventionHelper.ToSchemaRegistryString(_schemaCompatibility.Value)
+            : "";
+        var autoSetValue = _autoSetCompatibility ? "true" : "false";
+
         // Shell script that polls Schema Registry until schema exists or timeout
         // Using $$""" so that {{var}} is C# interpolation, and {single} is literal shell brace
         var validationScript = $$"""
@@ -123,10 +109,15 @@ public class SchemaValidationJobBuilder
             SUBJECT="{{_schemaSubject}}"
             TIMEOUT={{_timeoutSeconds}}
             INTERVAL={{_retryIntervalSeconds}}
+            SCHEMA_COMPATIBILITY="{{compatibilityValue}}"
+            AUTO_SET_COMPATIBILITY="{{autoSetValue}}"
 
             echo "Checking schema subject: $SUBJECT"
             echo "Schema Registry: $SCHEMA_REGISTRY_URL"
             echo "Timeout: ${TIMEOUT}s, Retry interval: ${INTERVAL}s"
+            if [ -n "$SCHEMA_COMPATIBILITY" ]; then
+                echo "Schema compatibility: $SCHEMA_COMPATIBILITY (auto-set: $AUTO_SET_COMPATIBILITY)"
+            fi
 
             elapsed=0
             while [ $elapsed -lt $TIMEOUT ]; do
@@ -140,6 +131,24 @@ public class SchemaValidationJobBuilder
                         -u "$SCHEMA_REGISTRY_USERNAME:$SCHEMA_REGISTRY_PASSWORD" \
                         "$SCHEMA_REGISTRY_URL/subjects/$SUBJECT/versions/latest")
                     echo "Schema info: $schema_info"
+
+                    # Auto-set compatibility if enabled and specified
+                    if [ "$AUTO_SET_COMPATIBILITY" = "true" ] && [ -n "$SCHEMA_COMPATIBILITY" ]; then
+                        echo "Setting schema compatibility to: $SCHEMA_COMPATIBILITY"
+                        compat_response=$(curl -s -o /dev/null -w "%{http_code}" \
+                            -X PUT -H "Content-Type: application/json" \
+                            -d "{\"compatibility\":\"$SCHEMA_COMPATIBILITY\"}" \
+                            -u "$SCHEMA_REGISTRY_USERNAME:$SCHEMA_REGISTRY_PASSWORD" \
+                            "$SCHEMA_REGISTRY_URL/config/$SUBJECT")
+
+                        if [ "$compat_response" = "200" ]; then
+                            echo "Compatibility set successfully to $SCHEMA_COMPATIBILITY"
+                        else
+                            echo "Warning: Failed to set compatibility (HTTP $compat_response)"
+                            # Don't fail - schema exists, compatibility setting is optional
+                        fi
+                    fi
+
                     exit 0
                 fi
 
@@ -229,8 +238,18 @@ public class SchemaValidationJobBuilder
 
     private string ComputeConfigHash()
     {
-        var configString = $"{_jobName}|{_schemaSubject}|{_schemaRegistryUrl}|{_timeoutSeconds}|{_retryIntervalSeconds}";
-        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(configString));
+        var config = new
+        {
+            _jobName,
+            _schemaSubject,
+            _schemaRegistryUrl,
+            _timeoutSeconds,
+            _retryIntervalSeconds,
+            _schemaCompatibility,
+            _autoSetCompatibility
+        };
+        var json = JsonSerializer.Serialize(config);
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(json));
         return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
     }
 }

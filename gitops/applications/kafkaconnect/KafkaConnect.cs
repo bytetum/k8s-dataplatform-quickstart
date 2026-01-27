@@ -6,13 +6,6 @@ using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
 namespace applications.kafkaconnect;
 
-/// <summary>
-/// Main Kafka Connect application that orchestrates:
-/// - External secrets for credentials
-/// - Kafka Connect cluster
-/// - Metrics configuration
-/// - Iceberg sink connectors
-/// </summary>
 internal class KafkaConnect : ComponentResource
 {
     public KafkaConnect(string manifestsRoot) : base(

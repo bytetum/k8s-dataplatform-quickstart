@@ -19,7 +19,7 @@ return await Deployment.RunAsync(() =>
     var postgreDebeziumConnector = new PostgresDebeziumConnector("../manifests");
 
     // Kafka Connect Cluster
-    var kafkaConnectCluster = new KafkaConnectClusterBuilder("m3-kafka-connect")
+    var kafkaConnectCluster = new KafkaConnectClusterBuilder("../manifests", "m3-kafka-connect")
         .WithBootstrapServers("warpstream-agent.warpstream.svc.cluster.local:9092")
         .WithImage("ttl.sh/hxt-kafka-connect-amd64-20-12:24h")
         .WithReplicas(1)
@@ -30,29 +30,26 @@ return await Deployment.RunAsync(() =>
             cpuLimit: "2",
             memoryLimit: "8Gi",
             jvmMaxHeap: "5G") // Keep heap at ~50% of container limit for JVM overhead
-        .Build("../manifests");
+        .Build();
 
-    // Iceberg Sink Connectors
+    // ========================================================================
+    // BRONZE LAYER CONNECTORS (DD130 Naming)
+    // Schema Compatibility: NONE (accept any schema from source systems)
+    // ========================================================================
     var icebergSinkCidmas = new IcebergSinkConnectorBuilder("../manifests")
-        .WithConnectorName("cidmas")
-        .WithSourceTopic("bronze.m3.cidmas")
-        .WithDestinationTable("m3_bronze.cidmas")
+        .WithNaming(NamingConventionHelper.DataLayer.Bronze, domain: "m3", dataset: "cidmas")
         .WithIdColumns("idsuno")
         .WithPartitionBy("idcono")
         .Build();
 
     var icebergSinkCidven = new IcebergSinkConnectorBuilder("../manifests")
-        .WithConnectorName("cidven")
-        .WithSourceTopic("bronze.m3.cidven")
-        .WithDestinationTable("m3_bronze.cidven")
+        .WithNaming(NamingConventionHelper.DataLayer.Bronze, domain: "m3", dataset: "cidven")
         .WithIdColumns("iisuno")
         .WithPartitionBy("iisugr")
         .Build();
 
     var icebergSinkCsytab = new IcebergSinkConnectorBuilder("../manifests")
-        .WithConnectorName("csytab")
-        .WithSourceTopic("bronze.m3.csytab")
-        .WithDestinationTable("m3_bronze.csytab")
+        .WithNaming(NamingConventionHelper.DataLayer.Bronze, domain: "m3", dataset: "csytab")
         .WithIdColumns("ctstky", "ctstco")
         .WithPartitionBy("ctstco")
         .Build();
@@ -72,39 +69,47 @@ return await Deployment.RunAsync(() =>
         .WithFailFastMode(retryDelayMaxMs: 60000, retryTimeoutMs: 300000)
         .Build();
 
-    // Silver Valid Example - Explicit topic mapping with schema validation
-    // Topic: silver.m3.valid_example -> Iceberg: m3_silver.valid_example
-    // Uses PreSync schema validation job to ensure schema exists before connector starts
+    // ========================================================================
+    // SILVER LAYER CONNECTORS (DD130 Naming)
+    // Schema Compatibility: BACKWARD (controlled evolution, consumers update first)
+    // Auto-derived: topic, table, DLQ names from DD130 components
+    // ========================================================================
     var icebergSinkValidExample = new IcebergSinkConnectorBuilder("../manifests")
-        .WithConnectorPrefix("silver-iceberg-sink")
-        .WithConnectorName("valid-example")
-        .WithSourceTopic("silver.m3.valid_example")
-        .WithDestinationTable("m3_silver.valid_example")
+        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "valid_example")
         .WithIdColumns("record_key")
         .Build();
 
-    // Silver Customer Transactions - Second example with DECIMAL type
-    // Topic: silver.m3.customer_transactions -> Iceberg: m3_silver.customer_transactions
-    // Uses PreSync schema validation job to ensure schema exists before connector starts
     var icebergSinkCustomerTransactions = new IcebergSinkConnectorBuilder("../manifests")
-        .WithConnectorPrefix("silver-iceberg-sink")
-        .WithConnectorName("customer-transactions")
-        .WithSourceTopic("silver.m3.customer_transactions")
-        .WithDestinationTable("m3_silver.customer_transactions")
+        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "customer_transactions")
         .WithIdColumns("record_key")
         .Build();
 
+    // var icebergSinkProductInventory = new IcebergSinkConnectorBuilder("../manifests")
+    //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "product_inventory")
+    //     .WithIdColumns("record_key")
+    //     .Build();
+
+    // ========================================================================
+    // FLINK JOBS (DD130 Naming)
+    // Auto-derived deployment name: {layer}.{domain}.{dataset}
+    // ========================================================================
     var scriptFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
-        .WithDeploymentName("sql-runner-example-script")
+        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "valid_example")
         .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test.sql")
-        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
+        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.LastState)
         .Build();
 
     var scriptFlinkDeployment2 = new FlinkDeploymentBuilder("../manifests")
-        .WithDeploymentName("sql-runner-customer-transactions")
+        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "customer_transactions")
         .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test_2.sql")
-        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
+        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.LastState)
         .Build();
+
+    // var scriptFlinkDeployment3 = new FlinkDeploymentBuilder("../manifests")
+    //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "product_inventory")
+    //     .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test_3.sql")
+    //     .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
+    //     .Build();
 
     var flinkSessionMode = new FlinkClusterBuilder("../manifests")
         .WithTaskSlots(2)
