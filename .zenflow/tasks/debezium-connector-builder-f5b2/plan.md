@@ -71,7 +71,8 @@ The `NamingConventionHelper` class is referenced throughout the codebase but doe
 
 ---
 
-### [ ] Step: Implement DebeziumSourceConnectorBuilder
+### [x] Step: Implement DebeziumSourceConnectorBuilder
+<!-- chat-id: cb038740-2a27-40de-8618-2004d1e8d57d -->
 
 Create the generic Debezium connector builder following established patterns.
 
@@ -107,6 +108,18 @@ Create the generic Debezium connector builder following established patterns.
 **Verification:**
 - `dotnet build` completes without errors
 - Builder follows same pattern as `IcebergSinkConnectorBuilder`
+
+**Result:** `DebeziumSourceConnectorBuilder.cs` created with ~500 lines of code. Implemented:
+- Database preset methods: `ForPostgres()`, `ForDb2()`, `ForMySql()`, `ForSqlServer()`, `ForMongoDB()`
+- Common configuration: connector name, cluster, tasks, database connection (explicit and from env vars)
+- Debezium configuration: topic prefix, snapshot mode, table include/exclude lists
+- PostgreSQL-specific: replication slot, publication, plugin name
+- SMT configuration: unwrap (ExtractNewRecordState) and topic routing (RegexRouter)
+- Schema Registry: Avro and JSON converters with configurable auth
+- Error handling: fail-fast mode and DLQ topic
+- Performance tuning: batch size, queue size, poll interval
+- DD130 naming integration: auto-derives connector name, topic prefix, and DLQ topic
+- Build method with config hash computation for idempotent deployments
 
 ---
 
