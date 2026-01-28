@@ -21,7 +21,7 @@ spec:
     high-availability.storageDir: s3://local-rocksdb-test/flink-apps/silver-m3-valid-example/ha
     high-availability.type: kubernetes
     jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-common/completed-jobs
-    kafka.bootstrap.servers: warpstream-agent.default.svc.cluster.local:9092
+    kafka.bootstrap.servers: warpstream-agent.warpstream.svc.cluster.local:9092
     metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
     state.backend.rocksdb.localdir: /data/rocksdb
     state.backend.type: rocksdb

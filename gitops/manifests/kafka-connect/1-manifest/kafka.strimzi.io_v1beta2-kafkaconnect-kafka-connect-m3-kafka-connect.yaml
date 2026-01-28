@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnect
 metadata:
   annotations:
-    config-hash: cc7d736281b47904
+    config-hash: 2089c8e3461566d0
     strimzi.io/use-connector-resources: "true"
   labels:
     app: m3-kafka
@@ -94,3 +94,28 @@ spec:
           secretKeyRef:
             key: password
             name: schema-registry-credentials
+      - name: POSTGRES_HOST
+        valueFrom:
+          secretKeyRef:
+            key: host
+            name: pricefiles-db-credentials
+      - name: POSTGRES_PORT
+        valueFrom:
+          secretKeyRef:
+            key: port
+            name: pricefiles-db-credentials
+      - name: POSTGRES_USER
+        valueFrom:
+          secretKeyRef:
+            key: username
+            name: pricefiles-db-credentials
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: password
+            name: pricefiles-db-credentials
+      - name: POSTGRES_DB
+        valueFrom:
+          secretKeyRef:
+            key: database
+            name: pricefiles-db-credentials
