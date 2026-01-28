@@ -18,7 +18,7 @@ Do not make assumptions on important decisions — get clarification first.
 
 ## Workflow Steps
 
-### [ ] Step: Technical Specification
+### [x] Step: Technical Specification
 
 Assess the task's difficulty, as underestimating it leads to poor outcomes.
 - easy: Straightforward implementation, trivial bug fix or feature
@@ -39,26 +39,107 @@ Save the output to `{@artifacts_path}/spec.md` with:
 - Data model / API / interface changes
 - Verification approach
 
-If the task is complex enough, create a detailed implementation plan based on `{@artifacts_path}/spec.md`:
-- Break down the work into concrete tasks (incrementable, testable milestones)
-- Each task should reference relevant contracts and include verification steps
-- Replace the Implementation step below with the planned tasks
-
-Rule of thumb for step size: each step should represent a coherent unit of work (e.g., implement a component, add an API endpoint, write tests for a module). Avoid steps that are too granular (single function).
-
-Save to `{@artifacts_path}/plan.md`. If the feature is trivial and doesn't warrant this breakdown, keep the Implementation step below as is.
+**Result:** Technical specification saved to `spec.md`. Difficulty assessed as **medium**.
 
 ---
 
-### [ ] Step: Implementation
+### [ ] Step: Create NamingConventionHelper (Prerequisite)
 
-Implement the task according to the technical specification and general engineering best practices.
+The `NamingConventionHelper` class is referenced throughout the codebase but does not exist, causing build failures.
 
-1. Break the task into steps where possible.
-2. Implement the required changes in the codebase.
-3. Add and run relevant tests and linters.
-4. Perform basic manual verification if applicable.
-5. After completion, write a report to `{@artifacts_path}/report.md` describing:
+**Tasks:**
+1. Create `gitops/applications/NamingConventionHelper.cs`
+2. Implement the `DataLayer` enum (Bronze, Silver, Gold)
+3. Implement the `SchemaCompatibility` enum
+4. Implement the `TopicComponents` record
+5. Implement parsing and generation methods:
+   - `ParseTopic(string topicName)`
+   - `ToTopicName(TopicComponents)`
+   - `ToIcebergTable(TopicComponents)`
+   - `ToFlinkJobName(...)`
+   - `ToDlqTopic(string sourceTopic)`
+   - `GetDefaultCompatibility(DataLayer)`
+   - `ToSchemaRegistryString(SchemaCompatibility)`
+6. Verify build passes: `dotnet build`
+
+**Verification:**
+- `dotnet build` completes without errors
+- All existing builders compile successfully
+
+---
+
+### [ ] Step: Implement DebeziumSourceConnectorBuilder
+
+Create the generic Debezium connector builder following established patterns.
+
+**Tasks:**
+1. Create `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
+2. Implement private fields for all configuration options
+3. Implement database preset methods:
+   - `ForPostgres()` - Sets PostgreSQL connector class and defaults
+   - `ForDb2()` - Sets DB2 connector class and defaults
+   - `ForMySql()` - Sets MySQL connector class and defaults (placeholder)
+4. Implement common configuration methods:
+   - `WithConnectorName()`, `WithClusterName()`, `WithTasksMax()`
+   - `WithDatabaseConnection()`, `WithDatabaseConnectionFromEnv()`
+   - `WithTopicPrefix()`, `WithSnapshotMode()`
+   - `WithTableIncludeList()`, `WithTableExcludeList()`
+5. Implement PostgreSQL-specific methods:
+   - `WithReplicationSlot()`, `WithPublication()`, `WithPlugin()`
+6. Implement SMT configuration methods:
+   - `WithUnwrap()`, `WithTopicRouting()`
+7. Implement Schema Registry methods:
+   - `WithSchemaRegistry()`, `WithAvroConverter()`, `WithJsonConverter()`
+8. Implement error handling methods:
+   - `WithFailFastMode()`, `WithDlqTopic()`
+9. Implement DD130 naming integration:
+   - `WithNaming()` method
+   - Auto-derive connector name, topic prefix, DLQ topic from naming components
+10. Implement `Build()` method:
+    - Create Pulumi Provider
+    - Build configuration dictionary
+    - Create KafkaConnector custom resource
+    - Compute config hash for idempotency
+
+**Verification:**
+- `dotnet build` completes without errors
+- Builder follows same pattern as `IcebergSinkConnectorBuilder`
+
+---
+
+### [ ] Step: Update Program.cs and Deprecate Old Connector
+
+Integrate the new builder and deprecate the old implementation.
+
+**Tasks:**
+1. Add `[Obsolete("Use DebeziumSourceConnectorBuilder instead")]` to `PostgresDebeziumConnector` class
+2. Update `Program.cs`:
+   - Replace `PostgresDebeziumConnector` instantiation with `DebeziumSourceConnectorBuilder`
+   - Add example DB2 connector (commented out, for documentation)
+3. Verify generated manifests match existing ones
+
+**Verification:**
+- Build passes with deprecation warning
+- Generated `kafka-connect` manifests are equivalent to existing ones
+- Config hash unchanged for identical configuration
+
+---
+
+### [ ] Step: Final Verification and Report
+
+Complete final verification and write implementation report.
+
+**Tasks:**
+1. Run `dotnet build` - should pass with only deprecation warning
+2. Compare generated manifests:
+   - Verify PostgreSQL connector manifest unchanged
+   - Verify config-hash annotation identical
+3. Write `report.md` documenting:
    - What was implemented
    - How the solution was tested
-   - The biggest issues or challenges encountered
+   - Any issues or challenges encountered
+
+**Verification:**
+- All acceptance criteria from spec.md met
+- Build passes
+- Manifests generated correctly
