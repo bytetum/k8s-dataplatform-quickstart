@@ -8,6 +8,7 @@ using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
 namespace applications.kafkaconnect;
 
+[Obsolete("Use DebeziumSourceConnectorBuilder instead. This class will be removed in a future version.")]
 internal class PostgresDebeziumConnector : ComponentResource
 {
     public PostgresDebeziumConnector(string manifestsRoot) : base(
