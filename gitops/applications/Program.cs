@@ -1,5 +1,6 @@
 ﻿global using Pulumi;
 global using Kubernetes = Pulumi.Kubernetes;
+global using applications;
 using applications.flink.flink_deployment;
 using applications.flink.flink_session_mode;
 using applications.infrastructure;

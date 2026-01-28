@@ -43,7 +43,8 @@ Save the output to `{@artifacts_path}/spec.md` with:
 
 ---
 
-### [ ] Step: Create NamingConventionHelper (Prerequisite)
+### [x] Step: Create NamingConventionHelper (Prerequisite)
+<!-- chat-id: 2e3307ac-16b6-4b6b-ba4f-81a363615381 -->
 
 The `NamingConventionHelper` class is referenced throughout the codebase but does not exist, causing build failures.
 
@@ -65,6 +66,8 @@ The `NamingConventionHelper` class is referenced throughout the codebase but doe
 **Verification:**
 - `dotnet build` completes without errors
 - All existing builders compile successfully
+
+**Result:** `NamingConventionHelper.cs` created with all required enums, record, and methods. Added `global using applications;` to `Program.cs` to fix namespace resolution. Build passes successfully.
 
 ---
 
