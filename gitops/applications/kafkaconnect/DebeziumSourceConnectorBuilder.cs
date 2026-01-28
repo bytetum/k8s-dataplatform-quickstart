@@ -568,4 +568,364 @@ public class DebeziumSourceConnectorBuilder
         var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(json));
         return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
     }
+
+    /// <summary>
+    /// Builds the Debezium source connector as a Pulumi ComponentResource.
+    /// </summary>
+    /// <returns>A ComponentResource representing the KafkaConnector custom resource.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when required configuration is missing.</exception>
+    public ComponentResource Build()
+    {
+        // Validate required configuration
+        ValidateConfiguration();
+
+        // Derive names from DD130 naming convention if configured
+        var (resolvedConnectorName, resolvedTopicPrefix, resolvedDlqTopic) = ResolveNaming();
+
+        // Build the configuration dictionary
+        var config = BuildConfiguration(resolvedTopicPrefix, resolvedDlqTopic);
+
+        // Create the connector resource
+        return CreateConnectorResource(resolvedConnectorName, config);
+    }
+
+    private void ValidateConfiguration()
+    {
+        if (!_databaseType.HasValue)
+            throw new InvalidOperationException("Database type must be set using WithDatabaseType()");
+
+        // MongoDB uses connection string instead of individual connection parameters
+        if (_databaseType == DatabaseType.MongoDB)
+        {
+            if (string.IsNullOrEmpty(_mongoDbConnectionString))
+                throw new InvalidOperationException(
+                    "MongoDB connection string must be set using WithMongoDbConnectionString()");
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(_databaseHostname) || string.IsNullOrEmpty(_databasePort) ||
+                string.IsNullOrEmpty(_databaseUser) || string.IsNullOrEmpty(_databasePassword) ||
+                string.IsNullOrEmpty(_databaseName))
+                throw new InvalidOperationException(
+                    "Database connection must be configured using WithDatabaseConnection()");
+        }
+
+        // Validate PostgreSQL-specific requirements
+        if (_databaseType == DatabaseType.Postgres && string.IsNullOrEmpty(_postgresSlotName))
+            throw new InvalidOperationException(
+                "PostgreSQL connector requires replication configuration via WithPostgresReplication()");
+
+        // Must have either DD130 naming or explicit topic prefix
+        if (!_layer.HasValue && string.IsNullOrEmpty(_topicPrefix))
+            throw new InvalidOperationException(
+                "Either WithNaming() or WithTopicPrefix() must be called to configure topic naming");
+    }
+
+    private (string connectorName, string topicPrefix, string? dlqTopic) ResolveNaming()
+    {
+        string connectorName;
+        string topicPrefix;
+        string? dlqTopic = _dlqTopicName;
+
+        if (_layer.HasValue && !string.IsNullOrEmpty(_domain) && !string.IsNullOrEmpty(_dataset))
+        {
+            // Use DD130 naming convention
+            var components = new NamingConventionHelper.TopicComponents(
+                _environment,
+                _layer.Value,
+                _domain,
+                _subdomain,
+                _dataset,
+                _processingStage);
+
+            // Derive topic prefix from DD130 (layer.domain or layer.domain.subdomain)
+            topicPrefix = _topicPrefix ?? BuildTopicPrefix(components);
+            connectorName = _connectorName ?? NamingConventionHelper.ToConnectorName(components);
+
+            // Auto-derive DLQ topic if error tolerance is enabled but no DLQ was specified
+            if (_errorToleranceAll && string.IsNullOrEmpty(dlqTopic))
+            {
+                var baseTopicName = NamingConventionHelper.ToTopicName(components);
+                dlqTopic = NamingConventionHelper.ToDlqTopic(baseTopicName);
+            }
+        }
+        else
+        {
+            // Use explicit naming
+            topicPrefix = _topicPrefix!;
+            connectorName = _connectorName ?? $"{topicPrefix.Replace(".", "-")}-source";
+        }
+
+        return (connectorName, topicPrefix, dlqTopic);
+    }
+
+    private static string BuildTopicPrefix(NamingConventionHelper.TopicComponents components)
+    {
+        // For CDC, topic prefix is typically: layer.domain (Debezium appends schema.table)
+        var parts = new List<string>
+        {
+            components.Layer.ToString().ToLowerInvariant(),
+            components.Domain
+        };
+
+        if (!string.IsNullOrEmpty(components.Subdomain))
+            parts.Add(components.Subdomain);
+
+        return string.Join(".", parts);
+    }
+
+    private Dictionary<string, object> BuildConfiguration(string topicPrefix, string? dlqTopic)
+    {
+        var config = new Dictionary<string, object>
+        {
+            // Connector identity
+            ["topic.prefix"] = topicPrefix,
+
+            // Snapshot configuration
+            ["snapshot.mode"] = GetSnapshotModeString()
+        };
+
+        // Database connection (varies by database type)
+        AddDatabaseConnectionConfig(config);
+
+        // Database-specific configuration
+        AddDatabaseSpecificConfig(config);
+
+        // Table selection
+        if (!string.IsNullOrEmpty(_tableIncludeList))
+            config["table.include.list"] = _tableIncludeList;
+        if (!string.IsNullOrEmpty(_tableExcludeList))
+            config["table.exclude.list"] = _tableExcludeList;
+
+        // Transforms
+        AddTransformConfig(config);
+
+        // Converters
+        AddConverterConfig(config);
+
+        // Error handling
+        AddErrorHandlingConfig(config, dlqTopic);
+
+        // Performance tuning
+        config["max.batch.size"] = _maxBatchSize;
+        config["max.queue.size"] = _maxQueueSize;
+        config["poll.interval.ms"] = _pollIntervalMs;
+
+        return config;
+    }
+
+    private void AddDatabaseConnectionConfig(Dictionary<string, object> config)
+    {
+        if (_databaseType == DatabaseType.MongoDB)
+        {
+            config["mongodb.connection.string"] = _mongoDbConnectionString!;
+        }
+        else
+        {
+            config["database.hostname"] = _databaseHostname!;
+            config["database.port"] = _databasePort!;
+            config["database.user"] = _databaseUser!;
+            config["database.password"] = _databasePassword!;
+            config["database.dbname"] = _databaseName!;
+        }
+    }
+
+    private void AddDatabaseSpecificConfig(Dictionary<string, object> config)
+    {
+        switch (_databaseType)
+        {
+            case DatabaseType.Postgres:
+                if (!string.IsNullOrEmpty(_postgresPluginName))
+                    config["plugin.name"] = _postgresPluginName;
+                if (!string.IsNullOrEmpty(_postgresPublicationName))
+                    config["publication.name"] = _postgresPublicationName;
+                if (!string.IsNullOrEmpty(_postgresSlotName))
+                    config["slot.name"] = _postgresSlotName;
+                break;
+
+            case DatabaseType.Db2:
+                if (!string.IsNullOrEmpty(_db2AsnProgram))
+                    config["asn.capture.program"] = _db2AsnProgram;
+                if (!string.IsNullOrEmpty(_db2AsnLib))
+                    config["asn.capture.library"] = _db2AsnLib;
+                break;
+
+            case DatabaseType.MySQL:
+                if (_mysqlServerId.HasValue)
+                    config["database.server.id"] = _mysqlServerId.Value;
+                break;
+
+            case DatabaseType.SqlServer:
+                // SqlServer uses the same connection parameters, no additional config needed
+                break;
+
+            case DatabaseType.Oracle:
+                // Oracle uses the same connection parameters, no additional config needed
+                break;
+
+            case DatabaseType.MongoDB:
+                // MongoDB connection is handled in AddDatabaseConnectionConfig
+                break;
+        }
+    }
+
+    private void AddTransformConfig(Dictionary<string, object> config)
+    {
+        var transforms = new List<string>();
+
+        // Unwrap transform (ExtractNewRecordState)
+        if (_unwrapTransformEnabled)
+        {
+            transforms.Add("unwrap");
+            config["transforms.unwrap.type"] = "io.debezium.transforms.ExtractNewRecordState";
+            config["transforms.unwrap.delete.handling.mode"] = GetDeleteHandlingModeString();
+            config["transforms.unwrap.drop.tombstones"] = _dropTombstones;
+
+            if (_unwrapAddFields)
+            {
+                config["transforms.unwrap.add.fields"] = "op,source.ts_ms";
+                config["transforms.unwrap.add.headers"] = "op,source.ts_ms";
+            }
+        }
+
+        // Route transform (RegexRouter)
+        if (!string.IsNullOrEmpty(_routeTransformRegex) && !string.IsNullOrEmpty(_routeTransformReplacement))
+        {
+            transforms.Add("route");
+            config["transforms.route.type"] = "org.apache.kafka.connect.transforms.RegexRouter";
+            config["transforms.route.regex"] = _routeTransformRegex;
+            config["transforms.route.replacement"] = _routeTransformReplacement;
+        }
+
+        if (transforms.Count > 0)
+            config["transforms"] = string.Join(",", transforms);
+    }
+
+    private void AddConverterConfig(Dictionary<string, object> config)
+    {
+        if (_useAvroConverter)
+        {
+            // Avro with Schema Registry
+            config["key.converter"] = "io.confluent.connect.avro.AvroConverter";
+            config["key.converter.schema.registry.url"] = _schemaRegistryUrl;
+            config["key.converter.schema.registry.basic.auth.user.info"] = _schemaRegistryAuth;
+            config["key.converter.schema.registry.basic.auth.credentials.source"] = "USER_INFO";
+            config["key.converter.schemas.enable"] = true;
+
+            config["value.converter"] = "io.confluent.connect.avro.AvroConverter";
+            config["value.converter.schema.registry.url"] = _schemaRegistryUrl;
+            config["value.converter.schema.registry.basic.auth.user.info"] = _schemaRegistryAuth;
+            config["value.converter.schema.registry.basic.auth.credentials.source"] = "USER_INFO";
+            config["value.converter.schemas.enable"] = true;
+        }
+        else
+        {
+            // JSON converter
+            config["key.converter"] = "org.apache.kafka.connect.json.JsonConverter";
+            config["key.converter.schemas.enable"] = _jsonSchemasEnable;
+
+            config["value.converter"] = "org.apache.kafka.connect.json.JsonConverter";
+            config["value.converter.schemas.enable"] = _jsonSchemasEnable;
+        }
+    }
+
+    private void AddErrorHandlingConfig(Dictionary<string, object> config, string? dlqTopic)
+    {
+        if (_errorToleranceAll)
+        {
+            config["errors.tolerance"] = "all";
+
+            if (!string.IsNullOrEmpty(dlqTopic))
+            {
+                config["errors.deadletterqueue.topic.name"] = dlqTopic;
+                config["errors.deadletterqueue.context.headers.enable"] = true;
+            }
+        }
+        else
+        {
+            config["errors.tolerance"] = "none";
+        }
+    }
+
+    private ComponentResource CreateConnectorResource(string connectorName, Dictionary<string, object> config)
+    {
+        // Create a container component resource
+        var component = new DebeziumConnectorComponent(
+            connectorName,
+            _manifestsRoot,
+            _clusterName,
+            _tasksMax,
+            GetConnectorClass(),
+            config);
+
+        return component;
+    }
+}
+
+/// <summary>
+/// Internal component resource that holds the Debezium connector Kubernetes resources.
+/// </summary>
+internal class DebeziumConnectorComponent : ComponentResource
+{
+    public DebeziumConnectorComponent(
+        string name,
+        string manifestsRoot,
+        string clusterName,
+        int tasksMax,
+        string connectorClass,
+        Dictionary<string, object> config)
+        : base("debezium-source-connector", name)
+    {
+        var provider = new Kubernetes.Provider($"{name}-yaml-provider", new()
+        {
+            RenderYamlToDirectory = $"{manifestsRoot}/kafka-connect"
+        }, new CustomResourceOptions
+        {
+            Parent = this
+        });
+
+        var connector = new Kubernetes.ApiExtensions.CustomResource(name,
+            new KafkaConnectorArgs()
+            {
+                Metadata = new ObjectMetaArgs
+                {
+                    Name = name,
+                    Namespace = "kafka-connect",
+                    Labels = new Dictionary<string, string>
+                    {
+                        { "strimzi.io/cluster", clusterName }
+                    },
+                    Annotations = new Dictionary<string, string>
+                    {
+                        { "config-hash", ComputeConfigHash(config) }
+                    }
+                },
+                Spec = new Dictionary<string, object>
+                {
+                    ["class"] = connectorClass,
+                    ["tasksMax"] = tasksMax,
+                    ["config"] = config
+                }
+            }, new CustomResourceOptions
+            {
+                Provider = provider,
+                Parent = this
+            });
+    }
+
+    private static string ComputeConfigHash(Dictionary<string, object> config)
+    {
+        var json = JsonSerializer.Serialize(config);
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(json));
+        return Convert.ToHexString(hashBytes)[..16].ToLowerInvariant();
+    }
+
+    private class KafkaConnectorArgs : Kubernetes.ApiExtensions.CustomResourceArgs
+    {
+        public KafkaConnectorArgs() : base("kafka.strimzi.io/v1beta2", "KafkaConnector")
+        {
+        }
+
+        [Input("spec")] public Dictionary<string, object>? Spec { get; set; }
+    }
 }

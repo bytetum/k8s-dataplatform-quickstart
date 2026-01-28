@@ -102,17 +102,18 @@ Implement:
 
 ---
 
-### [ ] Step: Implement Build Method and Connector Class Mapping
+### [x] Step: Implement Build Method and Connector Class Mapping
+<!-- chat-id: 55c76dc6-28a6-4474-9f09-663ed3aa51fd -->
 
 Implement the `Build()` method:
-- [ ] Map `DatabaseType` to Debezium connector class name
-- [ ] Apply DD130 naming if configured (derive topic prefix, connector name, DLQ)
-- [ ] Build configuration dictionary with all settings
-- [ ] Add database-specific configuration based on type
-- [ ] Create Pulumi provider for YAML rendering
-- [ ] Create `KafkaConnector` custom resource
-- [ ] Compute config hash for annotations
-- [ ] Return `ComponentResource`
+- [x] Map `DatabaseType` to Debezium connector class name
+- [x] Apply DD130 naming if configured (derive topic prefix, connector name, DLQ)
+- [x] Build configuration dictionary with all settings
+- [x] Add database-specific configuration based on type
+- [x] Create Pulumi provider for YAML rendering
+- [x] Create `KafkaConnector` custom resource
+- [x] Compute config hash for annotations
+- [x] Return `ComponentResource`
 
 **File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
 
