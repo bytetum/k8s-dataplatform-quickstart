@@ -186,3 +186,29 @@ Complete final verification and write implementation report.
   - Verification results with configuration equivalence table
   - Challenges encountered and solutions applied
   - Future considerations for the project
+
+---
+
+### [x] Step: Align with Master Branch NamingConventionHelper
+<!-- chat-id: (current session) -->
+
+User added the existing `NamingConventionHelper` to master branch. Updated implementation to align with it.
+
+**Tasks:**
+1. Replace `NamingConventionHelper.cs` with master branch version
+2. Update `DebeziumSourceConnectorBuilder.cs` to use corrected API:
+   - `ToConnectorName(TopicComponents)` instead of individual parameters
+3. Remove unnecessary `global using applications;` from `Program.cs`
+4. Verify build passes
+
+**Key Differences from Original Implementation:**
+- Namespace: `applications.kafkaconnect` (was `applications`)
+- SchemaCompatibility enum: 4 values (was 7, removed Transitive variants)
+- ToDlqTopic: Uses `_dlq` suffix (was `.dlq`)
+- ToConnectorName: Takes `TopicComponents` (was individual parameters)
+
+**Result:** Implementation aligned with master branch:
+- `NamingConventionHelper.cs` replaced with master branch version
+- `DebeziumSourceConnectorBuilder.cs` updated to use `ToConnectorName(TopicComponents)`
+- `Program.cs` cleaned up (removed unused global using)
+- Build passes with 0 errors, 0 warnings

@@ -456,18 +456,19 @@ public class DebeziumSourceConnectorBuilder
                 _topicPrefix = $"{_domain}-cdc";
             }
 
+            // Build TopicComponents for naming derivation
+            var topicComponents = new NamingConventionHelper.TopicComponents(
+                _environment, _layer.Value, _domain, _subdomain, _dataset, _processingStage);
+
             // Auto-derive connector name if not explicitly set
             if (string.IsNullOrEmpty(_connectorName))
             {
-                _connectorName = NamingConventionHelper.ToConnectorName(
-                    _layer.Value, _domain, _dataset, _processingStage);
+                _connectorName = NamingConventionHelper.ToConnectorName(topicComponents);
             }
 
             // Auto-derive DLQ topic if not explicitly set
             if (string.IsNullOrEmpty(_dlqTopic) && !_failFastMode)
             {
-                var topicComponents = new NamingConventionHelper.TopicComponents(
-                    _environment, _layer.Value, _domain, _subdomain, _dataset, _processingStage);
                 var baseTopic = NamingConventionHelper.ToTopicName(topicComponents);
                 _dlqTopic = NamingConventionHelper.ToDlqTopic(baseTopic);
             }

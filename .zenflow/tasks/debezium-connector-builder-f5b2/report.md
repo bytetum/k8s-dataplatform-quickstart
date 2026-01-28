@@ -6,19 +6,19 @@ Successfully refactored the `PostgresDebeziumConnector` into a generic `Debezium
 
 ## What Was Implemented
 
-### 1. NamingConventionHelper (`gitops/applications/NamingConventionHelper.cs`)
+### 1. NamingConventionHelper (`gitops/applications/kafkaconnect/NamingConventionHelper.cs`)
 
-Created a comprehensive helper class for DD130 naming conventions:
+Aligned with the existing `NamingConventionHelper` from the master branch (namespace: `applications.kafkaconnect`):
 
-- **Enums**: `DataLayer` (Bronze, Silver, Gold), `SchemaCompatibility` (None, Backward, Forward, Full, etc.)
+- **Enums**: `DataLayer` (Bronze, Silver, Gold), `SchemaCompatibility` (None, Backward, Forward, Full)
 - **Record**: `TopicComponents` for structured topic name parsing
 - **Methods**:
-  - `ParseTopic()` - Parses topic names into components
+  - `ParseTopic()` - Parses topic names into components with sophisticated layer detection
   - `ToTopicName()` - Generates topic names from components
-  - `ToIcebergTable()` - Generates Iceberg table names
+  - `ToIcebergTable()` - Generates Iceberg table names (overloaded: TopicComponents or string)
   - `ToFlinkJobName()` - Generates Flink job names
-  - `ToDlqTopic()` - Generates DLQ topic names
-  - `ToConnectorName()` - Generates connector names
+  - `ToDlqTopic()` - Generates DLQ topic names (uses `_dlq` suffix)
+  - `ToConnectorName(TopicComponents)` - Generates connector names from topic components
   - `GetDefaultCompatibility()` - Returns default schema compatibility per layer
   - `ToSchemaRegistryString()` - Converts compatibility enum to Schema Registry string
 
@@ -143,12 +143,16 @@ The new builder produces equivalent configuration to the old `PostgresDebeziumCo
 ### 1. Missing NamingConventionHelper (Prerequisite)
 The `NamingConventionHelper` class was referenced throughout the codebase but didn't exist, causing build failures. This had to be created first before implementing the builder.
 
-**Solution**: Created comprehensive `NamingConventionHelper.cs` with all required enums, record, and methods.
+**Solution**: Initially created a comprehensive `NamingConventionHelper.cs`. Later aligned with the existing version from master branch.
 
-### 2. Namespace Resolution
-After creating `NamingConventionHelper.cs`, the build failed with namespace resolution errors.
+### 2. Alignment with Master Branch
+After initial implementation, the existing `NamingConventionHelper` was added to master branch with different API signatures.
 
-**Solution**: Added `global using applications;` to `Program.cs` to ensure the namespace was properly imported.
+**Solution**: Updated implementation to match master branch:
+- Changed namespace from `applications` to `applications.kafkaconnect`
+- Updated `ToConnectorName()` to accept `TopicComponents` instead of individual parameters
+- Changed DLQ suffix from `.dlq` to `_dlq`
+- Removed unnecessary `global using applications;` from `Program.cs`
 
 ### 3. Connector Name in Kubernetes Metadata
 Initial implementation prefixed the connector name with "debezium-" in Kubernetes metadata, but it should use the connector name directly.
@@ -159,7 +163,7 @@ Initial implementation prefixed the connector name with "debezium-" in Kubernete
 
 | File | Change Type | Lines |
 |------|-------------|-------|
-| `gitops/applications/NamingConventionHelper.cs` | Created | ~275 |
+| `gitops/applications/kafkaconnect/NamingConventionHelper.cs` | Aligned with master | ~230 |
 | `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs` | Created | ~670 |
 | `gitops/applications/kafkaconnect/PostgresDebeziumConnector.cs` | Modified | +1 (Obsolete attribute) |
 | `gitops/applications/Program.cs` | Modified | ~35 |

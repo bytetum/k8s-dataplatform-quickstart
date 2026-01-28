@@ -1,163 +1,164 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace applications;
+namespace applications.kafkaconnect;
 
-/// <summary>
-/// Helper class for DD130 naming conventions across the data platform.
-/// Provides consistent naming for topics, tables, jobs, and schema registry subjects.
-/// </summary>
+// DD130-compliant naming convention helper.
+// Parses and generates names following the AO Essence Data Layer Structure.
+//
+// Kafka Topic: [environment.]layer.domain[.subdomain].dataset[_stage]
+// Iceberg Table: layer.domain_dataset[_stage]
+// Flink Job: [environment-]layer-domain[-subdomain]-dataset[-stage][-vN]
 public static class NamingConventionHelper
 {
-    /// <summary>
-    /// Data layer in the medallion architecture.
-    /// </summary>
-    public enum DataLayer
-    {
-        /// <summary>Raw ingested data, minimal transformation.</summary>
-        Bronze,
-        /// <summary>Cleaned, validated, and enriched data.</summary>
-        Silver,
-        /// <summary>Business-ready, aggregated data.</summary>
-        Gold
-    }
+    public enum DataLayer { Bronze, Silver, Gold }
 
-    /// <summary>
-    /// Schema Registry compatibility modes.
-    /// </summary>
-    public enum SchemaCompatibility
-    {
-        /// <summary>No compatibility checking.</summary>
-        None,
-        /// <summary>Consumers using the new schema can read data produced with the previous schema.</summary>
-        Backward,
-        /// <summary>Consumers using the previous schema can read data produced with the new schema.</summary>
-        Forward,
-        /// <summary>Both backward and forward compatible.</summary>
-        Full,
-        /// <summary>Backward compatible with all previous versions.</summary>
-        BackwardTransitive,
-        /// <summary>Forward compatible with all previous versions.</summary>
-        ForwardTransitive,
-        /// <summary>Both backward and forward compatible with all previous versions.</summary>
-        FullTransitive
-    }
+    public enum SchemaCompatibility { None, Backward, Forward, Full }
 
-    /// <summary>
-    /// Components that make up a DD130 topic name.
-    /// </summary>
-    /// <param name="Environment">Optional environment prefix (e.g., "dev", "prod").</param>
-    /// <param name="Layer">Data layer (Bronze, Silver, Gold).</param>
-    /// <param name="Domain">Business domain (e.g., "m3", "finance").</param>
-    /// <param name="Subdomain">Optional subdomain for further categorization.</param>
-    /// <param name="Dataset">Dataset name (e.g., "cidmas", "orders").</param>
-    /// <param name="ProcessingStage">Optional processing stage (e.g., "raw", "cleaned", "aggregated").</param>
     public record TopicComponents(
         string? Environment,
         DataLayer Layer,
         string Domain,
         string? Subdomain,
         string Dataset,
-        string? ProcessingStage);
+        string? ProcessingStage
+    );
 
-    // Topic name pattern: [env.]<layer>.<domain>[.<subdomain>].<dataset>[.<stage>]
-    private static readonly Regex TopicPattern = new(
-        @"^(?:(?<env>[a-z0-9-]+)\.)?(?<layer>bronze|silver|gold)\.(?<domain>[a-z0-9-]+)(?:\.(?<subdomain>[a-z0-9-]+))?\.(?<dataset>[a-z0-9_-]+)(?:\.(?<stage>[a-z0-9-]+))?$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    /// <summary>
-    /// Parses a topic name into its DD130 components.
-    /// </summary>
-    /// <param name="topicName">The topic name to parse.</param>
-    /// <returns>Parsed topic components.</returns>
-    /// <exception cref="ArgumentException">Thrown when the topic name doesn't match DD130 format.</exception>
     public static TopicComponents ParseTopic(string topicName)
     {
         if (string.IsNullOrWhiteSpace(topicName))
-            throw new ArgumentException("Topic name cannot be null or empty.", nameof(topicName));
+            throw new ArgumentException("Topic name cannot be empty", nameof(topicName));
 
-        var match = TopicPattern.Match(topicName);
-        if (!match.Success)
-            throw new ArgumentException($"Topic name '{topicName}' does not match DD130 naming convention.", nameof(topicName));
+        var parts = topicName.Split('.');
 
-        var layerStr = match.Groups["layer"].Value.ToLowerInvariant();
-        var layer = layerStr switch
+        // Minimum: layer.domain.dataset (3 parts)
+        if (parts.Length < 3)
+            throw new ArgumentException(
+                $"Invalid topic format: '{topicName}'. Expected at least layer.domain.dataset",
+                nameof(topicName));
+
+        int index = 0;
+        string? environment = null;
+        DataLayer layer;
+
+        // Check if first part is environment or layer
+        if (TryParseLayer(parts[0], out layer))
         {
-            "bronze" => DataLayer.Bronze,
-            "silver" => DataLayer.Silver,
-            "gold" => DataLayer.Gold,
-            _ => throw new ArgumentException($"Unknown layer: {layerStr}")
-        };
+            // No environment prefix
+            index = 1;
+        }
+        else if (parts.Length >= 4 && TryParseLayer(parts[1], out layer))
+        {
+            // Has environment prefix
+            environment = parts[0];
+            index = 2;
+        }
+        else
+        {
+            throw new ArgumentException(
+                $"Cannot determine data layer from topic: '{topicName}'. " +
+                $"Expected 'bronze', 'silver', or 'gold' as first or second segment.",
+                nameof(topicName));
+        }
 
-        return new TopicComponents(
-            Environment: match.Groups["env"].Success ? match.Groups["env"].Value : null,
-            Layer: layer,
-            Domain: match.Groups["domain"].Value,
-            Subdomain: match.Groups["subdomain"].Success && !string.IsNullOrEmpty(match.Groups["subdomain"].Value)
-                ? match.Groups["subdomain"].Value
-                : null,
-            Dataset: match.Groups["dataset"].Value,
-            ProcessingStage: match.Groups["stage"].Success && !string.IsNullOrEmpty(match.Groups["stage"].Value)
-                ? match.Groups["stage"].Value
-                : null);
+        // Domain is always next
+        var domain = parts[index++];
+
+        // Remaining parts: could be subdomain(s) and dataset
+        // Last part is always dataset (may include processing stage suffix)
+        var remainingParts = parts.Length - index;
+
+        string? subdomain = null;
+        string datasetWithStage;
+
+        if (remainingParts == 1)
+        {
+            // Just dataset
+            datasetWithStage = parts[index];
+        }
+        else if (remainingParts == 2)
+        {
+            // Subdomain + dataset
+            subdomain = parts[index];
+            datasetWithStage = parts[index + 1];
+        }
+        else if (remainingParts > 2)
+        {
+            // Multiple subdomains (join with .)
+            subdomain = string.Join(".", parts[index..(parts.Length - 1)]);
+            datasetWithStage = parts[^1];
+        }
+        else
+        {
+            throw new ArgumentException(
+                $"Invalid topic format: '{topicName}'. Missing dataset.",
+                nameof(topicName));
+        }
+
+        // Parse processing stage from dataset (suffix after last underscore)
+        var (dataset, processingStage) = ParseDatasetAndStage(datasetWithStage);
+
+        return new TopicComponents(environment, layer, domain, subdomain, dataset, processingStage);
     }
 
-    /// <summary>
-    /// Generates a topic name from DD130 components.
-    /// </summary>
-    /// <param name="components">The topic components.</param>
-    /// <returns>A DD130-compliant topic name.</returns>
     public static string ToTopicName(TopicComponents components)
     {
-        ArgumentNullException.ThrowIfNull(components);
-
         var parts = new System.Collections.Generic.List<string>();
 
         if (!string.IsNullOrEmpty(components.Environment))
-            parts.Add(components.Environment.ToLowerInvariant());
+            parts.Add(components.Environment);
 
         parts.Add(components.Layer.ToString().ToLowerInvariant());
-        parts.Add(components.Domain.ToLowerInvariant());
+        parts.Add(components.Domain);
 
         if (!string.IsNullOrEmpty(components.Subdomain))
-            parts.Add(components.Subdomain.ToLowerInvariant());
+            parts.Add(components.Subdomain);
 
-        parts.Add(components.Dataset.ToLowerInvariant());
-
+        var dataset = components.Dataset;
         if (!string.IsNullOrEmpty(components.ProcessingStage))
-            parts.Add(components.ProcessingStage.ToLowerInvariant());
+            dataset = $"{dataset}_{components.ProcessingStage}";
+
+        parts.Add(dataset);
 
         return string.Join(".", parts);
     }
 
-    /// <summary>
-    /// Generates an Iceberg table name from DD130 components.
-    /// Format: ao_catalog.<layer>_<domain>.<dataset>[_<stage>]
-    /// </summary>
-    /// <param name="components">The topic components.</param>
-    /// <returns>An Iceberg table name.</returns>
     public static string ToIcebergTable(TopicComponents components)
     {
-        ArgumentNullException.ThrowIfNull(components);
+        var schema = components.Layer.ToString().ToLowerInvariant();
 
-        var layer = components.Layer.ToString().ToLowerInvariant();
-        var domain = components.Domain.ToLowerInvariant().Replace("-", "_");
-        var dataset = components.Dataset.ToLowerInvariant().Replace("-", "_");
-
-        var tableName = dataset;
+        var table = $"{components.Domain}_{components.Dataset}";
         if (!string.IsNullOrEmpty(components.ProcessingStage))
-        {
-            var stage = components.ProcessingStage.ToLowerInvariant().Replace("-", "_");
-            tableName = $"{dataset}_{stage}";
-        }
+            table = $"{table}_{components.ProcessingStage}";
 
-        return $"ao_catalog.{layer}_{domain}.{tableName}";
+        return $"{schema}.{table}";
     }
 
-    /// <summary>
-    /// Generates a Flink job name from DD130 components.
-    /// Format: flink-<layer>-<domain>-<dataset>[-<subdomain>][-<stage>][-v<version>]
-    /// </summary>
+    public static string ToIcebergTable(string topicName)
+    {
+        return ToIcebergTable(ParseTopic(topicName));
+    }
+
+    public static string ToDlqTopic(string sourceTopic) => $"{sourceTopic}_dlq";
+
+    // Bronze=NONE, Silver=BACKWARD, Gold=FULL
+    public static SchemaCompatibility GetDefaultCompatibility(DataLayer layer) => layer switch
+    {
+        DataLayer.Bronze => SchemaCompatibility.None,
+        DataLayer.Silver => SchemaCompatibility.Backward,
+        DataLayer.Gold => SchemaCompatibility.Full,
+        _ => SchemaCompatibility.Backward
+    };
+
+    public static string ToSchemaRegistryString(SchemaCompatibility compatibility) => compatibility switch
+    {
+        SchemaCompatibility.None => "NONE",
+        SchemaCompatibility.Backward => "BACKWARD",
+        SchemaCompatibility.Forward => "FORWARD",
+        SchemaCompatibility.Full => "FULL",
+        _ => "BACKWARD"
+    };
+
     public static string ToFlinkJobName(
         DataLayer targetLayer,
         string domain,
@@ -167,109 +168,65 @@ public static class NamingConventionHelper
         int? version = null,
         string? environment = null)
     {
-        var parts = new System.Collections.Generic.List<string> { "flink" };
+        var parts = new System.Collections.Generic.List<string>();
 
         if (!string.IsNullOrEmpty(environment))
-            parts.Add(SanitizeForKubernetes(environment));
+            parts.Add(environment);
 
         parts.Add(targetLayer.ToString().ToLowerInvariant());
-        parts.Add(SanitizeForKubernetes(domain));
-        parts.Add(SanitizeForKubernetes(dataset));
+        parts.Add(domain);
 
         if (!string.IsNullOrEmpty(subdomain))
-            parts.Add(SanitizeForKubernetes(subdomain));
+            parts.Add(subdomain);
 
+        // Convert underscores to hyphens for Kubernetes compatibility
+        var name = dataset.Replace("_", "-");
         if (!string.IsNullOrEmpty(processingStage))
-            parts.Add(SanitizeForKubernetes(processingStage));
-
+            name = $"{name}-{processingStage.Replace("_", "-")}";
         if (version.HasValue)
-            parts.Add($"v{version.Value}");
+            name = $"{name}-v{version}";
 
+        parts.Add(name);
+
+        // Use hyphens as separator (Flink operator doesn't allow dots in names)
         return string.Join("-", parts);
     }
 
-    /// <summary>
-    /// Generates a Dead Letter Queue (DLQ) topic name from a source topic.
-    /// Format: <original_topic>.dlq
-    /// </summary>
-    /// <param name="sourceTopic">The source topic name.</param>
-    /// <returns>A DLQ topic name.</returns>
-    public static string ToDlqTopic(string sourceTopic)
-    {
-        if (string.IsNullOrWhiteSpace(sourceTopic))
-            throw new ArgumentException("Source topic cannot be null or empty.", nameof(sourceTopic));
-
-        return $"{sourceTopic}.dlq";
-    }
-
-    /// <summary>
-    /// Gets the default schema compatibility for a data layer.
-    /// Bronze = Backward (allow schema evolution with backward compat)
-    /// Silver = Full (stricter, both directions)
-    /// Gold = FullTransitive (strictest, business-critical)
-    /// </summary>
-    /// <param name="layer">The data layer.</param>
-    /// <returns>The default schema compatibility.</returns>
-    public static SchemaCompatibility GetDefaultCompatibility(DataLayer layer)
-    {
-        return layer switch
-        {
-            DataLayer.Bronze => SchemaCompatibility.Backward,
-            DataLayer.Silver => SchemaCompatibility.Full,
-            DataLayer.Gold => SchemaCompatibility.FullTransitive,
-            _ => SchemaCompatibility.Backward
-        };
-    }
-
-    /// <summary>
-    /// Converts a SchemaCompatibility enum value to its Schema Registry string representation.
-    /// </summary>
-    /// <param name="compatibility">The schema compatibility.</param>
-    /// <returns>The Schema Registry string value.</returns>
-    public static string ToSchemaRegistryString(SchemaCompatibility compatibility)
-    {
-        return compatibility switch
-        {
-            SchemaCompatibility.None => "NONE",
-            SchemaCompatibility.Backward => "BACKWARD",
-            SchemaCompatibility.Forward => "FORWARD",
-            SchemaCompatibility.Full => "FULL",
-            SchemaCompatibility.BackwardTransitive => "BACKWARD_TRANSITIVE",
-            SchemaCompatibility.ForwardTransitive => "FORWARD_TRANSITIVE",
-            SchemaCompatibility.FullTransitive => "FULL_TRANSITIVE",
-            _ => throw new ArgumentOutOfRangeException(nameof(compatibility), compatibility, "Unknown schema compatibility")
-        };
-    }
-
-    /// <summary>
-    /// Generates a connector name from DD130 components.
-    /// Format: <layer>-<domain>-<dataset>[-<stage>]
-    /// </summary>
-    public static string ToConnectorName(
-        DataLayer layer,
-        string domain,
-        string dataset,
-        string? processingStage = null)
+    public static string ToConnectorName(TopicComponents components)
     {
         var parts = new System.Collections.Generic.List<string>
         {
-            layer.ToString().ToLowerInvariant(),
-            SanitizeForKubernetes(domain),
-            SanitizeForKubernetes(dataset)
+            components.Layer.ToString().ToLowerInvariant(),
+            components.Domain,
+            components.Dataset.Replace("_", "-")
         };
 
-        if (!string.IsNullOrEmpty(processingStage))
-            parts.Add(SanitizeForKubernetes(processingStage));
+        if (!string.IsNullOrEmpty(components.ProcessingStage))
+            parts.Add(components.ProcessingStage.Replace("_", "-"));
 
         return string.Join("-", parts);
     }
 
-    /// <summary>
-    /// Sanitizes a string for use in Kubernetes resource names (RFC 1123).
-    /// Replaces underscores with hyphens and converts to lowercase.
-    /// </summary>
-    private static string SanitizeForKubernetes(string value)
+    private static bool TryParseLayer(string value, out DataLayer layer)
     {
-        return value.ToLowerInvariant().Replace("_", "-");
+        return Enum.TryParse(value, ignoreCase: true, out layer);
+    }
+
+    private static (string dataset, string? processingStage) ParseDatasetAndStage(string datasetWithStage)
+    {
+        // Known processing stages from DD130
+        string[] knownStages = { "raw", "cleaned", "enriched", "denormalized", "aggregated" };
+
+        var lastUnderscore = datasetWithStage.LastIndexOf('_');
+        if (lastUnderscore > 0)
+        {
+            var potentialStage = datasetWithStage[(lastUnderscore + 1)..];
+            if (Array.Exists(knownStages, s => s.Equals(potentialStage, StringComparison.OrdinalIgnoreCase)))
+            {
+                return (datasetWithStage[..lastUnderscore], potentialStage);
+            }
+        }
+
+        return (datasetWithStage, null);
     }
 }
