@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   annotations:
-    config-hash: dfca131b91da68b6
+    config-hash: 32fda0bf59af0dcc
   labels:
     strimzi.io/cluster: m3-kafka-connect
   name: postgres-debezium-source
@@ -16,26 +16,34 @@ spec:
     database.port: ${env:POSTGRES_PORT}
     database.user: ${env:POSTGRES_USER}
     errors.deadletterqueue.context.headers.enable: true
-    errors.deadletterqueue.producer.acks: all
-    errors.deadletterqueue.producer.enable.idempotence: true
-    errors.deadletterqueue.topic.name: debezium-errors
+    errors.deadletterqueue.topic.name: m3-debezium-errors
     errors.tolerance: all
-    key.converter: org.apache.kafka.connect.json.JsonConverter
+    key.converter: io.confluent.connect.avro.AvroConverter
+    key.converter.schema.registry.basic.auth.credentials.source: USER_INFO
+    key.converter.schema.registry.basic.auth.user.info: ${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}
+    key.converter.schema.registry.url: http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094
     key.converter.schemas.enable: true
+    max.batch.size: 2048
+    max.queue.size: 8192
     plugin.name: pgoutput
-    publication.name: dbz_publication
-    slot.name: debezium_test_slot
+    poll.interval.ms: 1000
+    publication.name: dbz_m3_publication
+    slot.name: m3_debezium_slot
     snapshot.mode: always
-    table.include.list: public.employees
-    topic.prefix: postgres-cdc
-    transforms: route,unwrap
-    transforms.route.regex: postgres-cdc.public.employees
-    transforms.route.replacement: bronze.postgres.employees
+    table.include.list: public.CSYTAB,public.CIDMAS,public.CIDVEN
+    topic.prefix: m3-cdc
+    transforms: unwrap,route
+    transforms.route.regex: m3-cdc.public.(.*)
+    transforms.route.replacement: bronze.m3.$1
     transforms.route.type: org.apache.kafka.connect.transforms.RegexRouter
-    transforms.unwrap.add.fields: timestamp
+    transforms.unwrap.add.fields: op,source.ts_ms
+    transforms.unwrap.add.headers: op,source.ts_ms
     transforms.unwrap.delete.handling.mode: rewrite
-    transforms.unwrap.drop.tombstones: false
+    transforms.unwrap.drop.tombstones: true
     transforms.unwrap.type: io.debezium.transforms.ExtractNewRecordState
-    value.converter: org.apache.kafka.connect.json.JsonConverter
+    value.converter: io.confluent.connect.avro.AvroConverter
+    value.converter.schema.registry.basic.auth.credentials.source: USER_INFO
+    value.converter.schema.registry.basic.auth.user.info: ${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}
+    value.converter.schema.registry.url: http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094
     value.converter.schemas.enable: true
   tasksMax: 1

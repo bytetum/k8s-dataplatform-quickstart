@@ -16,7 +16,41 @@ return await Deployment.RunAsync(() =>
     var polaris = new Polaris("../manifests");
     var postgres = new Postgres("../manifests");
     var kafkaConnect = new KafkaConnect("../manifests");
-    var postgreDebeziumConnector = new PostgresDebeziumConnector("../manifests");
+
+    // PostgreSQL CDC Source Connector (Debezium)
+    // Migrated from PostgresDebeziumConnector to use the generic builder pattern
+    var postgresDebeziumSource = new DebeziumSourceConnectorBuilder("../manifests")
+        .WithDatabaseType(DatabaseType.Postgres)
+        .WithDatabaseConnection(
+            hostname: "${env:POSTGRES_HOST}",
+            port: "${env:POSTGRES_PORT}",
+            user: "${env:POSTGRES_USER}",
+            password: "${env:POSTGRES_PASSWORD}",
+            database: "${env:POSTGRES_DB}")
+        .WithConnectorName("postgres-debezium-source")
+        .WithTopicPrefix("m3-cdc")
+        .WithPostgresReplication(
+            publicationName: "dbz_m3_publication",
+            slotName: "m3_debezium_slot",
+            pluginName: "pgoutput")
+        .WithTableIncludeList("public.CSYTAB", "public.CIDMAS", "public.CIDVEN")
+        .WithSnapshotMode(SnapshotMode.Always)
+        .WithUnwrapTransform(
+            enabled: true,
+            deleteMode: DeleteHandlingMode.Rewrite,
+            addFields: true,
+            dropTombstones: true)
+        .WithRouteTransform(
+            regex: "m3-cdc.public.(.*)",
+            replacement: "bronze.m3.$1")
+        .WithAvroConverter()
+        .WithErrorTolerance(tolerateAll: true)
+        .WithDeadLetterQueue("m3-debezium-errors")
+        .WithPerformanceTuning(
+            maxBatchSize: 2048,
+            maxQueueSize: 8192,
+            pollIntervalMs: 1000)
+        .Build();
 
     // Kafka Connect Cluster
     var kafkaConnectCluster = new KafkaConnectClusterBuilder("../manifests", "m3-kafka-connect")

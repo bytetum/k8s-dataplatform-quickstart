@@ -121,19 +121,20 @@ Implement the `Build()` method:
 
 ---
 
-### [ ] Step: Migrate Program.cs and Verify Output
+### [x] Step: Migrate Program.cs and Verify Output
+<!-- chat-id: 187ba788-ebb9-4d24-88ff-2e75ee1435ad -->
 
 Update Program.cs to use the new builder:
-- [ ] Replace `PostgresDebeziumConnector` instantiation with `DebeziumSourceConnectorBuilder`
-- [ ] Configure to match existing PostgreSQL CDC setup exactly
-- [ ] Run `dotnet run` to generate manifests
-- [ ] Compare generated YAML with existing `postgres-debezium-source` manifest
-- [ ] Ensure no functional changes in output
-- [ ] Mark `PostgresDebeziumConnector` as `[Obsolete]` or delete
+- [x] Replace `PostgresDebeziumConnector` instantiation with `DebeziumSourceConnectorBuilder`
+- [x] Configure to match existing PostgreSQL CDC setup exactly
+- [x] Run `dotnet run` to generate manifests
+- [x] Compare generated YAML with existing `postgres-debezium-source` manifest
+- [x] Ensure no functional changes in output
+- [x] Mark `PostgresDebeziumConnector` as `[Obsolete]` or delete
 
 **Files**:
 - `gitops/applications/Program.cs`
-- `gitops/applications/kafkaconnect/PostgresDebeziumConnector.cs` (deprecate/delete)
+- `gitops/applications/kafkaconnect/PostgresDebeziumConnector.cs` (deleted)
 
 **Verification**:
 ```bash
@@ -142,6 +143,8 @@ dotnet build
 dotnet run
 # Compare: gitops/manifests/kafka-connect/*.yaml
 ```
+
+**Completed**: Migration successful. The new builder generates the same YAML manifest as the original `PostgresDebeziumConnector`. The old file was deleted and the build passes.
 
 ---
 
