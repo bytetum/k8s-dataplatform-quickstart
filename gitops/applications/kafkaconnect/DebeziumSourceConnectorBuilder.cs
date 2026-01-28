@@ -120,6 +120,7 @@ public class DebeziumSourceConnectorBuilder
 
     // Converter configuration
     private bool _useAvroConverter = true;
+    private bool _jsonSchemasEnable = false;
 
     // Error handling configuration
     private bool _errorToleranceAll = true;
@@ -414,6 +415,148 @@ public class DebeziumSourceConnectorBuilder
             throw new InvalidOperationException("WithMongoDbConnectionString() can only be used with DatabaseType.MongoDB");
 
         _mongoDbConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        return this;
+    }
+
+    #endregion
+
+    #region Transform Configuration Methods
+
+    /// <summary>
+    /// Enables the ExtractNewRecordState SMT (Single Message Transform) to unwrap Debezium
+    /// envelope format into a flattened record structure.
+    /// </summary>
+    /// <param name="enabled">Whether to enable the unwrap transform (default: true).</param>
+    /// <param name="deleteMode">How to handle delete events (default: Rewrite).</param>
+    /// <param name="addFields">Whether to add metadata fields like __op, __source_ts_ms (default: true).</param>
+    /// <param name="dropTombstones">Whether to drop tombstone records (default: true).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithUnwrapTransform(
+        bool enabled = true,
+        DeleteHandlingMode deleteMode = DeleteHandlingMode.Rewrite,
+        bool addFields = true,
+        bool dropTombstones = true)
+    {
+        _unwrapTransformEnabled = enabled;
+        _deleteHandlingMode = deleteMode;
+        _unwrapAddFields = addFields;
+        _dropTombstones = dropTombstones;
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the RegexRouter SMT for topic routing and renaming.
+    /// Useful for mapping Debezium's default topic naming to custom patterns.
+    /// </summary>
+    /// <param name="regex">Regular expression pattern to match topic names.</param>
+    /// <param name="replacement">Replacement pattern (can use capture groups like $1, $2).</param>
+    /// <returns>The builder for method chaining.</returns>
+    /// <example>
+    /// // Route topics from "m3-cdc.public.tablename" to "bronze.m3.tablename"
+    /// .WithRouteTransform(@"m3-cdc\.public\.(.*)", "bronze.m3.$1")
+    /// </example>
+    public DebeziumSourceConnectorBuilder WithRouteTransform(string regex, string replacement)
+    {
+        _routeTransformRegex = regex ?? throw new ArgumentNullException(nameof(regex));
+        _routeTransformReplacement = replacement ?? throw new ArgumentNullException(nameof(replacement));
+        return this;
+    }
+
+    #endregion
+
+    #region Schema Registry and Converter Configuration
+
+    /// <summary>
+    /// Configures the Schema Registry connection.
+    /// </summary>
+    /// <param name="url">Schema Registry URL.</param>
+    /// <param name="auth">Authentication credentials in "username:password" format (can use ${env:VAR} syntax).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithSchemaRegistry(string url, string auth)
+    {
+        _schemaRegistryUrl = url ?? throw new ArgumentNullException(nameof(url));
+        _schemaRegistryAuth = auth ?? throw new ArgumentNullException(nameof(auth));
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the connector to use Avro serialization with Schema Registry.
+    /// This is the default serialization format.
+    /// </summary>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithAvroConverter()
+    {
+        _useAvroConverter = true;
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the connector to use JSON serialization instead of Avro.
+    /// Note: JSON does not require Schema Registry but lacks schema evolution capabilities.
+    /// </summary>
+    /// <param name="schemasEnable">Whether to include schema information in JSON messages (default: false).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithJsonConverter(bool schemasEnable = false)
+    {
+        _useAvroConverter = false;
+        _jsonSchemasEnable = schemasEnable;
+        return this;
+    }
+
+    #endregion
+
+    #region Error Handling Configuration
+
+    /// <summary>
+    /// Configures error tolerance for the connector.
+    /// When enabled (tolerateAll = true), errors are logged but don't stop the connector.
+    /// </summary>
+    /// <param name="tolerateAll">If true, tolerates all errors and logs them. If false, fails fast on errors.</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithErrorTolerance(bool tolerateAll = true)
+    {
+        _errorToleranceAll = tolerateAll;
+        return this;
+    }
+
+    /// <summary>
+    /// Configures a Dead Letter Queue (DLQ) topic for failed records.
+    /// Records that cannot be processed are sent to this topic for later analysis.
+    /// </summary>
+    /// <param name="topicName">The DLQ topic name. If not specified, auto-derives from connector naming.</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithDeadLetterQueue(string topicName)
+    {
+        _dlqTopicName = topicName ?? throw new ArgumentNullException(nameof(topicName));
+        return this;
+    }
+
+    #endregion
+
+    #region Performance Tuning Configuration
+
+    /// <summary>
+    /// Configures performance-related settings for the connector.
+    /// </summary>
+    /// <param name="maxBatchSize">Maximum number of records in a batch (default: 2048).</param>
+    /// <param name="maxQueueSize">Maximum size of the blocking queue for buffering records (default: 8192).</param>
+    /// <param name="pollIntervalMs">Interval in milliseconds between polls for new CDC events (default: 1000).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithPerformanceTuning(
+        int maxBatchSize = 2048,
+        int maxQueueSize = 8192,
+        int pollIntervalMs = 1000)
+    {
+        if (maxBatchSize < 1)
+            throw new ArgumentException("Max batch size must be at least 1", nameof(maxBatchSize));
+        if (maxQueueSize < 1)
+            throw new ArgumentException("Max queue size must be at least 1", nameof(maxQueueSize));
+        if (pollIntervalMs < 0)
+            throw new ArgumentException("Poll interval must be non-negative", nameof(pollIntervalMs));
+
+        _maxBatchSize = maxBatchSize;
+        _maxQueueSize = maxQueueSize;
+        _pollIntervalMs = pollIntervalMs;
         return this;
     }
 

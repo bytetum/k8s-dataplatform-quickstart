@@ -84,16 +84,17 @@ Implement database-specific methods:
 
 ---
 
-### [ ] Step: Add Transform, Schema, and Error Handling Methods
+### [x] Step: Add Transform, Schema, and Error Handling Methods
+<!-- chat-id: 4ad378bb-cc0e-45e8-87de-d518bd736a80 -->
 
 Implement:
-- [ ] `WithUnwrapTransform()` - ExtractNewRecordState SMT configuration
-- [ ] `WithRouteTransform()` - RegexRouter SMT for topic routing
-- [ ] `WithSchemaRegistry()` - Schema registry URL and auth
-- [ ] `WithAvroConverter()` / `WithJsonConverter()` - Serialization format
-- [ ] `WithErrorTolerance()` - Error handling mode
-- [ ] `WithDeadLetterQueue()` - DLQ topic configuration
-- [ ] `WithPerformanceTuning()` - Batch size, queue size, poll interval
+- [x] `WithUnwrapTransform()` - ExtractNewRecordState SMT configuration
+- [x] `WithRouteTransform()` - RegexRouter SMT for topic routing
+- [x] `WithSchemaRegistry()` - Schema registry URL and auth
+- [x] `WithAvroConverter()` / `WithJsonConverter()` - Serialization format
+- [x] `WithErrorTolerance()` - Error handling mode
+- [x] `WithDeadLetterQueue()` - DLQ topic configuration
+- [x] `WithPerformanceTuning()` - Batch size, queue size, poll interval
 
 **File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
 
