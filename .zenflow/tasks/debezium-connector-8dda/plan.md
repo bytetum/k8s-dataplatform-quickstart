@@ -18,47 +18,131 @@ Do not make assumptions on important decisions — get clarification first.
 
 ## Workflow Steps
 
-### [ ] Step: Technical Specification
+### [x] Step: Technical Specification
 
-Assess the task's difficulty, as underestimating it leads to poor outcomes.
-- easy: Straightforward implementation, trivial bug fix or feature
-- medium: Moderate complexity, some edge cases or caveats to consider
-- hard: Complex logic, many caveats, architectural considerations, or high-risk changes
+**Difficulty**: Medium
 
-Create a technical specification for the task that is appropriate for the complexity level:
-- Review the existing codebase architecture and identify reusable components.
-- Define the implementation approach based on established patterns in the project.
-- Identify all source code files that will be created or modified.
-- Define any necessary data model, API, or interface changes.
-- Describe verification steps using the project's test and lint commands.
+Technical specification created at `.zenflow/tasks/debezium-connector-8dda/spec.md`.
 
-Save the output to `{@artifacts_path}/spec.md` with:
-- Technical context (language, dependencies)
-- Implementation approach
-- Source code structure changes
-- Data model / API / interface changes
-- Verification approach
-
-If the task is complex enough, create a detailed implementation plan based on `{@artifacts_path}/spec.md`:
-- Break down the work into concrete tasks (incrementable, testable milestones)
-- Each task should reference relevant contracts and include verification steps
-- Replace the Implementation step below with the planned tasks
-
-Rule of thumb for step size: each step should represent a coherent unit of work (e.g., implement a component, add an API endpoint, write tests for a module). Avoid steps that are too granular (single function).
-
-Save to `{@artifacts_path}/plan.md`. If the feature is trivial and doesn't warrant this breakdown, keep the Implementation step below as is.
+Summary:
+- Refactor `PostgresDebeziumConnector` into generic `DebeziumSourceConnectorBuilder`
+- Follow existing `IcebergSinkConnectorBuilder` pattern (fluent builder)
+- Support multiple database types: PostgreSQL, DB2, MySQL, SqlServer, Oracle, MongoDB
+- Integrate with DD130 naming conventions via `NamingConventionHelper`
+- Provide database-specific configuration methods
 
 ---
 
-### [ ] Step: Implementation
+### [ ] Step: Create DebeziumSourceConnectorBuilder Core Structure
 
-Implement the task according to the technical specification and general engineering best practices.
+Create the new builder class with:
+- [ ] Define `DatabaseType` enum (Postgres, Db2, MySQL, SqlServer, Oracle, MongoDB)
+- [ ] Define `SnapshotMode` enum (Initial, Always, Never, SchemaOnly, WhenNeeded)
+- [ ] Define `DeleteHandlingMode` enum (None, Rewrite, Drop)
+- [ ] Create builder class with private fields for all configuration options
+- [ ] Implement constructor accepting `manifestsRoot` parameter
+- [ ] Implement `WithDatabaseType()` method
+- [ ] Implement `WithDatabaseConnection()` method for common DB credentials
 
-1. Break the task into steps where possible.
-2. Implement the required changes in the codebase.
-3. Add and run relevant tests and linters.
-4. Perform basic manual verification if applicable.
-5. After completion, write a report to `{@artifacts_path}/report.md` describing:
-   - What was implemented
-   - How the solution was tested
-   - The biggest issues or challenges encountered
+**File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
+
+**Verification**: `dotnet build` in `gitops/applications/`
+
+---
+
+### [ ] Step: Add DD130 Naming and Common Configuration Methods
+
+Add builder methods for:
+- [ ] `WithNaming()` - DD130 naming convention integration (layer, domain, dataset)
+- [ ] `WithTopicPrefix()` - Alternative explicit topic prefix
+- [ ] `WithConnectorName()` - Override auto-generated connector name
+- [ ] `WithTableIncludeList()` / `WithTableExcludeList()` - Table selection
+- [ ] `WithSnapshotMode()` - Snapshot behavior control
+- [ ] `WithClusterName()` - Strimzi cluster label
+- [ ] `WithTasksMax()` - Connector parallelism
+
+**File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
+
+**Verification**: `dotnet build` in `gitops/applications/`
+
+---
+
+### [ ] Step: Add Database-Specific Configuration Methods
+
+Implement database-specific methods:
+- [ ] `WithPostgresReplication(publicationName, slotName, pluginName)` - PostgreSQL logical replication
+- [ ] `WithDb2Asn(asnProgram, asnLib)` - DB2 ASN capture configuration
+- [ ] `WithMySqlServerId(serverId)` - MySQL binlog server ID
+- [ ] `WithMongoDbConnectionString(connectionString)` - MongoDB connection
+
+**File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
+
+**Verification**: `dotnet build` in `gitops/applications/`
+
+---
+
+### [ ] Step: Add Transform, Schema, and Error Handling Methods
+
+Implement:
+- [ ] `WithUnwrapTransform()` - ExtractNewRecordState SMT configuration
+- [ ] `WithRouteTransform()` - RegexRouter SMT for topic routing
+- [ ] `WithSchemaRegistry()` - Schema registry URL and auth
+- [ ] `WithAvroConverter()` / `WithJsonConverter()` - Serialization format
+- [ ] `WithErrorTolerance()` - Error handling mode
+- [ ] `WithDeadLetterQueue()` - DLQ topic configuration
+- [ ] `WithPerformanceTuning()` - Batch size, queue size, poll interval
+
+**File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
+
+**Verification**: `dotnet build` in `gitops/applications/`
+
+---
+
+### [ ] Step: Implement Build Method and Connector Class Mapping
+
+Implement the `Build()` method:
+- [ ] Map `DatabaseType` to Debezium connector class name
+- [ ] Apply DD130 naming if configured (derive topic prefix, connector name, DLQ)
+- [ ] Build configuration dictionary with all settings
+- [ ] Add database-specific configuration based on type
+- [ ] Create Pulumi provider for YAML rendering
+- [ ] Create `KafkaConnector` custom resource
+- [ ] Compute config hash for annotations
+- [ ] Return `ComponentResource`
+
+**File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
+
+**Verification**: `dotnet build` in `gitops/applications/`
+
+---
+
+### [ ] Step: Migrate Program.cs and Verify Output
+
+Update Program.cs to use the new builder:
+- [ ] Replace `PostgresDebeziumConnector` instantiation with `DebeziumSourceConnectorBuilder`
+- [ ] Configure to match existing PostgreSQL CDC setup exactly
+- [ ] Run `dotnet run` to generate manifests
+- [ ] Compare generated YAML with existing `postgres-debezium-source` manifest
+- [ ] Ensure no functional changes in output
+- [ ] Mark `PostgresDebeziumConnector` as `[Obsolete]` or delete
+
+**Files**:
+- `gitops/applications/Program.cs`
+- `gitops/applications/kafkaconnect/PostgresDebeziumConnector.cs` (deprecate/delete)
+
+**Verification**:
+```bash
+cd gitops/applications
+dotnet build
+dotnet run
+# Compare: gitops/manifests/kafka-connect/*.yaml
+```
+
+---
+
+### [ ] Step: Final Report
+
+Write implementation report to `.zenflow/tasks/debezium-connector-8dda/report.md`:
+- What was implemented
+- How the solution was tested
+- Any issues or challenges encountered
