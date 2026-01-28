@@ -338,6 +338,87 @@ public class DebeziumSourceConnectorBuilder
         return this;
     }
 
+    #region Database-Specific Configuration Methods
+
+    /// <summary>
+    /// Configures PostgreSQL logical replication settings.
+    /// Required for PostgreSQL connectors.
+    /// </summary>
+    /// <param name="publicationName">The name of the PostgreSQL publication to use for CDC.</param>
+    /// <param name="slotName">The name of the PostgreSQL replication slot.</param>
+    /// <param name="pluginName">The logical decoding plugin (default: "pgoutput"). Options: pgoutput, decoderbufs.</param>
+    /// <returns>The builder for method chaining.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if database type is not Postgres.</exception>
+    public DebeziumSourceConnectorBuilder WithPostgresReplication(
+        string publicationName,
+        string slotName,
+        string pluginName = "pgoutput")
+    {
+        if (_databaseType.HasValue && _databaseType != DatabaseType.Postgres)
+            throw new InvalidOperationException("WithPostgresReplication() can only be used with DatabaseType.Postgres");
+
+        _postgresPublicationName = publicationName ?? throw new ArgumentNullException(nameof(publicationName));
+        _postgresSlotName = slotName ?? throw new ArgumentNullException(nameof(slotName));
+        _postgresPluginName = pluginName ?? throw new ArgumentNullException(nameof(pluginName));
+        return this;
+    }
+
+    /// <summary>
+    /// Configures DB2 ASN (Apply/Capture) settings for change data capture.
+    /// Required for DB2 connectors.
+    /// </summary>
+    /// <param name="asnProgram">The ASN capture program name (e.g., "ASN").</param>
+    /// <param name="asnLib">The ASN library name (e.g., "ASNCAP").</param>
+    /// <returns>The builder for method chaining.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if database type is not Db2.</exception>
+    public DebeziumSourceConnectorBuilder WithDb2Asn(string asnProgram, string asnLib)
+    {
+        if (_databaseType.HasValue && _databaseType != DatabaseType.Db2)
+            throw new InvalidOperationException("WithDb2Asn() can only be used with DatabaseType.Db2");
+
+        _db2AsnProgram = asnProgram ?? throw new ArgumentNullException(nameof(asnProgram));
+        _db2AsnLib = asnLib ?? throw new ArgumentNullException(nameof(asnLib));
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the MySQL server ID for binlog replication.
+    /// Required for MySQL connectors to uniquely identify this connector in the replication topology.
+    /// </summary>
+    /// <param name="serverId">A unique server ID (must be unique across all MySQL replicas).</param>
+    /// <returns>The builder for method chaining.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if database type is not MySQL.</exception>
+    /// <exception cref="ArgumentException">Thrown if serverId is less than 1.</exception>
+    public DebeziumSourceConnectorBuilder WithMySqlServerId(int serverId)
+    {
+        if (_databaseType.HasValue && _databaseType != DatabaseType.MySQL)
+            throw new InvalidOperationException("WithMySqlServerId() can only be used with DatabaseType.MySQL");
+
+        if (serverId < 1)
+            throw new ArgumentException("Server ID must be at least 1", nameof(serverId));
+
+        _mysqlServerId = serverId;
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the MongoDB connection string for change streams.
+    /// This overrides the standard database connection parameters for MongoDB.
+    /// </summary>
+    /// <param name="connectionString">The MongoDB connection string (e.g., "mongodb://user:pass@host:port/database").</param>
+    /// <returns>The builder for method chaining.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if database type is not MongoDB.</exception>
+    public DebeziumSourceConnectorBuilder WithMongoDbConnectionString(string connectionString)
+    {
+        if (_databaseType.HasValue && _databaseType != DatabaseType.MongoDB)
+            throw new InvalidOperationException("WithMongoDbConnectionString() can only be used with DatabaseType.MongoDB");
+
+        _mongoDbConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        return this;
+    }
+
+    #endregion
+
     private static string ComputeConfigHash(Dictionary<string, object> config)
     {
         var json = JsonSerializer.Serialize(config);

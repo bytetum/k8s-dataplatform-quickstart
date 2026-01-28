@@ -69,13 +69,14 @@ Add builder methods for:
 
 ---
 
-### [ ] Step: Add Database-Specific Configuration Methods
+### [x] Step: Add Database-Specific Configuration Methods
+<!-- chat-id: b676152f-b77d-406e-a626-465b2db8dae0 -->
 
 Implement database-specific methods:
-- [ ] `WithPostgresReplication(publicationName, slotName, pluginName)` - PostgreSQL logical replication
-- [ ] `WithDb2Asn(asnProgram, asnLib)` - DB2 ASN capture configuration
-- [ ] `WithMySqlServerId(serverId)` - MySQL binlog server ID
-- [ ] `WithMongoDbConnectionString(connectionString)` - MongoDB connection
+- [x] `WithPostgresReplication(publicationName, slotName, pluginName)` - PostgreSQL logical replication
+- [x] `WithDb2Asn(asnProgram, asnLib)` - DB2 ASN capture configuration
+- [x] `WithMySqlServerId(serverId)` - MySQL binlog server ID
+- [x] `WithMongoDbConnectionString(connectionString)` - MongoDB connection
 
 **File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
 
