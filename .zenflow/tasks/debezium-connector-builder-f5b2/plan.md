@@ -123,7 +123,8 @@ Create the generic Debezium connector builder following established patterns.
 
 ---
 
-### [ ] Step: Update Program.cs and Deprecate Old Connector
+### [x] Step: Update Program.cs and Deprecate Old Connector
+<!-- chat-id: 3cef7eaf-48df-4c74-beaf-a602b811a569 -->
 
 Integrate the new builder and deprecate the old implementation.
 
@@ -138,6 +139,21 @@ Integrate the new builder and deprecate the old implementation.
 - Build passes with deprecation warning
 - Generated `kafka-connect` manifests are equivalent to existing ones
 - Config hash unchanged for identical configuration
+
+**Result:** Step completed successfully:
+- Added `[Obsolete]` attribute to `PostgresDebeziumConnector` class with deprecation message
+- Updated `Program.cs` to use `DebeziumSourceConnectorBuilder` with fluent API:
+  - `.ForPostgres()` - PostgreSQL connector preset
+  - `.WithDatabaseConnectionFromEnv("POSTGRES")` - Database credentials from env vars
+  - `.WithTopicPrefix("m3-cdc")`, `.WithSnapshotMode("always")`
+  - `.WithTableIncludeList()` for table selection
+  - `.WithPublication()`, `.WithReplicationSlot()` for PostgreSQL replication
+  - `.WithUnwrap()`, `.WithTopicRouting()` for SMT chain
+  - `.WithAvroConverter()` for Schema Registry integration
+  - `.WithDlqTopic()` for error handling
+- Added commented DB2 connector example for documentation
+- Fixed builder to use connector name directly in Kubernetes metadata (not prefixed)
+- Build passes with 0 errors, 0 warnings (no deprecation warning since old class is no longer used)
 
 ---
 

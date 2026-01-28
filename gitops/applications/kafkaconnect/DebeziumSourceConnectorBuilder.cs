@@ -630,7 +630,7 @@ public class DebeziumSourceConnectorBuilder
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = $"debezium-{_connectorName}",
+                Name = _connectorName,
                 Namespace = "kafka-connect",
                 Labels = new Dictionary<string, string>
                 {

@@ -17,7 +17,43 @@ return await Deployment.RunAsync(() =>
     var polaris = new Polaris("../manifests");
     var postgres = new Postgres("../manifests");
     var kafkaConnect = new KafkaConnect("../manifests");
-    var postgreDebeziumConnector = new PostgresDebeziumConnector("../manifests");
+
+    // ========================================================================
+    // DEBEZIUM SOURCE CONNECTORS (CDC)
+    // ========================================================================
+    // PostgreSQL Debezium Connector - Captures changes from M3 database
+    var postgresDebeziumConnector = new DebeziumSourceConnectorBuilder("../manifests")
+        .ForPostgres()
+        .WithConnectorName("postgres-debezium-source")
+        .WithClusterName("m3-kafka-connect")
+        .WithDatabaseConnectionFromEnv("POSTGRES")
+        .WithTopicPrefix("m3-cdc")
+        .WithSnapshotMode("always")
+        .WithTableIncludeList("public.CSYTAB", "public.CIDMAS", "public.CIDVEN")
+        .WithPublication("dbz_m3_publication")
+        .WithReplicationSlot("m3_debezium_slot")
+        .WithUnwrap()
+        .WithTopicRouting("m3-cdc.public.(.*)", "bronze.m3.$1")
+        .WithAvroConverter()
+        .WithDlqTopic("m3-debezium-errors")
+        .Build();
+
+    // ========================================================================
+    // Example: DB2 Debezium Connector (commented out for documentation)
+    // ========================================================================
+    // var db2DebeziumConnector = new DebeziumSourceConnectorBuilder("../manifests")
+    //     .ForDb2()
+    //     .WithConnectorName("db2-debezium-source")
+    //     .WithClusterName("m3-kafka-connect")
+    //     .WithDatabaseConnectionFromEnv("DB2")
+    //     .WithTopicPrefix("db2-cdc")
+    //     .WithSnapshotMode("initial")
+    //     .WithTableIncludeList("SCHEMA.TABLE1", "SCHEMA.TABLE2")
+    //     .WithUnwrap()
+    //     .WithTopicRouting("db2-cdc.SCHEMA.(.*)", "bronze.db2.$1")
+    //     .WithAvroConverter()
+    //     .WithDlqTopic("db2-debezium-errors")
+    //     .Build();
 
     // Kafka Connect Cluster
     var kafkaConnectCluster = new KafkaConnectClusterBuilder("../manifests", "m3-kafka-connect")
