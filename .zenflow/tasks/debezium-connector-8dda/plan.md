@@ -51,16 +51,17 @@ Create the new builder class with:
 
 ---
 
-### [ ] Step: Add DD130 Naming and Common Configuration Methods
+### [x] Step: Add DD130 Naming and Common Configuration Methods
+<!-- chat-id: 1a228798-bc12-47ff-97bf-993e0c4e52ec -->
 
 Add builder methods for:
-- [ ] `WithNaming()` - DD130 naming convention integration (layer, domain, dataset)
-- [ ] `WithTopicPrefix()` - Alternative explicit topic prefix
-- [ ] `WithConnectorName()` - Override auto-generated connector name
-- [ ] `WithTableIncludeList()` / `WithTableExcludeList()` - Table selection
-- [ ] `WithSnapshotMode()` - Snapshot behavior control
-- [ ] `WithClusterName()` - Strimzi cluster label
-- [ ] `WithTasksMax()` - Connector parallelism
+- [x] `WithNaming()` - DD130 naming convention integration (layer, domain, dataset)
+- [x] `WithTopicPrefix()` - Alternative explicit topic prefix
+- [x] `WithConnectorName()` - Override auto-generated connector name
+- [x] `WithTableIncludeList()` / `WithTableExcludeList()` - Table selection
+- [x] `WithSnapshotMode()` - Snapshot behavior control
+- [x] `WithClusterName()` - Strimzi cluster label
+- [x] `WithTasksMax()` - Connector parallelism
 
 **File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
 

@@ -222,6 +222,122 @@ public class DebeziumSourceConnectorBuilder
         };
     }
 
+    /// <summary>
+    /// Configures DD130-compliant naming convention.
+    /// Auto-derives topic prefix, connector name, and DLQ topic from the naming components.
+    /// </summary>
+    /// <param name="layer">Data layer (Bronze, Silver, Gold).</param>
+    /// <param name="domain">Business domain (e.g., "m3", "erp").</param>
+    /// <param name="dataset">Dataset identifier (e.g., "cdc", "orders").</param>
+    /// <param name="subdomain">Optional subdomain for nested organization.</param>
+    /// <param name="processingStage">Optional processing stage (raw, cleaned, enriched, etc.).</param>
+    /// <param name="environment">Optional environment prefix (dev, staging, prod).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithNaming(
+        NamingConventionHelper.DataLayer layer,
+        string domain,
+        string dataset,
+        string? subdomain = null,
+        string? processingStage = null,
+        string? environment = null)
+    {
+        _layer = layer;
+        _domain = domain ?? throw new ArgumentNullException(nameof(domain));
+        _dataset = dataset ?? throw new ArgumentNullException(nameof(dataset));
+        _subdomain = subdomain;
+        _processingStage = processingStage;
+        _environment = environment;
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the Debezium topic prefix explicitly.
+    /// This overrides any auto-derived prefix from WithNaming().
+    /// </summary>
+    /// <param name="topicPrefix">The topic prefix for CDC events.</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithTopicPrefix(string topicPrefix)
+    {
+        _topicPrefix = topicPrefix ?? throw new ArgumentNullException(nameof(topicPrefix));
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the connector name explicitly.
+    /// This overrides any auto-derived name from WithNaming().
+    /// </summary>
+    /// <param name="connectorName">The Kubernetes resource name for the connector.</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithConnectorName(string connectorName)
+    {
+        _connectorName = connectorName ?? throw new ArgumentNullException(nameof(connectorName));
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the list of tables to include in CDC capture.
+    /// Format: "schema.table" (e.g., "public.users", "dbo.orders").
+    /// </summary>
+    /// <param name="tables">Tables to include (supports wildcards like "public.*").</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithTableIncludeList(params string[] tables)
+    {
+        if (tables == null || tables.Length == 0)
+            throw new ArgumentException("At least one table must be specified", nameof(tables));
+        _tableIncludeList = string.Join(",", tables);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the list of tables to exclude from CDC capture.
+    /// Format: "schema.table" (e.g., "public.audit_log").
+    /// </summary>
+    /// <param name="tables">Tables to exclude (supports wildcards).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithTableExcludeList(params string[] tables)
+    {
+        if (tables == null || tables.Length == 0)
+            throw new ArgumentException("At least one table must be specified", nameof(tables));
+        _tableExcludeList = string.Join(",", tables);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the snapshot mode for initial data capture.
+    /// </summary>
+    /// <param name="mode">Snapshot mode (Initial, Always, Never, SchemaOnly, WhenNeeded).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithSnapshotMode(SnapshotMode mode)
+    {
+        _snapshotMode = mode;
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the Strimzi Kafka Connect cluster name for the connector.
+    /// </summary>
+    /// <param name="clusterName">The cluster name (used in strimzi.io/cluster label).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithClusterName(string clusterName)
+    {
+        _clusterName = clusterName ?? throw new ArgumentNullException(nameof(clusterName));
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the maximum number of tasks for the connector.
+    /// For source connectors, this is typically 1 for consistency.
+    /// </summary>
+    /// <param name="tasksMax">Maximum number of tasks (default: 1).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithTasksMax(int tasksMax)
+    {
+        if (tasksMax < 1)
+            throw new ArgumentException("Tasks max must be at least 1", nameof(tasksMax));
+        _tasksMax = tasksMax;
+        return this;
+    }
+
     private static string ComputeConfigHash(Dictionary<string, object> config)
     {
         var json = JsonSerializer.Serialize(config);
