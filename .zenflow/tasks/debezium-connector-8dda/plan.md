@@ -33,16 +33,17 @@ Summary:
 
 ---
 
-### [ ] Step: Create DebeziumSourceConnectorBuilder Core Structure
+### [x] Step: Create DebeziumSourceConnectorBuilder Core Structure
+<!-- chat-id: dcf14d8b-74c8-435c-af5c-9ba1dc99d142 -->
 
 Create the new builder class with:
-- [ ] Define `DatabaseType` enum (Postgres, Db2, MySQL, SqlServer, Oracle, MongoDB)
-- [ ] Define `SnapshotMode` enum (Initial, Always, Never, SchemaOnly, WhenNeeded)
-- [ ] Define `DeleteHandlingMode` enum (None, Rewrite, Drop)
-- [ ] Create builder class with private fields for all configuration options
-- [ ] Implement constructor accepting `manifestsRoot` parameter
-- [ ] Implement `WithDatabaseType()` method
-- [ ] Implement `WithDatabaseConnection()` method for common DB credentials
+- [x] Define `DatabaseType` enum (Postgres, Db2, MySQL, SqlServer, Oracle, MongoDB)
+- [x] Define `SnapshotMode` enum (Initial, Always, Never, SchemaOnly, WhenNeeded)
+- [x] Define `DeleteHandlingMode` enum (None, Rewrite, Drop)
+- [x] Create builder class with private fields for all configuration options
+- [x] Implement constructor accepting `manifestsRoot` parameter
+- [x] Implement `WithDatabaseType()` method
+- [x] Implement `WithDatabaseConnection()` method for common DB credentials
 
 **File**: `gitops/applications/kafkaconnect/DebeziumSourceConnectorBuilder.cs`
 
