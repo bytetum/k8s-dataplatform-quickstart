@@ -1,5 +1,6 @@
 ﻿global using Pulumi;
 global using Kubernetes = Pulumi.Kubernetes;
+using applications;
 using applications.flink.flink_deployment;
 using applications.flink.flink_session_mode;
 using applications.infrastructure;
@@ -16,11 +17,44 @@ return await Deployment.RunAsync(() =>
     var polaris = new Polaris("../manifests");
     var postgres = new Postgres("../manifests");
     var kafkaConnect = new KafkaConnect("../manifests");
-    var postgreDebeziumConnector = new PostgresDebeziumConnector("../manifests");
+    // PostgreSQL CDC Source Connector (Debezium)
+    // Migrated from PostgresDebeziumConnector to use the generic builder pattern
+    var postgresDebeziumSource = new DebeziumSourceConnectorBuilder("../manifests")
+        .WithDatabaseType(DatabaseType.Postgres)
+        .WithDatabaseConnection(
+            hostname: "${env:POSTGRES_HOST}",
+            port: "${env:POSTGRES_PORT}",
+            user: "${env:POSTGRES_USER}",
+            password: "${env:POSTGRES_PASSWORD}",
+            database: "${env:POSTGRES_DB}")
+        .WithConnectorName("postgres-debezium-source")
+        .WithTopicPrefix("m3-cdc")
+        .WithPostgresReplication(
+            publicationName: "dbz_m3_publication",
+            slotName: "m3_debezium_slot",
+            pluginName: "pgoutput")
+        .WithTableIncludeList("public.CSYTAB", "public.CIDMAS", "public.CIDVEN")
+        .WithSnapshotMode(SnapshotMode.Always)
+        .WithUnwrapTransform(
+            enabled: true,
+            deleteMode: DeleteHandlingMode.Rewrite,
+            addFields: true,
+            dropTombstones: true)
+        .WithRouteTransform(
+            regex: "m3-cdc.public.(.*)",
+            replacement: "bronze.m3.$1")
+        .WithAvroConverter()
+        .WithErrorTolerance(tolerateAll: true)
+        .WithDeadLetterQueue("m3-debezium-errors")
+        .WithPerformanceTuning(
+            maxBatchSize: 2048,
+            maxQueueSize: 8192,
+            pollIntervalMs: 1000)
+        .Build();
 
     // Kafka Connect Cluster
     var kafkaConnectCluster = new KafkaConnectClusterBuilder("../manifests", "m3-kafka-connect")
-        .WithBootstrapServers("warpstream-agent.warpstream.svc.cluster.local:9092")
+        .WithBootstrapServers(Constants.KafkaBootstrapServers)
         .WithImage("ttl.sh/hxt-kafka-connect-amd64-20-12:24h")
         .WithReplicas(1)
         .WithMetricsConfig("kafka-connect-metrics", "metrics-config.yml")
@@ -74,36 +108,36 @@ return await Deployment.RunAsync(() =>
     // Schema Compatibility: BACKWARD (controlled evolution, consumers update first)
     // Auto-derived: topic, table, DLQ names from DD130 components
     // ========================================================================
-    var icebergSinkValidExample = new IcebergSinkConnectorBuilder("../manifests")
-        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "valid_example")
-        .WithIdColumns("record_key")
-        .Build();
-
-    var icebergSinkCustomerTransactions = new IcebergSinkConnectorBuilder("../manifests")
-        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "customer_transactions")
-        .WithIdColumns("record_key")
-        .Build();
-
-    // var icebergSinkProductInventory = new IcebergSinkConnectorBuilder("../manifests")
-    //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "product_inventory")
+    // var icebergSinkValidExample = new IcebergSinkConnectorBuilder("../manifests")
+    //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "valid_example")
     //     .WithIdColumns("record_key")
     //     .Build();
 
-    // ========================================================================
-    // FLINK JOBS (DD130 Naming)
-    // Auto-derived deployment name: {layer}.{domain}.{dataset}
-    // ========================================================================
-    var scriptFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
-        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "valid_example")
-        .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test.sql")
-        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.LastState)
-        .Build();
+    // var icebergSinkCustomerTransactions = new IcebergSinkConnectorBuilder("../manifests")
+    //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "customer_transactions")
+    //     .WithIdColumns("record_key")
+    //     .Build();
 
-    var scriptFlinkDeployment2 = new FlinkDeploymentBuilder("../manifests")
-        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "customer_transactions")
-        .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test_2.sql")
-        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.LastState)
-        .Build();
+    // // var icebergSinkProductInventory = new IcebergSinkConnectorBuilder("../manifests")
+    // //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "product_inventory")
+    // //     .WithIdColumns("record_key")
+    // //     .Build();
+
+    // // ========================================================================
+    // // FLINK JOBS (DD130 Naming)
+    // // Auto-derived deployment name: {layer}.{domain}.{dataset}
+    // // ========================================================================
+    // var scriptFlinkDeployment = new FlinkDeploymentBuilder("../manifests")
+    //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "valid_example")
+    //     .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test.sql")
+    //     .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.LastState)
+    //     .Build();
+
+    // var scriptFlinkDeployment2 = new FlinkDeploymentBuilder("../manifests")
+    //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "customer_transactions")
+    //     .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test_2.sql")
+    //     .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.LastState)
+    //     .Build();
 
     // var scriptFlinkDeployment3 = new FlinkDeploymentBuilder("../manifests")
     //     .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "product_inventory")

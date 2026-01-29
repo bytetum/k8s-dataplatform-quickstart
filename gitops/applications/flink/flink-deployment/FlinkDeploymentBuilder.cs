@@ -21,9 +21,9 @@ internal class FlinkDeploymentBuilder
     private string _taskManagerMemory = "2048m";
     private double _taskManagerCpu = 0.6;
     private int _jobParallelism = 1;
-    private string _kafkaBootstrapServers = "warpstream-agent.default.svc.cluster.local:9092";
+    private string _kafkaBootstrapServers = applications.Constants.KafkaBootstrapServers;
     private string _sqlFilePath = "";
-    private string _s3BucketPath = "s3://local-rocksdb-test";
+    private string _s3BucketPath = applications.Constants.S3BucketPath;
     private string _entryClass = "";
     private string _jarFilePath = "";
     private UpgradeMode _upgradeMode = UpgradeMode.Stateless;
@@ -136,7 +136,13 @@ internal class FlinkDeploymentBuilder
         _upgradeMode = upgradeMode;
         return this;
     }
-    
+
+    public FlinkDeploymentBuilder WithS3BucketPath(string s3BucketPath)
+    {
+        _s3BucketPath = s3BucketPath;
+        return this;
+    }
+
     public FlinkDeploymentBuilder WithNaming(
         NamingConventionHelper.DataLayer targetLayer,
         string domain,

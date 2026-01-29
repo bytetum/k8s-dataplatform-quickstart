@@ -60,13 +60,12 @@ public class IcebergSinkConnectorBuilder
     private string? _regexRouterReplacement;
 
     // Common defaults (can be overridden)
-    private string _schemaRegistryUrl =
-        "http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094";
+    private string _schemaRegistryUrl = Constants.SchemaRegistryUrl;
 
     private string _schemaRegistryAuth = "${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}";
 
-    private string _polarisUri = "http://polaris.polaris.svc.cluster.local:8181/api/catalog";
-    private string _catalogName = "ao_catalog";
+    private string _polarisUri = Constants.PolarisUri;
+    private string _catalogName = Constants.PolarisCatalog;
     private string _dlqTopic = "m3.iceberg.dlq";
 
     public IcebergSinkConnectorBuilder(string manifestsRoot)
@@ -473,7 +472,7 @@ public class IcebergSinkConnectorBuilder
             Metadata = new ObjectMetaArgs
             {
                 Name = $"{_connectorPrefix}-{_connectorName}",
-                Namespace = "kafka-connect",
+                Namespace = Constants.KafkaConnectNamespace,
                 Labels = new Dictionary<string, string>
                 {
                     { "strimzi.io/cluster", _clusterName }

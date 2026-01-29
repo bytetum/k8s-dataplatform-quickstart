@@ -15,10 +15,10 @@ public class KafkaConnectClusterBuilder
 {
     private readonly string _manifestsRoot;
     private readonly string _clusterName;
-    private string _bootstrapServers = "warpstream-agent.warpstream.svc.cluster.local:9092";
+    private string _bootstrapServers = Constants.KafkaBootstrapServers;
     private string _image = "ttl.sh/hxt-kafka-connect-amd64:24h";
     private int _replicas = 1;
-    private string _namespace = "kafka-connect";
+    private string _namespace = Constants.KafkaConnectNamespace;
 
     // Metrics configuration
     private string? _metricsConfigMapName;
@@ -186,6 +186,12 @@ public class KafkaConnectClusterBuilder
                         CreateEnvVar("POLARIS_PASSWORD", "polaris-root-password", "polaris-root-password"),
                         CreateEnvVar("SCHEMA_REGISTRY_USERNAME", "schema-registry-credentials", "username"),
                         CreateEnvVar("SCHEMA_REGISTRY_PASSWORD", "schema-registry-credentials", "password"),
+                        // Postgres credentials for Debezium CDC
+                        CreateEnvVar("POSTGRES_HOST", "pricefiles-db-credentials", "host"),
+                        CreateEnvVar("POSTGRES_PORT", "pricefiles-db-credentials", "port"),
+                        CreateEnvVar("POSTGRES_USER", "pricefiles-db-credentials", "username"),
+                        CreateEnvVar("POSTGRES_PASSWORD", "pricefiles-db-credentials", "password"),
+                        CreateEnvVar("POSTGRES_DB", "pricefiles-db-credentials", "dbname"),
                     }
                 }
             }
@@ -246,6 +252,12 @@ public class KafkaConnectClusterBuilder
                         CreateEnvVarArgs("POLARIS_PASSWORD", "polaris-root-password", "polaris-root-password"),
                         CreateEnvVarArgs("SCHEMA_REGISTRY_USERNAME", "schema-registry-credentials", "username"),
                         CreateEnvVarArgs("SCHEMA_REGISTRY_PASSWORD", "schema-registry-credentials", "password"),
+                        // Postgres credentials for Debezium CDC
+                        CreateEnvVarArgs("POSTGRES_HOST", "pricefiles-db-credentials", "host"),
+                        CreateEnvVarArgs("POSTGRES_PORT", "pricefiles-db-credentials", "port"),
+                        CreateEnvVarArgs("POSTGRES_USER", "pricefiles-db-credentials", "username"),
+                        CreateEnvVarArgs("POSTGRES_PASSWORD", "pricefiles-db-credentials", "password"),
+                        CreateEnvVarArgs("POSTGRES_DB", "pricefiles-db-credentials", "dbname"),
                     }
                 }
             }

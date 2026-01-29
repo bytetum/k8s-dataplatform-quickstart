@@ -29,7 +29,7 @@ internal class KafkaConnect : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "container-registry-write-credentials",
-                Namespace = "kafka-connect",
+                Namespace = Constants.KafkaConnectNamespace,
             },
             Spec = new ExternalSecretSpecArgs()
             {
@@ -70,7 +70,7 @@ internal class KafkaConnect : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "container-registry-read-credentials",
-                Namespace = "kafka-connect",
+                Namespace = Constants.KafkaConnectNamespace,
             },
             Spec = new ExternalSecretSpecArgs()
             {
@@ -111,7 +111,7 @@ internal class KafkaConnect : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "polaris-root-password",
-                Namespace = "kafka-connect",
+                Namespace = Constants.KafkaConnectNamespace,
             },
             Spec = new ExternalSecretSpecArgs
             {
@@ -143,7 +143,7 @@ internal class KafkaConnect : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "iceberg-bucket-credentials",
-                Namespace = "kafka-connect",
+                Namespace = Constants.KafkaConnectNamespace,
             },
             Spec = new ExternalSecretSpecArgs
             {
@@ -175,7 +175,7 @@ internal class KafkaConnect : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "pricefiles-db-credentials",
-                Namespace = "kafka-connect",
+                Namespace = Constants.KafkaConnectNamespace,
             },
             Spec = new ExternalSecretSpecArgs
             {
@@ -207,7 +207,7 @@ internal class KafkaConnect : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "schema-registry-credentials",
-                Namespace = "kafka-connect",
+                Namespace = Constants.KafkaConnectNamespace,
             },
             Spec = new ExternalSecretSpecArgs
             {
