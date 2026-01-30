@@ -1,6 +1,6 @@
 apiVersion: v1
 data:
-  flink-conf.yaml: |-
+  config.yaml: |-
     jobmanager.rpc.address: flink-jobmanager
     rest.address: flink-jobmanager
     taskmanager.numberOfTaskSlots: 2
@@ -26,6 +26,13 @@ data:
 
     # Prometheus metrics reporter
     metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+
+    # OpenTelemetry metrics reporter (uncomment when OTel Collector is deployed)
+    # metrics.reporter.otel.factory.class: org.apache.flink.metrics.otel.OpenTelemetryMetricReporterFactory
+    # metrics.reporter.otel.exporter.endpoint: http://otel-collector:4317
+    # OpenLineage job status listener
+
+    execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListener
   log4j-console.properties: |-
     rootLogger.level = INFO
     rootLogger.appenderRef.console.ref = ConsoleAppender

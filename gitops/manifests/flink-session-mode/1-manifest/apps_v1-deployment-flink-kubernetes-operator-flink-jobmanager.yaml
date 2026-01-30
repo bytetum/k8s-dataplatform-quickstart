@@ -44,7 +44,7 @@ spec:
             secretKeyRef:
               key: password
               name: schema-registry-credentials
-        image: flink-custom:test
+        image: flink-test:2.1.1
         imagePullPolicy: Never
         livenessProbe:
           initialDelaySeconds: 30
