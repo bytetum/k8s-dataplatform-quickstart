@@ -5,7 +5,42 @@ metrics:
   tags:
     {}
 
+# Resource limits - critical for Kind/resource-constrained environments
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+# Probe configuration for slow-starting JVMs
+livenessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  failureThreshold: 12
+  timeoutSeconds: 5
+
+readinessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  failureThreshold: 10
+  timeoutSeconds: 3
+
+startupProbe:
+  httpGet:
+    path: /q/health/live
+    port: 8181
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  failureThreshold: 30  # Allows up to 160s startup
+  timeoutSeconds: 3
+
 extraEnv:
+  # JVM tuning for faster startup and bounded memory
+  - name: JAVA_OPTS_APPEND
+    value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -Xss256k -XX:+UseG1GC -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+
   - name: AWS_STORAGE_BUCKET
     value: s3://local-iceberg-test/
   - name: AWS_REGION
