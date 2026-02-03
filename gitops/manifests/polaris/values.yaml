@@ -39,7 +39,7 @@ startupProbe:
 extraEnv:
   # JVM tuning for faster startup and bounded memory
   - name: JAVA_OPTS_APPEND
-    value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -Xss256k -XX:+UseG1GC -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+    value: "-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 
   - name: AWS_STORAGE_BUCKET
     value: s3://local-iceberg-test/
