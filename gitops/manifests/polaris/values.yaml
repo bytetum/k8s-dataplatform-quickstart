@@ -1,32 +1,79 @@
+metrics:
+  # -- Specifies whether metrics for the polaris server should be enabled.
+  enabled: true
+  # -- Additional tags (dimensional labels) to add to the metrics.
+  tags:
+    {}
+
+# Resource limits - critical for Kind/resource-constrained environments
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+# Probe configuration for slow-starting JVMs
+livenessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  failureThreshold: 12
+  timeoutSeconds: 5
+
+readinessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  failureThreshold: 10
+  timeoutSeconds: 3
+
+startupProbe:
+  httpGet:
+    path: /q/health/live
+    port: 8181
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  failureThreshold: 30  # Allows up to 160s startup
+  timeoutSeconds: 3
+
 extraEnv:
+  # JVM tuning for faster startup and bounded memory
+  - name: JAVA_OPTS_APPEND
+    value: "-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+
   - name: AWS_STORAGE_BUCKET
-    value: s3://k8s-essence/
+    value: s3://local-iceberg-test/
+  - name: AWS_REGION
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_REGION
   - name: AWS_ACCESS_KEY_ID
     valueFrom:
       secretKeyRef:
-        name: s3-credentials
-        key: SCALEWAY_ACCESS_KEY
+        name: iceberg-bucket-credentials
+        key: AWS_ACCESS_KEY
   - name: AWS_SECRET_ACCESS_KEY
     valueFrom:
       secretKeyRef:
-        name: s3-credentials
-        key: SCALEWAY_SECRET_KEY
-              
+        name: iceberg-bucket-credentials
+        key: AWS_SECRET_KEY
+
   - name: POLARIS_PERSISTENCE_TYPE
     value: relational-jdbc
-    
+
   - name: QUARKUS_DATASOURCE_USERNAME
     valueFrom:
       secretKeyRef:
         name: polaris-postgres-credentials
         key: username
-      
+
   - name: QUARKUS_DATASOURCE_PASSWORD
     valueFrom:
       secretKeyRef:
         name: polaris-postgres-credentials
         key: password
-        
+
   - name: POSTGRES_HOST
     valueFrom:
       secretKeyRef:
@@ -34,67 +81,74 @@ extraEnv:
         key: db-address
 
   - name: QUARKUS_DATASOURCE_JDBC_URL
-    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/polaris"
+
+realmContext:
+  realms:
+    - polaris
+
+features:
+  DROP_WITH_PURGE_ENABLED: true
+  
+extraInitContainers:
+  - name: polaris-boostrap
+    image: apache/polaris-admin-tool:latest
+    imagePullPolicy: Always
+    env:
+      - name: POLARIS_ROOT_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: polaris-root-password
+            key:  polaris-root-password
+
+      - name: POLARIS_PERSISTENCE_TYPE
+        value: relational-jdbc
+
+      - name: POSTGRES_HOST
+        valueFrom:
+          secretKeyRef:
+            name: polaris-postgres-credentials
+            key: db-address
+
+      - name: QUARKUS_DATASOURCE_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: polaris-postgres-credentials
+            key: username
+
+      - name: QUARKUS_DATASOURCE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: polaris-postgres-credentials
+            key: password
+
+      - name: QUARKUS_DATASOURCE_JDBC_URL
+        value: "jdbc:postgresql://$(POSTGRES_HOST):5432/polaris"
     
-extraInitContainers: 
-   - name: polaris-boostrap
-     image: apache/polaris-admin-tool:latest
-     imagePullPolicy: Always
-     env:
-       - name: POLARIS_ROOT_PASSWORD
-         valueFrom:
-           secretKeyRef:
-             name: polaris-root-password
-             key:  polaris-root-password
-         
-       - name: POLARIS_PERSISTENCE_TYPE
-         value: relational-jdbc
-         
-       - name: POSTGRES_HOST
-         valueFrom:
-           secretKeyRef:
-             name: polaris-postgres-credentials
-             key: db-address  
-             
-       - name: QUARKUS_DATASOURCE_USERNAME
-         valueFrom:
-           secretKeyRef:
-             name: polaris-postgres-credentials
-             key: username
-             
-       - name: QUARKUS_DATASOURCE_PASSWORD
-         valueFrom:
-           secretKeyRef:
-             name: polaris-postgres-credentials
-             key: password
-             
-       - name: QUARKUS_DATASOURCE_JDBC_URL
-         value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database-test?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
-       
-     command:
-       - "/bin/bash"
-       - "-c"
-       - |
-         set -x
-         ACCEPTABLE_ERROR="already been bootstrapped"
-         
-         # Execute the command, redirecting stderr to stdout to capture all output
-         OUTPUT=$(java -jar /deployments/polaris-admin-tool.jar bootstrap --realm=database-test --credential=database-test,root,${POLARIS_ROOT_PASSWORD} 2>&1)
-         EXIT_CODE=$?
-         
-         echo "--- Polaris Bootstrap Output ---"
-         echo "${OUTPUT}"
-         echo "------------------------------"
-         
-         if [ ${EXIT_CODE} -eq 0 ]; then
-           echo "Bootstrap successful on the first run."
-           exit 0
-         fi
-         
-         if [[ "${OUTPUT}" == *"${ACCEPTABLE_ERROR}"* ]]; then
-           echo "Ignoring acceptable error: Metastore is already bootstrapped."
-           exit 0
-         else
-           echo "Bootstrap failed with an unexpected error (Exit Code: ${EXIT_CODE})." >&2
-           exit 1
-         fi
+    command:
+      - "/bin/bash"
+      - "-c"
+      - |
+        set -x
+        ACCEPTABLE_ERROR="already been bootstrapped"
+        
+        # Execute the command, redirecting stderr to stdout to capture all output
+        OUTPUT=$(java -jar /deployments/polaris-admin-tool.jar bootstrap --realm=polaris --credential=polaris,root,${POLARIS_ROOT_PASSWORD} 2>&1)
+        EXIT_CODE=$?
+        
+        echo "--- Polaris Bootstrap Output ---"
+        echo "${OUTPUT}"
+        echo "------------------------------"
+        
+        if [ ${EXIT_CODE} -eq 0 ]; then
+          echo "Bootstrap successful on the first run."
+          exit 0
+        fi
+        
+        if [[ "${OUTPUT}" == *"${ACCEPTABLE_ERROR}"* ]]; then
+          echo "Ignoring acceptable error: Metastore is already bootstrapped."
+          exit 0
+        else
+          echo "Bootstrap failed with an unexpected error (Exit Code: ${EXIT_CODE})." >&2
+          exit 1
+        fi
