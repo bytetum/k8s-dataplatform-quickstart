@@ -81,11 +81,11 @@ extraEnv:
         key: db-address
 
   - name: QUARKUS_DATASOURCE_JDBC_URL
-    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+    value: "jdbc:postgresql://$(POSTGRES_HOST):5432/polaris?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
 
 realmContext:
   realms:
-    - database
+    - polaris
 
 features:
   DROP_WITH_PURGE_ENABLED: true
@@ -123,7 +123,7 @@ extraInitContainers:
             key: password
 
       - name: QUARKUS_DATASOURCE_JDBC_URL
-        value: "jdbc:postgresql://$(POSTGRES_HOST):5432/database?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
+        value: "jdbc:postgresql://$(POSTGRES_HOST):5432/polaris?user=$(QUARKUS_DATASOURCE_USERNAME)&password=$(QUARKUS_DATASOURCE_PASSWORD)"
     
     command:
       - "/bin/bash"
@@ -133,7 +133,7 @@ extraInitContainers:
         ACCEPTABLE_ERROR="already been bootstrapped"
         
         # Execute the command, redirecting stderr to stdout to capture all output
-        OUTPUT=$(java -jar /deployments/polaris-admin-tool.jar bootstrap --realm=database --credential=database,root,${POLARIS_ROOT_PASSWORD} 2>&1)
+        OUTPUT=$(java -jar /deployments/polaris-admin-tool.jar bootstrap --realm=polaris --credential=polaris,root,${POLARIS_ROOT_PASSWORD} 2>&1)
         EXIT_CODE=$?
         
         echo "--- Polaris Bootstrap Output ---"
