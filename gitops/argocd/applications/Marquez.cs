@@ -7,6 +7,7 @@ public class Marquez
         new ArgoApplicationBuilder("marquez", provider)
             .SyncWave(1) // Marquez must be available before Flink sends lineage events
             .InNamespace("marquez")
+            .CreateNamespace()
             .Build();
     }
 }

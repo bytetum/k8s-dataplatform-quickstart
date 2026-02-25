@@ -41,6 +41,12 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
         return this;
     }
 
+    public ArgoApplicationBuilder CreateNamespace()
+    {
+        syncOptions.Add("CreateNamespace=true");
+        return this;
+    }
+
     public ArgoApplicationBuilder Branch(string branch)
     {
         sources.Last().TargetRevision = branch;

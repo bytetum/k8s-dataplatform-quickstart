@@ -7,6 +7,7 @@ public class OpenMetadataDependencies
         new ArgoApplicationBuilder("openmetadata-dependencies", provider)
             .SyncWave(1)
             .InNamespace("openmetadata")
+            .CreateNamespace()
             .Build();
     }
 }
@@ -18,6 +19,7 @@ public class OpenMetadata
         new ArgoApplicationBuilder("openmetadata", provider)
             .SyncWave(2) // After dependencies are ready
             .InNamespace("openmetadata")
+            .CreateNamespace()
             .Build();
     }
 }
