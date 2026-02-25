@@ -105,7 +105,7 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
             },
         };
 
-        if (sources.Any(source => source.applicationType == ApplicationType.Helm))
+        if (sources.Any(source => source.applicationType is ApplicationType.Helm or ApplicationType.HelmGit))
         {
             syncOptions.Add("CreateNamespace=true");
         }
@@ -153,7 +153,8 @@ internal class ArgoApplicationBuilder(string name, Kubernetes.Provider provider)
 enum ApplicationType
 {
     Yaml,
-    Helm
+    Helm,
+    HelmGit // Helm chart sourced from a git repo (uses Path instead of Chart)
 }
 
 internal class ArgoApplicationSource(ApplicationType applicationType, string name)
@@ -183,6 +184,17 @@ internal class ArgoApplicationSource(ApplicationType applicationType, string nam
         ApplicationType.Helm => new()
         {
             Chart = source.Chart,
+            RepoURL = source.RepoURL,
+            TargetRevision = source.TargetRevision,
+            Helm = source.SkipCrds || source.ValueFiles.Count > 0 ? new ApplicationSpecSourceHelmArgs
+            {
+                SkipCrds = source.SkipCrds ? true : null,
+                ValueFiles = source.ValueFiles.Count > 0 ? source.ValueFiles : null!,
+            } : null!,
+        },
+        ApplicationType.HelmGit => new()
+        {
+            Path = source.Path,
             RepoURL = source.RepoURL,
             TargetRevision = source.TargetRevision,
             Helm = source.SkipCrds || source.ValueFiles.Count > 0 ? new ApplicationSpecSourceHelmArgs
