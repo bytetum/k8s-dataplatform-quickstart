@@ -18,6 +18,7 @@ spec:
     execution.checkpointing.interval: 1min
     execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-apps/silver-m3-product-inventory/savepoints
     execution.checkpointing.storage: filesystem
+    execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListener
     high-availability.storageDir: s3://local-rocksdb-test/flink-apps/silver-m3-product-inventory/ha
     high-availability.type: kubernetes
     jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-common/completed-jobs
@@ -51,6 +52,8 @@ spec:
             secretKeyRef:
               key: AWS_SECRET_ACCESS_KEY
               name: flink-bucket-credentials
+        - name: OPENLINEAGE_CONFIG
+          value: /opt/flink/conf/openlineage.yml
         imagePullPolicy: Never
         name: flink-main-container
         volumeMounts:

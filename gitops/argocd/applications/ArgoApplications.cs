@@ -25,6 +25,9 @@ internal class ArgoApplications : ComponentResource
         var strimziOperator = new StrimziOperator(provider);
         var kafkaConnect = new KafkaConnect(provider);
         var flinkSessionMode = new FlinkSessionMode(provider);
+        var marquez = new Marquez(provider);
+        var openMetadataDeps = new OpenMetadataDependencies(provider);
+        var openMetadata = new OpenMetadata(provider);
         // var monitoring = new KubePrometheus(provider);
     }
 }

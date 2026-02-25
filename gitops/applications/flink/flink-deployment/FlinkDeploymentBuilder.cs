@@ -13,8 +13,8 @@ internal class FlinkDeploymentBuilder
     private string _manifestRoot = "";
     private string _deploymentName = "sql-runner-example";
     private string _namespace = Constants.Namespace;
-    private string _image = "flink-custom:test";
-    private string _flinkVersion = "v1_20";
+    private string _image = "flink-test:2.1.1";
+    private string _flinkVersion = "v2_1";
     private int _taskSlots = 1;
     private string _jobManagerMemory = "1024m";
     private double _jobManagerCpu = 0.6;
@@ -237,8 +237,11 @@ internal class FlinkDeploymentBuilder
                         JobManagerArchiveFsDir = $"{_s3BucketPath}/flink-common/completed-jobs",
                         KafkaBootstrapServers = _kafkaBootstrapServers,
                         
-                        // Prometheus metrics reporter configuration
-                        MetricsReporterPromFactory = "org.apache.flink.metrics.prometheus.PrometheusReporterFactory",
+                        // OpenTelemetry metrics reporter configuration (uncomment when OTel Collector is deployed)
+                        // MetricsReporterOtelFactory = "org.apache.flink.metrics.otel.OpenTelemetryMetricReporterFactory",
+                        
+                        // OpenLineage job status listener for lineage tracking (Flink 2.1+)
+                        ExecutionJobStatusChangedListeners = "io.openlineage.flink.listener.OpenLineageJobStatusChangedListener",
                     },
                     ServiceAccount = "flink-sql-gateway-sa",
                     JobManager = new JobManagerSpecArgs
@@ -292,6 +295,11 @@ internal class FlinkDeploymentBuilder
                                                     Key = "AWS_SECRET_ACCESS_KEY"
                                                 }
                                             }
+                                        },
+                                        new EnvVarArgs
+                                        {
+                                            Name = "OPENLINEAGE_CONFIG",
+                                            Value = "/opt/flink/conf/openlineage.yml"
                                         }
                                     },
                                     VolumeMounts = new InputList<VolumeMountArgs>
@@ -396,7 +404,7 @@ internal class FlinkDeploymentBuilder
                         JarURI = !string.IsNullOrEmpty(_jarFilePath)
                             ? $"local:///opt/flink/jar/{System.IO.Path.GetFileName(_jarFilePath)}"
                             : "local:///opt/flink/usrlib/runner.jar",
-                        EntryClass = _entryClass,
+                        EntryClass = !string.IsNullOrEmpty(_jarFilePath) && !string.IsNullOrEmpty(_entryClass) ? _entryClass : null,
                         // Only pass SQL script args when NOT using custom JAR
                         Args = string.IsNullOrEmpty(_jarFilePath)
                             ? new InputList<string> { $"/opt/flink/sql/{System.IO.Path.GetFileName(_sqlFilePath)}" }

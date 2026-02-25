@@ -31,8 +31,7 @@ data:
     # metrics.reporter.otel.factory.class: org.apache.flink.metrics.otel.OpenTelemetryMetricReporterFactory
     # metrics.reporter.otel.exporter.endpoint: http://otel-collector:4317
     # OpenLineage job status listener
-
-    # execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListener
+    execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListener
   log4j-console.properties: |-
     rootLogger.level = INFO
     rootLogger.appenderRef.console.ref = ConsoleAppender
@@ -63,6 +62,12 @@ data:
     appender.rolling.strategy.max = 10
     logger.netty.name = org.jboss.netty.channel.DefaultChannelPipeline
     logger.netty.level = OFF
+  openlineage.yml: |-
+    transport:
+      type: http
+      url: http://marquez.marquez.svc.cluster.local:5000
+      endpoint: /api/v1/lineage
+      timeoutInMillis: 5000
 kind: ConfigMap
 metadata:
   labels:

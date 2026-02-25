@@ -1,0 +1,25 @@
+---
+# Source: marquez/templates/web/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: marquez-web
+  labels:
+    app.kubernetes.io/name: marquez
+    helm.sh/chart: marquez-0.51.1
+    app.kubernetes.io/instance: marquez
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: web
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+
+  selector:
+    app.kubernetes.io/name: marquez
+    app.kubernetes.io/instance: marquez
+    app.kubernetes.io/component: web

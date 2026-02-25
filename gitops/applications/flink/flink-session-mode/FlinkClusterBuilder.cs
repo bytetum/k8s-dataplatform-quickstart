@@ -275,7 +275,7 @@ internal class FlinkClusterBuilder
             Data = new InputMap<string>
             {
                 {
-                    "flink-conf.yaml",
+                    "config.yaml",
                     $"""
                          jobmanager.rpc.address: flink-jobmanager
                          rest.address: flink-jobmanager
@@ -302,6 +302,22 @@ internal class FlinkClusterBuilder
 
                          # Prometheus metrics reporter
                          metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+                         
+                         # OpenTelemetry metrics reporter (uncomment when OTel Collector is deployed)
+                         # metrics.reporter.otel.factory.class: org.apache.flink.metrics.otel.OpenTelemetryMetricReporterFactory
+                         # metrics.reporter.otel.exporter.endpoint: http://otel-collector:4317
+                         # OpenLineage job status listener
+                         execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListener
+                         """.Replace("\r\n", "\n")
+                },
+                {
+                    "openlineage.yml",
+                    $"""
+                         transport:
+                           type: http
+                           url: {applications.Constants.MarquezApiUrl}
+                           endpoint: /api/v1/lineage
+                           timeoutInMillis: 5000
                          """.Replace("\r\n", "\n")
                 },
                 {
@@ -377,7 +393,7 @@ internal class FlinkClusterBuilder
                         {
                             Name = "jobmanager",
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
-                            Image = "flink-custom:test",
+                            Image = "flink-test:2.1.1",
                             ImagePullPolicy = "Never",
                             Args = new InputList<string> { "jobmanager" },
                             Ports = new InputList<ContainerPortArgs>
@@ -441,6 +457,11 @@ internal class FlinkClusterBuilder
                                             Key = "password"
                                         }
                                     }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "OPENLINEAGE_CONFIG",
+                                    Value = "/opt/flink/conf/openlineage.yml"
                                 }
                             },
                             VolumeMounts = new InputList<VolumeMountArgs>
@@ -513,7 +534,7 @@ internal class FlinkClusterBuilder
                         {
                             Name = "taskmanager",
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
-                            Image = "flink-custom:test",
+                            Image = "flink-test:2.1.1",
                             ImagePullPolicy = "Never",
                             Args = new InputList<string> { "taskmanager" },
                             Ports = new InputList<ContainerPortArgs>
@@ -575,6 +596,11 @@ internal class FlinkClusterBuilder
                                             Key = "password"
                                         }
                                     }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "OPENLINEAGE_CONFIG",
+                                    Value = "/opt/flink/conf/openlineage.yml"
                                 }
                             },
                             VolumeMounts = new InputList<VolumeMountArgs>
@@ -625,7 +651,7 @@ internal class FlinkClusterBuilder
                             Name = "sql-gateway",
                             SecurityContext = new SecurityContextArgs { Privileged = true, RunAsUser = 0 },
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
-                            Image = "flink-custom:test",
+                            Image = "flink-test:2.1.1",
                             ImagePullPolicy = "Never",
                             Command = new InputList<string> { "/bin/sh", "-c" },
                             Args = new InputList<string>
@@ -684,6 +710,11 @@ internal class FlinkClusterBuilder
                                             Key = "password"
                                         }
                                     }
+                                },
+                                new EnvVarArgs
+                                {
+                                    Name = "OPENLINEAGE_CONFIG",
+                                    Value = "/opt/flink/conf/openlineage.yml"
                                 }
                             },
                             VolumeMounts = new InputList<VolumeMountArgs>

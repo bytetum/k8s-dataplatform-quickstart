@@ -27,4 +27,17 @@ public static class Constants
 
     // S3 / Object Storage
     public const string S3BucketPath = "s3://local-rocksdb-test";
+
+    // Marquez (OpenLineage backend)
+    public const string MarquezNamespace = "marquez";
+    public const int MarquezApiPort = 5000;
+    public const int MarquezWebPort = 3000;
+    public static string MarquezApiUrl =>
+        $"http://marquez.{MarquezNamespace}.svc.cluster.local:{MarquezApiPort}";
+
+    // OpenMetadata
+    public const string OpenMetadataNamespace = "openmetadata";
+    public const int OpenMetadataPort = 8585;
+    public static string OpenMetadataUrl =>
+        $"http://openmetadata.{OpenMetadataNamespace}.svc.cluster.local:{OpenMetadataPort}";
 }
