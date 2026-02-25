@@ -10,10 +10,17 @@ spec:
     namespace: marquez
     server: https://kubernetes.default.svc
   project: default
-  source:
-    directory:
+  sources:
+  - helm:
+      valueFiles:
+      - $values/gitops/manifests/marquez/values.yaml
+    path: chart
+    repoURL: https://github.com/MarquezProject/marquez.git
+    targetRevision: main
+  - directory:
       recurse: true
     path: gitops/manifests/marquez
+    ref: values
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:
@@ -21,4 +28,5 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
+    - CreateNamespace=true
     - CreateNamespace=true
