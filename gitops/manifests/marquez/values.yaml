@@ -2,6 +2,12 @@ marquez:
   port: 5000
   adminPort: 5001
   migrateOnStartup: true
+  db:
+    host: marquez-postgres
+    port: 5432
+    name: marquez
+    user: marquez
+    password: marquez
   resources:
     requests:
       cpu: 250m
@@ -22,20 +28,4 @@ web:
       memory: 256Mi
 
 postgresql:
-  enabled: true
-  image:
-    registry: docker.io
-    repository: bitnami/postgresql
-    tag: 14
-  auth:
-    username: marquez
-    password: marquez
-    database: marquez
-  primary:
-    resources:
-      requests:
-        cpu: 250m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
+  enabled: false
