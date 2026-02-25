@@ -1,0 +1,26 @@
+openmetadata:
+  config:
+    database:
+      host: openmetadata-dependencies-mysql.openmetadata.svc.cluster.local
+      port: 3306
+      auth:
+        username: openmetadata_user
+        password: openmetadata
+    elasticsearch:
+      host: opensearch-cluster-master.openmetadata.svc.cluster.local
+      port: 9200
+      scheme: http
+    airflow:
+      host: openmetadata-dependencies-web.openmetadata.svc.cluster.local
+      port: 8080
+      auth:
+        username: admin
+        password: admin
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 2Gi

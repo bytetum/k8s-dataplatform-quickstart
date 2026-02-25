@@ -31,7 +31,7 @@ spec:
       # This init container is for avoiding CrashLoopback errors in the Marquez container because the PostgreSQL container is not ready
       initContainers:
         - name: wait-for-db
-          image: docker.io/bitnami/postgresql:12.1.0
+          image: docker.io/bitnami/postgresql:14.15.0
           imagePullPolicy: IfNotPresent
           command:
             - /bin/bash

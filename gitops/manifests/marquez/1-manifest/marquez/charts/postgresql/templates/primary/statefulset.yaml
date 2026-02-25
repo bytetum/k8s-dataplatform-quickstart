@@ -58,7 +58,7 @@ spec:
       initContainers:
       containers:
         - name: postgresql
-          image: docker.io/bitnami/postgresql:12.1.0
+          image: docker.io/bitnami/postgresql:14.15.0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsUser: 1001

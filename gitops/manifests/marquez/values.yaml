@@ -23,6 +23,8 @@ web:
 
 postgresql:
   enabled: true
+  image:
+    tag: 14.15.0
   auth:
     username: marquez
     password: marquez
