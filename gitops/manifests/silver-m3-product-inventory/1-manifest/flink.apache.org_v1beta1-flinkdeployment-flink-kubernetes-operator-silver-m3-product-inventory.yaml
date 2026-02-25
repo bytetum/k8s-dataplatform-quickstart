@@ -18,7 +18,7 @@ spec:
     execution.checkpointing.interval: 1min
     execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-apps/silver-m3-product-inventory/savepoints
     execution.checkpointing.storage: filesystem
-    execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListener
+    execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListenerFactory
     high-availability.storageDir: s3://local-rocksdb-test/flink-apps/silver-m3-product-inventory/ha
     high-availability.type: kubernetes
     jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-common/completed-jobs
