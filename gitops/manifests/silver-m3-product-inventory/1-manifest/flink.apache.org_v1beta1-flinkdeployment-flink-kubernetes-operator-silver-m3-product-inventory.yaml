@@ -30,7 +30,6 @@ spec:
   job:
     args:
     - /opt/flink/sql/schema_validator_test_3.sql
-    entryClass: ""
     jarURI: local:///opt/flink/usrlib/runner.jar
     parallelism: 1
     upgradeMode: stateless
