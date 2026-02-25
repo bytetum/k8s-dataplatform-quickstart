@@ -101,7 +101,7 @@ public class Postgres : ComponentResource
                                     new EnvVarArgs
                                     {
                                         Name = "POSTGRES_DB",
-                                        Value = "database"
+                                        Value = "polaris"
                                     },
                                     new EnvVarArgs
                                     {
