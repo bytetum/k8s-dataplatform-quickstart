@@ -1,9 +1,13 @@
 mysql:
   enabled: true
+  fullnameOverride: "mysql"
+  image:
+    pullPolicy: "IfNotPresent"
   auth:
     rootPassword: openmetadata
-    password: openmetadata
   primary:
+    persistence:
+      size: 5Gi
     resources:
       requests:
         cpu: 250m
@@ -15,22 +19,15 @@ mysql:
 opensearch:
   enabled: true
   singleNode: true
+  persistence:
+    size: 5Gi
   resources:
     requests:
-      cpu: 250m
-      memory: 1Gi
+      cpu: 100m
+      memory: 512Mi
     limits:
       cpu: 500m
       memory: 1536Mi
 
 airflow:
   enabled: true
-  airflow:
-    executor: LocalExecutor
-  resources:
-    requests:
-      cpu: 250m
-      memory: 512Mi
-    limits:
-      cpu: 500m
-      memory: 1Gi
