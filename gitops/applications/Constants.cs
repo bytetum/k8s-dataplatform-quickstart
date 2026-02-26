@@ -30,7 +30,7 @@ public static class Constants
 
     // Marquez (OpenLineage backend)
     public const string MarquezNamespace = "marquez";
-    public const int MarquezApiPort = 5000;
+    public const int MarquezApiPort = 80;
     public const int MarquezWebPort = 3000;
     public static string MarquezApiUrl =>
         $"http://marquez.{MarquezNamespace}.svc.cluster.local:{MarquezApiPort}";

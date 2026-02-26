@@ -91,7 +91,7 @@ spec:
       - command:
         - sh
         - -c
-        - 'printf ''transport:\n  type: http\n  url: http://marquez.marquez.svc.cluster.local:5000\n  endpoint:
+        - 'printf ''transport:\n  type: http\n  url: http://marquez.marquez.svc.cluster.local:80\n  endpoint:
           /api/v1/lineage\n  timeoutInMillis: 5000'' > /opt/openlineage/openlineage.yml'
         image: busybox:latest
         name: init-openlineage-config
