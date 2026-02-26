@@ -10,10 +10,17 @@ spec:
     namespace: openmetadata
     server: https://kubernetes.default.svc
   project: default
-  source:
-    directory:
+  sources:
+  - chart: openmetadata-dependencies
+    helm:
+      valueFiles:
+      - $values/gitops/manifests/openmetadata-dependencies/values.yaml
+    repoURL: https://helm.open-metadata.org/
+    targetRevision: 1.12.1
+  - directory:
       recurse: true
     path: gitops/manifests/openmetadata-dependencies
+    ref: values
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:
@@ -21,4 +28,6 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
     - CreateNamespace=true
