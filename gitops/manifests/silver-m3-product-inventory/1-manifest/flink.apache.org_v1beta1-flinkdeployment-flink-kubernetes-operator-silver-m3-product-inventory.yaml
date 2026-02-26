@@ -63,6 +63,8 @@ spec:
           name: flink-sql
         - mountPath: /opt/flink/jar
           name: flink-jar
+        - mountPath: /opt/openlineage
+          name: openlineage-dir
       initContainers:
       - command:
         - sh
@@ -86,8 +88,16 @@ spec:
           name: flink-sql
         - mountPath: /opt/flink/jar
           name: flink-jar
+      - command:
+        - sh
+        - -c
+        - 'printf ''transport:\n  type: http\n  url: http://marquez.marquez.svc.cluster.local:5000\n  endpoint:
+          /api/v1/lineage\n  timeoutInMillis: 5000'' > /opt/openlineage/openlineage.yml'
+        image: busybox:latest
+        name: init-openlineage-config
+        volumeMounts:
         - mountPath: /opt/openlineage
-          name: openlineage-config
+          name: openlineage-dir
       volumes:
       - emptyDir: {}
         name: rocksdb-local-dir
@@ -95,9 +105,8 @@ spec:
         name: flink-sql
       - emptyDir: {}
         name: flink-jar
-      - configMap:
-          name: silver-m3-product-inventory-openlineage-config
-        name: openlineage-config
+      - emptyDir: {}
+        name: openlineage-dir
   serviceAccount: flink-sql-gateway-sa
   taskManager:
     resource:

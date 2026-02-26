@@ -45,8 +45,6 @@ spec:
             secretKeyRef:
               key: password
               name: schema-registry-credentials
-        - name: OPENLINEAGE_CONFIG
-          value: /opt/flink/conf/openlineage.yml
         image: flink-test:2.1.1
         imagePullPolicy: Never
         name: sql-gateway

@@ -190,32 +190,8 @@ internal class FlinkDeploymentBuilder
             Parent = flinkDeploymentComponent
         });
 
-        // OpenLineage configuration ConfigMap
-        var openlineageConfigName = $"{_deploymentName}-openlineage-config";
-        var openlineageConfigMap = new Pulumi.Kubernetes.Core.V1.ConfigMap(openlineageConfigName, new ConfigMapArgs
-        {
-            Metadata = new ObjectMetaArgs
-            {
-                Name = openlineageConfigName,
-                Namespace = _namespace,
-            },
-            Data = new InputMap<string>
-            {
-                { "openlineage.yml",
-                    $"""
-                    transport:
-                      type: http
-                      url: {applications.Constants.MarquezApiUrl}
-                      endpoint: /api/v1/lineage
-                      timeoutInMillis: 5000
-                    """.Replace("\r\n", "\n")
-                }
-            }
-        }, new CustomResourceOptions
-        {
-            Provider = provider,
-            Parent = flinkDeploymentComponent
-        });
+        // OpenLineage config content (written by init container into emptyDir)
+        var openlineageConfigYaml = $"transport:\\n  type: http\\n  url: {applications.Constants.MarquezApiUrl}\\n  endpoint: /api/v1/lineage\\n  timeoutInMillis: 5000";
 
         var flinkDeployment = new FlinkDeployment(_deploymentName,
             new FlinkDeploymentArgs()
@@ -345,6 +321,11 @@ internal class FlinkDeploymentBuilder
                                         {
                                             MountPath = "/opt/flink/jar",
                                             Name = "flink-jar"
+                                        },
+                                        new VolumeMountArgs
+                                        {
+                                            MountPath = "/opt/openlineage",
+                                            Name = "openlineage-dir"
                                         }
                                     }
                                 },
@@ -401,11 +382,24 @@ internal class FlinkDeploymentBuilder
                                         {
                                             MountPath = "/opt/flink/jar",
                                             Name = "flink-jar"
-                                        },
+                                        }
+                                    }
+                                },
+                                new ContainerArgs
+                                {
+                                    Name = "init-openlineage-config",
+                                    Image = "busybox:latest",
+                                    Command = new InputList<string>
+                                    {
+                                        "sh", "-c",
+                                        $"printf '{openlineageConfigYaml}' > /opt/openlineage/openlineage.yml"
+                                    },
+                                    VolumeMounts = new InputList<VolumeMountArgs>
+                                    {
                                         new VolumeMountArgs
                                         {
                                             MountPath = "/opt/openlineage",
-                                            Name = "openlineage-config"
+                                            Name = "openlineage-dir"
                                         }
                                     }
                                 }
@@ -429,11 +423,8 @@ internal class FlinkDeploymentBuilder
                                 },
                                 new VolumeArgs
                                 {
-                                    Name = "openlineage-config",
-                                    ConfigMap = new ConfigMapVolumeSourceArgs
-                                    {
-                                        Name = openlineageConfigName
-                                    }
+                                    Name = "openlineage-dir",
+                                    EmptyDir = new EmptyDirVolumeSourceArgs()
                                 }
                             }
                         }

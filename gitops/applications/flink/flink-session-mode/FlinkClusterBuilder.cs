@@ -306,18 +306,6 @@ internal class FlinkClusterBuilder
                          # OpenTelemetry metrics reporter (uncomment when OTel Collector is deployed)
                          # metrics.reporter.otel.factory.class: org.apache.flink.metrics.otel.OpenTelemetryMetricReporterFactory
                          # metrics.reporter.otel.exporter.endpoint: http://otel-collector:4317
-                         # OpenLineage job status listener
-                         execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListenerFactory
-                         """.Replace("\r\n", "\n")
-                },
-                {
-                    "openlineage.yml",
-                    $"""
-                         transport:
-                           type: http
-                           url: {applications.Constants.MarquezApiUrl}
-                           endpoint: /api/v1/lineage
-                           timeoutInMillis: 5000
                          """.Replace("\r\n", "\n")
                 },
                 {
@@ -458,11 +446,6 @@ internal class FlinkClusterBuilder
                                         }
                                     }
                                 },
-                                new EnvVarArgs
-                                {
-                                    Name = "OPENLINEAGE_CONFIG",
-                                    Value = "/opt/flink/conf/openlineage.yml"
-                                }
                             },
                             VolumeMounts = new InputList<VolumeMountArgs>
                             {
@@ -597,11 +580,6 @@ internal class FlinkClusterBuilder
                                         }
                                     }
                                 },
-                                new EnvVarArgs
-                                {
-                                    Name = "OPENLINEAGE_CONFIG",
-                                    Value = "/opt/flink/conf/openlineage.yml"
-                                }
                             },
                             VolumeMounts = new InputList<VolumeMountArgs>
                             {
@@ -711,11 +689,6 @@ internal class FlinkClusterBuilder
                                         }
                                     }
                                 },
-                                new EnvVarArgs
-                                {
-                                    Name = "OPENLINEAGE_CONFIG",
-                                    Value = "/opt/flink/conf/openlineage.yml"
-                                }
                             },
                             VolumeMounts = new InputList<VolumeMountArgs>
                             {
