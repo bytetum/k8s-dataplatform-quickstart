@@ -1,30 +1,4 @@
 openmetadata:
   config:
-    database:
-      host: mysql
-      port: 3306
-      auth:
-        username: openmetadata_user
-        password:
-          secretRef: mysql-secrets
-          secretKey: openmetadata-mysql-password
-    elasticsearch:
-      host: opensearch
-      port: 9200
-      scheme: http
     pipelineServiceClientConfig:
-      type: "airflow"
-      airflow:
-        apiEndpoint: http://openmetadata-dependencies-api-server:8080
-        auth:
-          username: admin
-          password:
-            secretRef: airflow-secrets
-            secretKey: openmetadata-airflow-password
-resources:
-  requests:
-    cpu: 500m
-    memory: 1Gi
-  limits:
-    cpu: 1
-    memory: 2Gi
+      apiEndpoint: http://openmetadata-dependencies-api-server:8080

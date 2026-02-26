@@ -1,36 +1,4 @@
-mysql:
-  enabled: true
-  fullnameOverride: "mysql"
-  image:
-    pullPolicy: "IfNotPresent"
-  auth:
-    rootPassword: openmetadata
-  primary:
-    persistence:
-      size: 5Gi
-    resources:
-      requests:
-        cpu: 250m
-        memory: 512Mi
-      limits:
-        cpu: 500m
-        memory: 1Gi
-
-opensearch:
-  enabled: true
-  singleNode: true
-  persistence:
-    size: 5Gi
-  resources:
-    requests:
-      cpu: 100m
-      memory: 512Mi
-    limits:
-      cpu: 500m
-      memory: 1536Mi
-
 airflow:
-  enabled: true
   logs:
     persistence:
       enabled: false
