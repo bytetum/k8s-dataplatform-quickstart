@@ -307,7 +307,7 @@ internal class FlinkClusterBuilder
                          # metrics.reporter.otel.factory.class: org.apache.flink.metrics.otel.OpenTelemetryMetricReporterFactory
                          # metrics.reporter.otel.exporter.endpoint: http://otel-collector:4317
                          # OpenLineage job status listener
-                         execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListener
+                         execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListenerFactory
                          """.Replace("\r\n", "\n")
                 },
                 {

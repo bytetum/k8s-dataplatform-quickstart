@@ -190,6 +190,33 @@ internal class FlinkDeploymentBuilder
             Parent = flinkDeploymentComponent
         });
 
+        // OpenLineage configuration ConfigMap
+        var openlineageConfigName = $"{_deploymentName}-openlineage-config";
+        var openlineageConfigMap = new Pulumi.Kubernetes.Core.V1.ConfigMap(openlineageConfigName, new ConfigMapArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = openlineageConfigName,
+                Namespace = _namespace,
+            },
+            Data = new InputMap<string>
+            {
+                { "openlineage.yml",
+                    $"""
+                    transport:
+                      type: http
+                      url: {applications.Constants.MarquezApiUrl}
+                      endpoint: /api/v1/lineage
+                      timeoutInMillis: 5000
+                    """.Replace("\r\n", "\n")
+                }
+            }
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = flinkDeploymentComponent
+        });
+
         var flinkDeployment = new FlinkDeployment(_deploymentName,
             new FlinkDeploymentArgs()
             {
@@ -241,7 +268,7 @@ internal class FlinkDeploymentBuilder
                         // MetricsReporterOtelFactory = "org.apache.flink.metrics.otel.OpenTelemetryMetricReporterFactory",
                         
                         // OpenLineage job status listener for lineage tracking (Flink 2.1+)
-                        ExecutionJobStatusChangedListeners = "io.openlineage.flink.listener.OpenLineageJobStatusChangedListener",
+                        ExecutionJobStatusChangedListeners = "io.openlineage.flink.listener.OpenLineageJobStatusChangedListenerFactory",
                     },
                     ServiceAccount = "flink-sql-gateway-sa",
                     JobManager = new JobManagerSpecArgs
@@ -299,7 +326,7 @@ internal class FlinkDeploymentBuilder
                                         new EnvVarArgs
                                         {
                                             Name = "OPENLINEAGE_CONFIG",
-                                            Value = "/opt/flink/conf/openlineage.yml"
+                                            Value = "/opt/openlineage/openlineage.yml"
                                         }
                                     },
                                     VolumeMounts = new InputList<VolumeMountArgs>
@@ -374,6 +401,11 @@ internal class FlinkDeploymentBuilder
                                         {
                                             MountPath = "/opt/flink/jar",
                                             Name = "flink-jar"
+                                        },
+                                        new VolumeMountArgs
+                                        {
+                                            MountPath = "/opt/openlineage",
+                                            Name = "openlineage-config"
                                         }
                                     }
                                 }
@@ -394,6 +426,14 @@ internal class FlinkDeploymentBuilder
                                 {
                                     Name = "flink-jar",
                                     EmptyDir = new EmptyDirVolumeSourceArgs()
+                                },
+                                new VolumeArgs
+                                {
+                                    Name = "openlineage-config",
+                                    ConfigMap = new ConfigMapVolumeSourceArgs
+                                    {
+                                        Name = openlineageConfigName
+                                    }
                                 }
                             }
                         }

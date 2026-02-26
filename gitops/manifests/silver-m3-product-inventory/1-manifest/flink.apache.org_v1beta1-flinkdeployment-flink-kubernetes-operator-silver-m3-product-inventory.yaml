@@ -53,7 +53,7 @@ spec:
               key: AWS_SECRET_ACCESS_KEY
               name: flink-bucket-credentials
         - name: OPENLINEAGE_CONFIG
-          value: /opt/flink/conf/openlineage.yml
+          value: /opt/openlineage/openlineage.yml
         imagePullPolicy: Never
         name: flink-main-container
         volumeMounts:
@@ -86,9 +86,8 @@ spec:
           name: flink-sql
         - mountPath: /opt/flink/jar
           name: flink-jar
-        - mountPath: /opt/flink/conf/openlineage.yml
+        - mountPath: /opt/openlineage
           name: openlineage-config
-          subPath: openlineage.yml
       volumes:
       - emptyDir: {}
         name: rocksdb-local-dir
