@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    config-hash: 18c8c6887ecdb136
+  labels:
+    app: topic-create
+    target: postgres-debezium-source
+  name: topic-create-postgres-debezium-source
+  namespace: kafka-connect
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - |-
+          #!/bin/sh
+          set -e
+
+          BOOTSTRAP_SERVER="warpstream-agent.warpstream.svc.cluster.local:9092"
+          TOPICS="bronze.m3.csytab bronze.m3.cidmas bronze.m3.cidven"
+          CLEANUP_POLICY="compact"
+          MIN_COMPACTION_LAG_MS="604800000"
+          PARTITIONS=1
+          REPLICATION_FACTOR=1
+
+          echo "Creating topics with cleanup.policy=$CLEANUP_POLICY"
+          echo "Bootstrap server: $BOOTSTRAP_SERVER"
+
+          for TOPIC in $TOPICS; do
+              echo "Creating topic: $TOPIC"
+              /opt/bitnami/kafka/bin/kafka-topics.sh \
+                  --bootstrap-server "$BOOTSTRAP_SERVER" \
+                  --create --if-not-exists \
+                  --topic "$TOPIC" \
+                  --partitions "$PARTITIONS" \
+                  --replication-factor "$REPLICATION_FACTOR" \
+                  --config "cleanup.policy=$CLEANUP_POLICY" \
+                  --config "min.compaction.lag.ms=$MIN_COMPACTION_LAG_MS"
+
+              echo "Verifying topic: $TOPIC"
+              /opt/bitnami/kafka/bin/kafka-topics.sh \
+                  --bootstrap-server "$BOOTSTRAP_SERVER" \
+                  --describe --topic "$TOPIC"
+          done
+
+          echo "All topics created successfully"
+        image: bitnami/kafka:3.9
+        name: topic-create
+      restartPolicy: Never
+  ttlSecondsAfterFinished: 300

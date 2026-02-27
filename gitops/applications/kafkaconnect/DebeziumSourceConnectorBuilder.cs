@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 namespace applications.kafkaconnect;
 /// <summary>
@@ -546,8 +548,29 @@ public class DebeziumSourceConnectorBuilder
         var (resolvedConnectorName, resolvedTopicPrefix, resolvedDlqTopic) = ResolveNaming();
         // Build the configuration dictionary
         var config = BuildConfiguration(resolvedTopicPrefix, resolvedDlqTopic);
-        // Create the connector resource
-        return CreateConnectorResource(resolvedConnectorName, config);
+        // Compute output topic names for pre-creation
+        var outputTopics = ComputeOutputTopicNames(resolvedTopicPrefix);
+        // Create the connector resource (includes PreSync topic creation job)
+        return CreateConnectorResource(resolvedConnectorName, config, outputTopics);
+    }
+    private List<string> ComputeOutputTopicNames(string topicPrefix)
+    {
+        if (string.IsNullOrEmpty(_tableIncludeList))
+            return new List<string>();
+        var tables = _tableIncludeList.Split(',');
+        var topics = new List<string>();
+        foreach (var table in tables)
+        {
+            // Debezium topic format: {topicPrefix}.{schema}.{table} (lowercased)
+            var debeziumTopic = $"{topicPrefix}.{table}".ToLowerInvariant();
+            // Apply route transform if configured
+            if (!string.IsNullOrEmpty(_routeTransformRegex) && !string.IsNullOrEmpty(_routeTransformReplacement))
+            {
+                debeziumTopic = Regex.Replace(debeziumTopic, _routeTransformRegex, _routeTransformReplacement);
+            }
+            topics.Add(debeziumTopic);
+        }
+        return topics;
     }
     private void ValidateConfiguration()
     {
@@ -773,7 +796,7 @@ public class DebeziumSourceConnectorBuilder
             config["errors.tolerance"] = "none";
         }
     }
-    private ComponentResource CreateConnectorResource(string connectorName, Dictionary<string, object> config)
+    private ComponentResource CreateConnectorResource(string connectorName, Dictionary<string, object> config, List<string> outputTopics)
     {
         // Create a container component resource
         var component = new DebeziumConnectorComponent(
@@ -782,7 +805,12 @@ public class DebeziumSourceConnectorBuilder
             _clusterName,
             _tasksMax,
             GetConnectorClass(),
-            config);
+            config,
+            outputTopics,
+            _topicCreationCleanupPolicy,
+            _topicCreationMinCompactionLagMs,
+            _topicCreationReplicationFactor,
+            _topicCreationPartitions);
         return component;
     }
 }
@@ -797,7 +825,12 @@ internal class DebeziumConnectorComponent : ComponentResource
         string clusterName,
         int tasksMax,
         string connectorClass,
-        Dictionary<string, object> config)
+        Dictionary<string, object> config,
+        List<string> outputTopics,
+        string cleanupPolicy,
+        int minCompactionLagMs,
+        int replicationFactor,
+        int partitions)
         : base("debezium-source-connector", name)
     {
         var provider = new Kubernetes.Provider($"yaml-provider", new()
@@ -807,6 +840,17 @@ internal class DebeziumConnectorComponent : ComponentResource
         {
             Parent = this
         });
+        // PreSync job: pre-create topics with correct config before connector starts
+        if (outputTopics.Count > 0)
+        {
+            new TopicCreationJobBuilder()
+                .WithProvider(provider)
+                .WithParent(this)
+                .WithJobName(name)
+                .WithTopics(outputTopics)
+                .WithTopicConfig(cleanupPolicy, minCompactionLagMs, replicationFactor, partitions)
+                .Build();
+        }
         var connector = new Kubernetes.ApiExtensions.CustomResource(name,
             new KafkaConnectorArgs()
             {
