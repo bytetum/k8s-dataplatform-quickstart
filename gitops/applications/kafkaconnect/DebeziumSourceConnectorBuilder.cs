@@ -109,6 +109,11 @@ public class DebeziumSourceConnectorBuilder
     private int _maxBatchSize = 2048;
     private int _maxQueueSize = 8192;
     private int _pollIntervalMs = 1000;
+    // Topic creation defaults (applied when Debezium auto-creates topics)
+    private string _topicCreationCleanupPolicy = "compact";
+    private int _topicCreationMinCompactionLagMs = 604800000; // 7 days
+    private int _topicCreationReplicationFactor = 1;
+    private int _topicCreationPartitions = 1;
     /// <summary>
     /// Creates a new Debezium source connector builder.
     /// </summary>
@@ -498,6 +503,30 @@ public class DebeziumSourceConnectorBuilder
         return this;
     }
     #endregion
+    #region Topic Creation Configuration
+    /// <summary>
+    /// Configures defaults for topics auto-created by Debezium.
+    /// On WarpStream, cleanup.policy cannot be changed after creation, so this ensures
+    /// topics are created with the correct policy from the start.
+    /// </summary>
+    /// <param name="cleanupPolicy">Topic cleanup policy: "compact", "delete", or "compact,delete" (default: "compact").</param>
+    /// <param name="minCompactionLagMs">Minimum time before a message can be compacted, in ms (default: 604800000 = 7 days).</param>
+    /// <param name="replicationFactor">Replication factor for created topics (default: 1).</param>
+    /// <param name="partitions">Number of partitions for created topics (default: 1).</param>
+    /// <returns>The builder for method chaining.</returns>
+    public DebeziumSourceConnectorBuilder WithTopicCreationDefaults(
+        string cleanupPolicy = "compact",
+        int minCompactionLagMs = 604800000,
+        int replicationFactor = 1,
+        int partitions = 1)
+    {
+        _topicCreationCleanupPolicy = cleanupPolicy ?? throw new ArgumentNullException(nameof(cleanupPolicy));
+        _topicCreationMinCompactionLagMs = minCompactionLagMs;
+        _topicCreationReplicationFactor = replicationFactor;
+        _topicCreationPartitions = partitions;
+        return this;
+    }
+    #endregion
     private static string ComputeConfigHash(Dictionary<string, object> config)
     {
         var json = JsonSerializer.Serialize(config);
@@ -621,6 +650,11 @@ public class DebeziumSourceConnectorBuilder
         config["max.batch.size"] = _maxBatchSize;
         config["max.queue.size"] = _maxQueueSize;
         config["poll.interval.ms"] = _pollIntervalMs;
+        // Topic creation defaults (ensures correct cleanup.policy on WarpStream where it can't be changed post-creation)
+        config["topic.creation.default.replication.factor"] = _topicCreationReplicationFactor;
+        config["topic.creation.default.partitions"] = _topicCreationPartitions;
+        config["topic.creation.default.cleanup.policy"] = _topicCreationCleanupPolicy;
+        config["topic.creation.default.min.compaction.lag.ms"] = _topicCreationMinCompactionLagMs;
         return config;
     }
     private void AddDatabaseConnectionConfig(Dictionary<string, object> config)

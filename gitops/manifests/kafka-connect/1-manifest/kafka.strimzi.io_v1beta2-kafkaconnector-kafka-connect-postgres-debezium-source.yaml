@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   annotations:
-    config-hash: 32fda0bf59af0dcc
+    config-hash: a5c7ebbe6d0d03a9
   labels:
     strimzi.io/cluster: m3-kafka-connect
   name: postgres-debezium-source
@@ -31,6 +31,10 @@ spec:
     slot.name: m3_debezium_slot
     snapshot.mode: always
     table.include.list: public.CSYTAB,public.CIDMAS,public.CIDVEN
+    topic.creation.default.cleanup.policy: compact
+    topic.creation.default.min.compaction.lag.ms: 604800000
+    topic.creation.default.partitions: 1
+    topic.creation.default.replication.factor: 1
     topic.prefix: m3-cdc
     transforms: unwrap,route
     transforms.route.regex: m3-cdc.public.(.*)
