@@ -97,25 +97,22 @@ public class TopicCreationJobBuilder
             MIN_COMPACTION_LAG_MS="{{_minCompactionLagMs}}"
             PARTITIONS={{_partitions}}
             REPLICATION_FACTOR={{_replicationFactor}}
+            COMMAND_TIMEOUT=60
 
             echo "Creating topics with cleanup.policy=$CLEANUP_POLICY"
             echo "Bootstrap server: $BOOTSTRAP_SERVER"
 
             for TOPIC in $TOPICS; do
                 echo "Creating topic: $TOPIC"
-                bin/kafka-topics.sh \
+                timeout $COMMAND_TIMEOUT bin/kafka-topics.sh \
                     --bootstrap-server "$BOOTSTRAP_SERVER" \
+                    --command-config /dev/null \
                     --create --if-not-exists \
                     --topic "$TOPIC" \
                     --partitions "$PARTITIONS" \
                     --replication-factor "$REPLICATION_FACTOR" \
                     --config "cleanup.policy=$CLEANUP_POLICY" \
                     --config "min.compaction.lag.ms=$MIN_COMPACTION_LAG_MS"
-
-                echo "Verifying topic: $TOPIC"
-                bin/kafka-topics.sh \
-                    --bootstrap-server "$BOOTSTRAP_SERVER" \
-                    --describe --topic "$TOPIC"
             done
 
             echo "All topics created successfully"
@@ -141,6 +138,7 @@ public class TopicCreationJobBuilder
             },
             Spec = new JobSpecArgs
             {
+                ActiveDeadlineSeconds = 120,
                 BackoffLimit = _backoffLimit,
                 TtlSecondsAfterFinished = 300,
                 Template = new PodTemplateSpecArgs
