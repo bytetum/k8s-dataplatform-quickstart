@@ -103,7 +103,7 @@ public class TopicCreationJobBuilder
 
             for TOPIC in $TOPICS; do
                 echo "Creating topic: $TOPIC"
-                /opt/bitnami/kafka/bin/kafka-topics.sh \
+                bin/kafka-topics.sh \
                     --bootstrap-server "$BOOTSTRAP_SERVER" \
                     --create --if-not-exists \
                     --topic "$TOPIC" \
@@ -113,7 +113,7 @@ public class TopicCreationJobBuilder
                     --config "min.compaction.lag.ms=$MIN_COMPACTION_LAG_MS"
 
                 echo "Verifying topic: $TOPIC"
-                /opt/bitnami/kafka/bin/kafka-topics.sh \
+                bin/kafka-topics.sh \
                     --bootstrap-server "$BOOTSTRAP_SERVER" \
                     --describe --topic "$TOPIC"
             done
@@ -153,7 +153,7 @@ public class TopicCreationJobBuilder
                             new ContainerArgs
                             {
                                 Name = "topic-create",
-                                Image = "bitnami/kafka:3.9",
+                                Image = "quay.io/strimzi/kafka:0.47.0-kafka-3.9.0",
                                 Command = new InputList<string> { "sh", "-c", creationScript }
                             }
                         }
