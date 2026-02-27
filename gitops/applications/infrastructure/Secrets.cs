@@ -37,28 +37,53 @@ internal class Secrets : ComponentResource
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4",
-                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}",
+                                Value = "{\"AWS_ACCESS_KEY\": \"AWS_ACCESS_KEY\", \"AWS_SECRET_KEY\": \"AWS_SECRET_KEY\", \"AWS_ROLE_ARN\": \"AWS_ROLE_ARN\", \"AWS_REGION\": \"AWS_REGION\"}",
                                 Version = "latest_enabled"
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 //wait for PE to generate
                                 Key = "id:842cb98e-9786-4cc6-9af7-424f9278d802",
-                                Value = "{\"public.pem\": \"value\", \"private.pem\": \"value\"}",
+                                Value = "{\"public.pem\": \"public.pem\", \"private.pem\": \"private.pem\"}",
                                 Version = "latest_enabled",
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:842cb98e-9786-4cc6-9af7-424f9278d808",
-                                Value = "{\"db-address\": \"postgres-service\", \"username\": \"value\", \"password\": \"value\"}",
+                                Value = "{\"db-address\": \"db-address\", \"username\": \"username\", \"password\": \"password\"}",
                                 Version = "latest_enabled",
                             },
                             new ClusterSecretStoreProviderDataFakeArgs
                             {
                                 Key = "id:polaris-root-password",
-                                Value = "{\"polaris-root-password\": \"s3cr3t\"}",
+                                Value = "{\"polaris-root-password\": \"polaris-root-password\"}",
                                 Version = "latest_enabled",
                             }
+							,
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:827b85c8-babe-4a43-8af2-dce1dd530081",
+                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}",
+								Version = "latest_enabled"
+							},
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:ae402e70-87ee-435a-8ecc-f6c91c57ae9c",
+								Value = "{\"agent_key\": \"agent_key\"}",
+								Version = "latest_enabled"
+							},
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:flink-warpstream-credentials-secret",
+								Value = "{\"USERNAME\": \"USERNAME\", \"PASSWORD\": \"PASSWORD\"}",
+								Version = "latest_enabled"
+							},
+							new ClusterSecretStoreProviderDataFakeArgs
+							{
+								Key = "id:schema-registry-credentials",
+								Value = "{\"username\": \"ccun_291350ada8541780bdbc5663f2d22855a4da5bf905a576bac6c8dfa95c89db71\", \"password\": \"ccp_956975877bc5eeb62ce21d18c49d320a3d128cb9d0c81278999a742f6272090e\"}",
+								Version = "latest_enabled"
+							},
                         }
                     }
                     //MARK: endchange

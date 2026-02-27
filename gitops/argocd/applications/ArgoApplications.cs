@@ -1,4 +1,6 @@
 ﻿using argocd.applications.flink_deployment;
+using argocd.applications;
+using argocd.applications.kafka_connect;
 
 namespace argocd.applications;
 
@@ -14,10 +16,19 @@ internal class ArgoApplications : ComponentResource
 
         var certManager = new CertManager(provider);
         var externalSecrets = new ExternalSecrets(provider);
-		//var warpStream = new WarpStream(provider);
+		var warpStream = new WarpStream(provider);
         var flinkOperator = new FlinkOperator(provider);
         var flinkDeployment = new FlinkDeployment(provider);
         var polaris = new Polaris(provider);
+        var trino = new Trino(provider);
+        var warpStreamSchemaRegistry = new WarpStreamSchemaRegistry(provider);
+        var strimziOperator = new StrimziOperator(provider);
+        var kafkaConnect = new KafkaConnect(provider);
+        var flinkSessionMode = new FlinkSessionMode(provider);
+        var marquez = new Marquez(provider);
+        var openMetadataDeps = new OpenMetadataDependencies(provider);
+        var openMetadata = new OpenMetadata(provider);
+        // var monitoring = new KubePrometheus(provider);
     }
 }
 

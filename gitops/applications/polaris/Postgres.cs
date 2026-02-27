@@ -4,7 +4,7 @@ using Pulumi.Kubernetes.Types.Inputs.Apps.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
-namespace applications.Polaris;
+namespace applications.postgres;
 
 public class Postgres : ComponentResource
 {
@@ -101,7 +101,7 @@ public class Postgres : ComponentResource
                                     new EnvVarArgs
                                     {
                                         Name = "POSTGRES_DB",
-                                        Value = "database-test"
+                                        Value = "polaris"
                                     },
                                     new EnvVarArgs
                                     {

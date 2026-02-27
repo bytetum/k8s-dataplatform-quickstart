@@ -1,0 +1,121 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  annotations:
+    config-hash: 42c1ad159e36722a
+    strimzi.io/use-connector-resources: "true"
+  labels:
+    app: m3-kafka
+  name: m3-kafka-connect
+  namespace: kafka-connect
+spec:
+  bootstrapServers: warpstream-agent.warpstream.svc.cluster.local:9092
+  config:
+    config.providers: env
+    config.providers.env.class: org.apache.kafka.common.config.provider.EnvVarConfigProvider
+    config.storage.replication.factor: 1
+    config.storage.topic: m3.kafka.connect.configs
+    consumer.fetch.max.bytes: 50242880
+    consumer.fetch.max.wait.ms: 10000
+    consumer.group.instance.id: m3-kafka-connect-connect-0
+    consumer.max.partition.fetch.bytes: 50242880
+    consumer.metadata.max.age.ms: 60000
+    consumer.request.timeout.ms: 60000
+    consumer.retry.backoff.ms: 1000
+    consumer.session.timeout.ms: 45000
+    fetch.max.wait.ms: 10000
+    group.id: m3.kafka.connect.init
+    heartbeat.interval.ms: 3000
+    max.poll.interval.ms: 300000
+    metadata.max.age.ms: 60000
+    offset.storage.replication.factor: 1
+    offset.storage.topic: m3.kafka.connect.offsets
+    producer.acks: all
+    producer.batch.size: 100000
+    producer.buffer.memory: 128000000
+    producer.compression.type: lz4
+    producer.enable.idempotence: true
+    producer.linger.ms: 100
+    producer.metadata.max.age.ms: 60000
+    producer.request.timeout.ms: 60000
+    producer.retry.backoff.ms: 1000
+    request.timeout.ms: 60000
+    session.timeout.ms: 120000
+    status.storage.replication.factor: 1
+    status.storage.topic: m3.kafka.connect.status
+    worker.sync.timeout.ms: 3000
+  image: ttl.sh/hxt-kafka-connect-amd64-20-12:24h
+  jvmOptions:
+    -Xmx: 5G
+  metricsConfig:
+    type: jmxPrometheusExporter
+    valueFrom:
+      configMapKeyRef:
+        key: metrics-config.yml
+        name: kafka-connect-metrics
+  replicas: 1
+  resources:
+    limits:
+      cpu: "2"
+      memory: 8Gi
+    requests:
+      cpu: "2"
+      memory: 4Gi
+  template:
+    connectContainer:
+      env:
+      - name: AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            key: AWS_ACCESS_KEY
+            name: iceberg-bucket-credentials
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            key: AWS_SECRET_KEY
+            name: iceberg-bucket-credentials
+      - name: AWS_REGION
+        valueFrom:
+          secretKeyRef:
+            key: AWS_REGION
+            name: iceberg-bucket-credentials
+      - name: POLARIS_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: polaris-root-password
+            name: polaris-root-password
+      - name: SCHEMA_REGISTRY_USERNAME
+        valueFrom:
+          secretKeyRef:
+            key: username
+            name: schema-registry-credentials
+      - name: SCHEMA_REGISTRY_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: password
+            name: schema-registry-credentials
+      - name: POSTGRES_HOST
+        valueFrom:
+          secretKeyRef:
+            key: host
+            name: pricefiles-db-credentials
+      - name: POSTGRES_PORT
+        valueFrom:
+          secretKeyRef:
+            key: port
+            name: pricefiles-db-credentials
+      - name: POSTGRES_USER
+        valueFrom:
+          secretKeyRef:
+            key: username
+            name: pricefiles-db-credentials
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: password
+            name: pricefiles-db-credentials
+      - name: POSTGRES_DB
+        valueFrom:
+          secretKeyRef:
+            key: dbname
+            name: pricefiles-db-credentials

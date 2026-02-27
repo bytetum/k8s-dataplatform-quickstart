@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-taskmanager
+  namespace: flink-kubernetes-operator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flink
+      component: taskmanager
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9249"
+        prometheus.io/scrape: "true"
+      labels:
+        app: flink
+        component: taskmanager
+        metrics: prometheus
+    spec:
+      containers:
+      - args:
+        - taskmanager
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AWS_ACCESS_KEY_ID
+              name: flink-bucket-credentials
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: AWS_SECRET_ACCESS_KEY
+              name: flink-bucket-credentials
+        - name: SCHEMA_REGISTRY_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: schema-registry-credentials
+        - name: SCHEMA_REGISTRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: schema-registry-credentials
+        image: flink-test:2.1.1
+        imagePullPolicy: Never
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          tcpSocket:
+            port: 6122
+        name: taskmanager
+        ports:
+        - containerPort: 6122
+          name: rpc
+        - containerPort: 9249
+          name: metrics
+        volumeMounts:
+        - mountPath: /opt/flink/conf/
+          name: flink-config-volume
+        - mountPath: /data/rocksdb
+          name: rocksdb-local-dir
+      serviceAccountName: flink-sql-gateway-sa
+      volumes:
+      - configMap:
+          name: flink-config
+        name: flink-config-volume
+      - emptyDir: {}
+        name: rocksdb-local-dir
