@@ -16,7 +16,7 @@ spec:
       - $values/gitops/manifests/marquez/values.yaml
     path: chart
     repoURL: https://github.com/MarquezProject/marquez.git
-    targetRevision: main
+    targetRevision: 0.50.0
   - directory:
       recurse: true
     path: gitops/manifests/marquez
