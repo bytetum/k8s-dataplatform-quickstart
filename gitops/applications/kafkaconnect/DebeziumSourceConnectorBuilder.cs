@@ -14,6 +14,7 @@ public enum DatabaseType
 {
     Postgres,
     Db2,
+    Db2as400,
     MySQL,
     SqlServer,
     Oracle,
@@ -561,8 +562,16 @@ public class DebeziumSourceConnectorBuilder
         var topics = new List<string>();
         foreach (var table in tables)
         {
-            // Debezium topic format: {topicPrefix}.{schema}.{table} (lowercased)
-            var debeziumTopic = $"{topicPrefix}.{table}".ToLowerInvariant();
+            // Normalize casing to match what Debezium produces from the database catalog
+            var normalizedTable = _databaseType switch
+            {
+                DatabaseType.Postgres or DatabaseType.MySQL => table.ToLowerInvariant(),
+                DatabaseType.Db2 or DatabaseType.Db2as400 or DatabaseType.Oracle => table.ToUpperInvariant(),
+                _ => table
+            };
+
+            var debeziumTopic = $"{topicPrefix}.{normalizedTable}";
+            
             // Apply route transform if configured
             if (!string.IsNullOrEmpty(_routeTransformRegex) && !string.IsNullOrEmpty(_routeTransformReplacement))
             {

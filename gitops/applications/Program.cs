@@ -145,6 +145,21 @@ return await Deployment.RunAsync(() =>
         .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
         .Build();
 
+    // ========================================================================
+    // MARQUEZ/OPENLINEAGE LINEAGE DEMO
+    //   Job 1+2 (data seed): Run via Flink Session Mode SQL Gateway
+    //     - schema_validator_test_debug.sql          -> debug.silver.m3.order_summary
+    //     - schema_validator_test_debug_customers.sql -> debug.silver.m3.customers
+    //   Job 3 (streaming transformation): Flink Application Mode deployment
+    //     debug.silver.m3.order_summary ──────┐
+    //     debug.silver.m3.customers ──────────┼──► JOIN ──► debug.silver.m3.customer_order_analytics
+    // ========================================================================
+    var debugFlinkLineage = new FlinkDeploymentBuilder("../manifests")
+        .WithNaming(NamingConventionHelper.DataLayer.Silver, domain: "m3", dataset: "debug_customer_order_analytics")
+        .WithSqlS3Uri("s3://local-rocksdb-test/schema_validator_test_debug_lineage.sql")
+        .WithUpgradeMode(FlinkDeploymentBuilder.UpgradeMode.Stateless)
+        .Build();
+
     var flinkSessionMode = new FlinkClusterBuilder("../manifests")
         .WithTaskSlots(2)
         .WithTaskManagerReplicas(2)

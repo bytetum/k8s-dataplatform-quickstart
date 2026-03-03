@@ -3,17 +3,17 @@ kind: Application
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-  name: silver-m3-product-inventory
+  name: silver-m3-debug-customer-order-analytics
   namespace: argocd
 spec:
   destination:
-    namespace: silver-m3-product-inventory
+    namespace: silver-m3-debug-customer-order-analytics
     server: https://kubernetes.default.svc
   project: default
   source:
     directory:
       recurse: true
-    path: gitops/manifests/silver-m3-product-inventory
+    path: gitops/manifests/silver-m3-debug-customer-order-analytics
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:

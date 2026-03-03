@@ -209,7 +209,11 @@ namespace Pulumi.Crds.FlinkDeployment
         [Output("metrics.reporter.prom.factory.class")]
         public Output<string> MetricsReporterPromFactory { get; private set; } = null!;
 
-   
+        [Output("metrics.reporter.otel.factory.class")]
+        public Output<string> MetricsReporterOtelFactory { get; private set; } = null!;
+
+        [Output("execution.job-status-changed-listeners")]
+        public Output<string> ExecutionJobStatusChangedListeners { get; private set; } = null!;
     }
 
     public class FlinkConfigurationSpecArgs : ResourceArgs
@@ -248,6 +252,10 @@ namespace Pulumi.Crds.FlinkDeployment
         [Input("metrics.reporter.prom.factory.class")]
         public Input<string>? MetricsReporterPromFactory { get; set; }
 
-    
+        [Input("metrics.reporter.otel.factory.class")]
+        public Input<string>? MetricsReporterOtelFactory { get; set; }
+
+        [Input("execution.job-status-changed-listeners")]
+        public Input<string>? ExecutionJobStatusChangedListeners { get; set; }
     }
 }
