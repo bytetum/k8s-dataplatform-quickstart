@@ -19,6 +19,9 @@ marquez:
 web:
   enabled: true
   port: 3000
+  extraEnvVars:
+    - name: PORT
+      value: "3000"
   resources:
     requests:
       cpu: 100m
