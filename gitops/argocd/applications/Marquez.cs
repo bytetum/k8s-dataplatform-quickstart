@@ -7,7 +7,7 @@ public class Marquez
         new ArgoApplicationBuilder("marquez", provider)
             .AddSource(ApplicationType.HelmGit)
             .RepoUrl("https://github.com/MarquezProject/marquez.git")
-            .Branch("0.50.0")
+            .Branch("main")
             .Path("chart")
             .AddValueFile("$values/gitops/manifests/marquez/values.yaml")
             .AddSource(ApplicationType.Yaml)
