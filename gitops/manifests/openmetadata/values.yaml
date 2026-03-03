@@ -1,0 +1,4 @@
+openmetadata:
+  config:
+    pipelineServiceClientConfig:
+      apiEndpoint: http://openmetadata-dependencies-api-server:8080
