@@ -22,7 +22,7 @@ spec:
       valueFiles:
       - $values/gitops/manifests/warpstream-agent/values.yaml
     repoURL: https://warpstreamlabs.github.io/charts
-    targetRevision: 0.15.28
+    targetRevision: 1.0.5
   syncPolicy:
     automated:
       prune: true

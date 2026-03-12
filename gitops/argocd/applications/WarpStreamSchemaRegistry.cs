@@ -9,7 +9,7 @@ internal class WarpStreamSchemaRegistry
             .AsValueSource("values")
             .AddSource(ApplicationType.Helm)
             .RepoUrl("https://warpstreamlabs.github.io/charts")
-            .Branch("0.15.28")
+            .Branch("1.0.5")
             .Chart("warpstream-agent")
             .AddValueFile("$values/gitops/manifests/warpstream-schema-registry/values.yaml")
             .InNamespace("warpstream")
