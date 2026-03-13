@@ -48,6 +48,10 @@ server:
   config:
     query.max-memory: "1GB"
     query.max-memory-per-node: "1GB"
+    spill-enabled: "true"
+    spiller-spill-path: "/tmp/trino-spill"
+    query.max-run-time: "10m"
+    query.max-execution-time: "10m"
 
 catalogs:
   polaris: |
