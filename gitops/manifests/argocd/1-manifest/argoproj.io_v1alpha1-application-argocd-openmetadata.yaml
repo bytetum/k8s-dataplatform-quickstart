@@ -3,20 +3,30 @@ kind: Application
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-  name: flink-deployment
+  name: openmetadata
   namespace: argocd
 spec:
   destination:
-    namespace: flink-deployment
+    namespace: openmetadata
     server: https://kubernetes.default.svc
   project: default
-  source:
-    directory:
+  sources:
+  - chart: openmetadata
+    helm:
+      valueFiles:
+      - $values/gitops/manifests/openmetadata/values.yaml
+    repoURL: https://helm.open-metadata.org/
+    targetRevision: 1.12.1
+  - directory:
       recurse: true
-    path: gitops/manifests/flink-deployment
+    path: gitops/manifests/openmetadata
+    ref: values
     repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
     targetRevision: HEAD
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - CreateNamespace=true

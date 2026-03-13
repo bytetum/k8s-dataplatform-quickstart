@@ -53,6 +53,9 @@ public class ExternalSecretSpecTargetArgs : Pulumi.ResourceArgs
 
     [Input("creationPolicy")]
     public Input<string> CreationPolicy { get; set; } = "Owner";
+
+    [Input("template")]
+    public Input<ExternalSecretSpecTargetTemplateArgs>? Template { get; set; }
 }
 
 public class ExternalSecretSpecDataFromArgs : Pulumi.ResourceArgs
@@ -68,4 +71,13 @@ public class ExternalSecretSpecDataFromExtractArgs : Pulumi.ResourceArgs
 
     [Input("version")]
     public Input<string> Version { get; set; } = "latest_enabled";
+}
+
+public class ExternalSecretSpecTargetTemplateArgs : Pulumi.ResourceArgs
+{
+    [Input("type")]
+    public Input<string>? Type { get; set; }
+
+    [Input("data")]
+    public InputMap<string>? Data { get; set; }
 }

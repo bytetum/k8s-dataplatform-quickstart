@@ -1,0 +1,5 @@
+airflow:
+  migrationsWaitTimeout: 300
+  logs:
+    persistence:
+      enabled: false

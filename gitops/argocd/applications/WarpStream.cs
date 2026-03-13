@@ -9,7 +9,7 @@ internal class WarpStream
             .AsValueSource("values")
             .AddSource(ApplicationType.Helm)
             .RepoUrl("https://warpstreamlabs.github.io/charts")
-            .Branch("0.15.28")
+            .Branch("1.0.5")
             .AddValueFile("$values/gitops/manifests/warpstream-agent/values.yaml")
             .InNamespace("warpstream")
             .Build();

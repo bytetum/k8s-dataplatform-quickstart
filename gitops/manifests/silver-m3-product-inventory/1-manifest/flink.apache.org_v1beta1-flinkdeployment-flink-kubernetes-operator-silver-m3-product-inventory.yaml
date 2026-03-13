@@ -1,0 +1,114 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "9249"
+    prometheus.io/scrape: "true"
+  labels:
+    app: silver-m3-product-inventory
+    component: flink
+    metrics: prometheus
+  name: silver-m3-product-inventory
+  namespace: flink-kubernetes-operator
+spec:
+  flinkConfiguration:
+    execution.checkpointing.dir: s3://local-rocksdb-test/flink-apps/silver-m3-product-inventory/checkpoints
+    execution.checkpointing.incremental: true
+    execution.checkpointing.interval: 1min
+    execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-apps/silver-m3-product-inventory/savepoints
+    execution.checkpointing.storage: filesystem
+    execution.job-status-changed-listeners: io.openlineage.flink.listener.OpenLineageJobStatusChangedListenerFactory
+    high-availability.storageDir: s3://local-rocksdb-test/flink-apps/silver-m3-product-inventory/ha
+    high-availability.type: kubernetes
+    jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-common/completed-jobs
+    kafka.bootstrap.servers: warpstream-agent.warpstream.svc.cluster.local:9092
+    state.backend.rocksdb.localdir: /data/rocksdb
+    state.backend.type: rocksdb
+    taskmanager.numberOfTaskSlots: "1"
+  flinkVersion: v2_1
+  image: flink-test:2.1.1
+  job:
+    args:
+    - /opt/flink/sql/schema_validator_test_3.sql
+    jarURI: local:///opt/flink/usrlib/runner.jar
+    parallelism: 1
+    upgradeMode: stateless
+  jobManager:
+    resource:
+      cpu: 0.6
+      memory: 1024m
+  podTemplate:
+    spec:
+      containers:
+      - env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AWS_ACCESS_KEY_ID
+              name: flink-bucket-credentials
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: AWS_SECRET_ACCESS_KEY
+              name: flink-bucket-credentials
+        - name: OPENLINEAGE_CONFIG
+          value: /opt/openlineage/openlineage.yml
+        imagePullPolicy: Never
+        name: flink-main-container
+        volumeMounts:
+        - mountPath: /data/rocksdb
+          name: rocksdb-local-dir
+        - mountPath: /opt/flink/sql
+          name: flink-sql
+        - mountPath: /opt/flink/jar
+          name: flink-jar
+        - mountPath: /opt/openlineage
+          name: openlineage-dir
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - aws s3 cp s3://local-rocksdb-test/schema_validator_test_3.sql /opt/flink/sql/schema_validator_test_3.sql
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AWS_ACCESS_KEY_ID
+              name: flink-bucket-credentials
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: AWS_SECRET_ACCESS_KEY
+              name: flink-bucket-credentials
+        image: amazon/aws-cli:latest
+        name: init-get-jars
+        volumeMounts:
+        - mountPath: /opt/flink/sql
+          name: flink-sql
+        - mountPath: /opt/flink/jar
+          name: flink-jar
+      - command:
+        - sh
+        - -c
+        - 'printf ''transport:\n  type: http\n  url: http://marquez.marquez.svc.cluster.local:80\n  endpoint:
+          /api/v1/lineage\n  timeoutInMillis: 5000'' > /opt/openlineage/openlineage.yml'
+        image: busybox:latest
+        name: init-openlineage-config
+        volumeMounts:
+        - mountPath: /opt/openlineage
+          name: openlineage-dir
+      volumes:
+      - emptyDir: {}
+        name: rocksdb-local-dir
+      - emptyDir: {}
+        name: flink-sql
+      - emptyDir: {}
+        name: flink-jar
+      - emptyDir: {}
+        name: openlineage-dir
+  serviceAccount: flink-sql-gateway-sa
+  taskManager:
+    resource:
+      cpu: 0.6
+      memory: 2048m
