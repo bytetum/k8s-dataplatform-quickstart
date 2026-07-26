@@ -2,9 +2,9 @@ namespace argocd.applications;
 
 public class Trino
 {
-    public Trino(Pulumi.Kubernetes.Provider provider)
+    public Trino(Pulumi.Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("trino", provider)
+        new ArgoApplicationBuilder("trino", provider, settings)
             .AddSource(ApplicationType.Helm)
             .RepoUrl("https://trinodb.github.io/charts")
             .Branch("1.41.0")  // Latest stable version of Trino Helm chart

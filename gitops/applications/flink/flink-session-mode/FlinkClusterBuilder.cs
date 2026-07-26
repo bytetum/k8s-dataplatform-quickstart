@@ -101,7 +101,7 @@ internal class FlinkClusterBuilder
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -112,7 +112,7 @@ internal class FlinkClusterBuilder
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:flink-s3-credentials-secret"
+                        Key = SecretSources.FlinkBucketCredentials
                     }
                 }
             }
@@ -133,7 +133,7 @@ internal class FlinkClusterBuilder
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -144,7 +144,7 @@ internal class FlinkClusterBuilder
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:schema-registry-credentials"
+                        Key = SecretSources.SchemaRegistryCredentials
                     }
                 }
             }
@@ -165,7 +165,7 @@ internal class FlinkClusterBuilder
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "shared-secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -185,7 +185,7 @@ internal class FlinkClusterBuilder
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:1cf21d4a-b561-4353-9981-fecafe592689"
+                        Key = SecretSources.ContainerRegistryReadCredentials
                     }
                 }
             }

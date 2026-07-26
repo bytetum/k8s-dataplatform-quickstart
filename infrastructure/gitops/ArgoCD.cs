@@ -6,11 +6,13 @@ namespace infrastructure.gitops;
 
 internal class ArgoCD : ComponentResource
 {
-    public ArgoCD(Kubernetes.Provider provider)
+    public ArgoCD(
+        Kubernetes.Provider provider,
+        string repoUrl,
+        string targetRevision,
+        string manifestsPath)
         : base("argocd-installation", "argocd-installation")
     {
-        var config = new Config();
-
         var ns = new Namespace("ns-argocd", new()
         {
             Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
@@ -22,25 +24,6 @@ internal class ArgoCD : ComponentResource
           Provider = provider,
         });
 
-        var redisPasswordResource = new Pulumi.Random.RandomPassword("argo-redis-password", new()
-        {
-            Length = 16,
-        });
-
-        var redisSecret = new Secret("argo-redis-secret", new()
-        {
-            Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
-            {
-                Name = "argocd-redis",
-                Namespace = ns.Metadata.Apply(metadata => metadata.Name),
-            },
-            Type = "Opaque",
-            StringData =
-            {
-                { "auth", "conmemay" },
-            },
-        });
-
         var argoCd = new Kubernetes.Helm.V4.Chart("argocd", new()
         {
             Namespace = ns.Metadata.Apply(metadata => metadata.Name),
@@ -50,54 +33,6 @@ internal class ArgoCD : ComponentResource
             {
                 Repo = "https://argoproj.github.io/argo-helm",
             },
-        }, new()
-        {
-            Provider = provider,
-            DependsOn = { redisSecret }
-        });
-
-        var repoCredentials = new Secret("repo-credentials", new()
-        {
-            Type = "Opaque",
-            Data =
-            {
-                { "url", ToBase64("git@github.com:bytetum/k8s-dataplatform-quickstart.git") },
-                { "sshPrivateKey",  config.RequireSecret("argo_secret_key").Apply(ToBase64) },
-                { "type", ToBase64("git") }
-            },
-            Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
-            {
-                Name = "repo-credentials",
-                Namespace = ns.Metadata.Apply(metadata => metadata.Name),
-                Labels =
-                {
-                    { "argocd.argoproj.io/secret-type", "repo-creds" }  
-                }
-            }
-        }, new()
-        {
-            Provider = provider,
-        });
-
-        var repo = new Secret("repo", new()
-        {
-            Type = "Opaque",
-            Data =
-            {
-                { "name", ToBase64("essence") },
-                { "url", ToBase64("git@github.com:bytetum/k8s-dataplatform-quickstart.git") },
-                { "insecure", ToBase64("true") },
-                { "type", ToBase64("git") },
-            },
-            Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
-            {
-                Name = "repo",
-                Namespace = ns.Metadata.Apply(metadata => metadata.Name),
-                Labels =
-                {
-                    { "argocd.argoproj.io/secret-type", "repository" }  
-                }
-            }
         }, new()
         {
             Provider = provider,
@@ -114,8 +49,9 @@ internal class ArgoCD : ComponentResource
             {
                 Source = new ArgoApplicationSourceArgs
                 {
-                    Path = "gitops/manifests/argocd",
-                    RepoUrl = "git@github.com:bytetum/k8s-dataplatform-quickstart.git",
+                    Path = manifestsPath,
+                    RepoUrl = repoUrl,
+                    TargetRevision = targetRevision,
                     Directory =
                     {
                         { "recurse", true }
@@ -143,12 +79,6 @@ internal class ArgoCD : ComponentResource
             Provider = provider,
             DependsOn = argoCd,
         });
-    }
-
-    private static string ToBase64(string input)
-    {
-        var bytes = System.Text.Encoding.UTF8.GetBytes(input);
-        return System.Convert.ToBase64String(bytes);
     }
 }
 internal class ArgoApplicationArgs : Kubernetes.ApiExtensions.CustomResourceArgs
@@ -185,7 +115,7 @@ internal class ArgoApplicationSourceArgs: ResourceArgs
     public required Input<string> RepoUrl { get; set; }
 
     [Input("targetRevision")]
-    public Input<string> Branch = "HEAD";
+    public required Input<string> TargetRevision { get; set; }
 
     [Input("directory")]
     public InputMap<bool> Directory { get; set; } = [];

@@ -1,0 +1,14 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+# The cluster name is supplied by scripts/mac/create-cluster.sh. Keeping the API
+# on loopback prevents the local control plane from being exposed on the LAN.
+# apiServerPort is intentionally omitted so Kind chooses a free host port.
+networking:
+  apiServerAddress: "127.0.0.1"
+
+# A single node keeps the Docker Desktop overhead small. Kind control-plane
+# nodes are schedulable by default; add workers only when a tested profile
+# requires them, because extra nodes do not add CPU or RAM to Docker Desktop.
+nodes:
+  - role: control-plane

@@ -2,9 +2,9 @@ namespace argocd.applications;
 
 public class OpenMetadataDependencies
 {
-    public OpenMetadataDependencies(Kubernetes.Provider provider)
+    public OpenMetadataDependencies(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("openmetadata-dependencies", provider)
+        new ArgoApplicationBuilder("openmetadata-dependencies", provider, settings)
             .AddSource(ApplicationType.Helm)
             .RepoUrl("https://helm.open-metadata.org/")
             .Chart("openmetadata-dependencies")
@@ -22,9 +22,9 @@ public class OpenMetadataDependencies
 
 public class OpenMetadata
 {
-    public OpenMetadata(Kubernetes.Provider provider)
+    public OpenMetadata(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("openmetadata", provider)
+        new ArgoApplicationBuilder("openmetadata", provider, settings)
             .AddSource(ApplicationType.Helm)
             .RepoUrl("https://helm.open-metadata.org/")
             .Chart("openmetadata")

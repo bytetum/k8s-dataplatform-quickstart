@@ -17,10 +17,10 @@ spec:
     spec:
       containers:
       - args:
-        - "/opt/flink/bin/sql-gateway.sh start -Dsql-gateway.endpoint.rest.address=0.0.0.0
-          &&\r\n                                echo \"SQL Gateway daemon started.
-          Tailing logs to keep container alive.\" &&\r\n                                sleep
-          infinity"
+        - |-
+          /opt/flink/bin/sql-gateway.sh start -Dsql-gateway.endpoint.rest.address=0.0.0.0 &&
+                                          echo "SQL Gateway daemon started. Tailing logs to keep container alive." &&
+                                          sleep infinity
         command:
         - /bin/sh
         - -c

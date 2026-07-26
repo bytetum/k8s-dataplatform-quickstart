@@ -196,7 +196,7 @@ public class Polaris : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -207,7 +207,7 @@ public class Polaris : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4"
+                        Key = SecretSources.IcebergBucketCredentials
                     }
                 }
             }
@@ -228,7 +228,7 @@ public class Polaris : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -239,7 +239,7 @@ public class Polaris : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:842cb98e-9786-4cc6-9af7-424f9278d802"
+                        Key = SecretSources.PolarisKeyPair
                     }
                 }
             }
@@ -260,7 +260,7 @@ public class Polaris : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -271,7 +271,7 @@ public class Polaris : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:polaris-root-password"
+                        Key = SecretSources.PolarisRootPassword
                     }
                 }
             }

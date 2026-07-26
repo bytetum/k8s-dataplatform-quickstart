@@ -2,9 +2,9 @@ namespace argocd.applications;
 
 internal class WarpStreamSchemaRegistry
 {
-    public WarpStreamSchemaRegistry(Kubernetes.Provider provider)
+    public WarpStreamSchemaRegistry(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("warpstream-schema-registry", provider)
+        new ArgoApplicationBuilder("warpstream-schema-registry", provider, settings)
             .AddSource(ApplicationType.Yaml)
             .AsValueSource("values")
             .AddSource(ApplicationType.Helm)

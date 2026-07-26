@@ -2,9 +2,9 @@ namespace argocd.applications;
 
 internal class StrimziOperator
 {
-    public StrimziOperator(Kubernetes.Provider provider)
+    public StrimziOperator(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("strimzi-kafka-operator", provider)
+        new ArgoApplicationBuilder("strimzi-kafka-operator", provider, settings)
             .AddSource(ApplicationType.Helm)
             .Branch("0.47.0")
             .RepoUrl("quay.io/strimzi-helm")

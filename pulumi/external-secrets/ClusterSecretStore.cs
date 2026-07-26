@@ -15,7 +15,6 @@ public class ClusterSecretStore : Kubernetes.ApiExtensions.CustomResource
 [OutputType]
 public sealed class ClusterSecretStoreSpec
 {
-     
 }
 
 public class ClusterSecretStoreArgs : Kubernetes.ApiExtensions.CustomResourceArgs
@@ -42,79 +41,57 @@ public class ClusterSecretStoreSpecConditionsArgs : Pulumi.ResourceArgs
     [Input("namespaces")]
     public InputList<string>? Namespaces { get; set; }
 }
+
 public class ClusterSecretStoreSpecProviderArgs : Pulumi.ResourceArgs
 {
-    [Input("scaleway")]
-    public Input<ClusterSecretStoreSpecProviderScalewayArgs>? Scaleway { get; set; }
-    
-    [Input("fake")]
-    public Input<ClusterSecretStoreSpecProviderFakeArgs>? Fake { get; set; }
+    [Input("kubernetes")]
+    public Input<ClusterSecretStoreSpecProviderKubernetesArgs>? Kubernetes { get; set; }
 }
 
-//MARK: change
-public class ClusterSecretStoreSpecProviderFakeArgs : Pulumi.ResourceArgs
+public class ClusterSecretStoreSpecProviderKubernetesArgs : Pulumi.ResourceArgs
 {
-    [Input("data")]
-    public InputList<ClusterSecretStoreProviderDataFakeArgs>? Data { get; set; }
+    [Input("remoteNamespace")]
+    public Input<string>? RemoteNamespace { get; set; }
+
+    [Input("server")]
+    public Input<ClusterSecretStoreSpecProviderKubernetesServerArgs>? Server { get; set; }
+
+    [Input("auth")]
+    public Input<ClusterSecretStoreSpecProviderKubernetesAuthArgs>? Auth { get; set; }
 }
 
-public class ClusterSecretStoreProviderDataFakeArgs : Pulumi.ResourceArgs
+public class ClusterSecretStoreSpecProviderKubernetesServerArgs : Pulumi.ResourceArgs
 {
-    [Input("key")]
-    public Input<string>? Key { get; set; }
-    [Input("value")]
-    public Input<string>? Value { get; set; }
-    
-    [Input("valueMap")]
-    public InputMap<string>? ValueMap { get; set; }
-
-    [Input("version")]
-    public Input<string>? Version { get; set; }
+    [Input("caProvider")]
+    public Input<ClusterSecretStoreSpecProviderKubernetesCaProviderArgs>? CaProvider { get; set; }
 }
 
-//MARK: endchange
-
-public class ClusterSecretStoreSpecProviderScalewayArgs : Pulumi.ResourceArgs
+public class ClusterSecretStoreSpecProviderKubernetesCaProviderArgs : Pulumi.ResourceArgs
 {
-    [Input("region")]
-    public Input<string>? Region { get; set; }
+    [Input("type")]
+    public Input<string>? Type { get; set; }
 
-    [Input("projectId")]
-    public Input<string>? ProjectId { get; set; }
-
-    [Input("accessKey")]
-    public Input<ClusterSecretStoreSpecProviderScalewayAceessKeyArgs>? AccessKey { get; set; }
-
-    [Input("secretKey")]
-    public Input<ClusterSecretStoreSpecProviderScalewaySecretKeyArgs>? SecretKey { get; set; }
-}
-
-public class ClusterSecretStoreSpecProviderFakeSecretArgs : Pulumi.ResourceArgs
-{
-    [Input("key")]
-    public InputMap<string>? value { get; set; }
-}
-
-public class ClusterSecretStoreSpecProviderScalewayAceessKeyArgs : Pulumi.ResourceArgs
-{
-    [Input("secretRef")]
-    public Input<SecretRefArgs>? SecretRef { get; set; }
-}
-
-public class ClusterSecretStoreSpecProviderScalewaySecretKeyArgs : Pulumi.ResourceArgs
-{
-    [Input("secretRef")]
-    public Input<SecretRefArgs>? SecretRef { get; set; }
-}
-
-public class SecretRefArgs : Pulumi.ResourceArgs
-{
     [Input("name")]
     public Input<string>? Name { get; set; }
 
     [Input("key")]
     public Input<string>? Key { get; set; }
-    
+
+    [Input("namespace")]
+    public Input<string>? Namespace { get; set; }
+}
+
+public class ClusterSecretStoreSpecProviderKubernetesAuthArgs : Pulumi.ResourceArgs
+{
+    [Input("serviceAccount")]
+    public Input<ClusterSecretStoreSpecProviderKubernetesServiceAccountArgs>? ServiceAccount { get; set; }
+}
+
+public class ClusterSecretStoreSpecProviderKubernetesServiceAccountArgs : Pulumi.ResourceArgs
+{
+    [Input("name")]
+    public Input<string>? Name { get; set; }
+
     [Input("namespace")]
     public Input<string>? Namespace { get; set; }
 }

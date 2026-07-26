@@ -70,7 +70,7 @@ public class ExternalSecretSpecDataFromExtractArgs : Pulumi.ResourceArgs
     public required Input<string> Key { get; set; }
 
     [Input("version")]
-    public Input<string> Version { get; set; } = "latest_enabled";
+    public Input<string>? Version { get; set; }
 }
 
 public class ExternalSecretSpecTargetTemplateArgs : Pulumi.ResourceArgs

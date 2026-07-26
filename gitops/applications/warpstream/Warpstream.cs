@@ -26,7 +26,7 @@ internal class Warpstream : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore",
                 },
                 Target = new ExternalSecretSpecTargetArgs
@@ -37,8 +37,7 @@ internal class Warpstream : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs
                     {
-                        Key = "id:827b85c8-babe-4a43-8af2-dce1dd530081",
-                        Version = "latest_enabled"
+                        Key = SecretSources.WarpstreamBucketCredentials,
                     }
                 }
             }
@@ -59,7 +58,7 @@ internal class Warpstream : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore",
                 },
                 Target = new ExternalSecretSpecTargetArgs
@@ -70,8 +69,7 @@ internal class Warpstream : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs
                     {
-                        Key = "id:ae402e70-87ee-435a-8ecc-f6c91c57ae9c",
-                        Version = "latest_enabled",
+                        Key = SecretSources.WarpstreamAgentApiKey,
                     }
                 }
             }

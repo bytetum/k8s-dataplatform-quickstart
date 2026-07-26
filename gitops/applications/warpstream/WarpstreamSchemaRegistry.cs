@@ -26,7 +26,7 @@ internal class WarpstreamSchemaRegistry : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore",
                 },
                 Target = new ExternalSecretSpecTargetArgs
@@ -37,9 +37,7 @@ internal class WarpstreamSchemaRegistry : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs
                     {
-                        // Place holder
-                        Key = "id:warpstream-schema-registry-secrets",
-                        Version = "latest_enabled",
+                        Key = SecretSources.WarpstreamSchemaRegistrySecrets,
                     }
                 }
             }

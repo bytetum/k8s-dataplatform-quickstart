@@ -35,7 +35,7 @@ internal class KafkaConnect : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "shared-secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -55,7 +55,7 @@ internal class KafkaConnect : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:f11e62c3-85f0-40c9-82a8-b6f1d7ce7932"
+                        Key = SecretSources.ContainerRegistryWriteCredentials
                     }
                 }
             }
@@ -76,7 +76,7 @@ internal class KafkaConnect : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "shared-secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -96,7 +96,7 @@ internal class KafkaConnect : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:1cf21d4a-b561-4353-9981-fecafe592689"
+                        Key = SecretSources.ContainerRegistryReadCredentials
                     }
                 }
             }
@@ -117,7 +117,7 @@ internal class KafkaConnect : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -128,7 +128,7 @@ internal class KafkaConnect : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:polaris-root-password"
+                        Key = SecretSources.PolarisRootPassword
                     }
                 }
             }
@@ -149,7 +149,7 @@ internal class KafkaConnect : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -160,7 +160,7 @@ internal class KafkaConnect : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4"
+                        Key = SecretSources.IcebergBucketCredentials
                     }
                 }
             }
@@ -181,7 +181,7 @@ internal class KafkaConnect : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -192,7 +192,7 @@ internal class KafkaConnect : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:86fac104-7ff1-47d8-8cd1-7e2d74dbc0fd" // Replace with actual secret ID
+                        Key = SecretSources.PricefilesDatabaseCredentials
                     }
                 }
             }
@@ -213,7 +213,7 @@ internal class KafkaConnect : ComponentResource
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -224,7 +224,7 @@ internal class KafkaConnect : ComponentResource
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:schema-registry-credentials"
+                        Key = SecretSources.SchemaRegistryCredentials
                     }
                 }
             }

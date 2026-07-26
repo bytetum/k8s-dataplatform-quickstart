@@ -1,0 +1,7 @@
+config:
+  argocd:kube_context: kind-dataplatform-mac
+  argocd:repo_url: https://github.com/bytetum/k8s-dataplatform-quickstart.git
+  argocd:target_revision: mac-local
+  argocd:manifests_path: ../environments/mac/manifests/argocd
+  argocd:profile: foundation
+encryptionsalt: v1:obd0RLF96JI=:v1:JsuNxKNGObTqbgQW:StiZ8cVH6r3Q+w8X33kiGu7he3gFGg==

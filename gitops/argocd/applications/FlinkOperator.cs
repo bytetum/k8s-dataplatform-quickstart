@@ -2,9 +2,9 @@ namespace argocd.applications;
 
 internal class FlinkOperator
 {
-    public FlinkOperator(Kubernetes.Provider provider)
+    public FlinkOperator(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("flink-kubernetes-operator", provider)
+        new ArgoApplicationBuilder("flink-kubernetes-operator", provider, settings)
             .AddSource(ApplicationType.Helm)
             .SyncWave(1)
             .Branch("1.13.0")

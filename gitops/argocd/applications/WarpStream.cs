@@ -2,9 +2,9 @@
 
 internal class WarpStream
 {
-    public WarpStream(Kubernetes.Provider provider)
+    public WarpStream(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("warpstream-agent", provider)
+        new ArgoApplicationBuilder("warpstream-agent", provider, settings)
             .AddSource(ApplicationType.Yaml)
             .AsValueSource("values")
             .AddSource(ApplicationType.Helm)
