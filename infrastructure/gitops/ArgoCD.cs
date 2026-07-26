@@ -24,6 +24,29 @@ internal class ArgoCD : ComponentResource
           Provider = provider,
         });
 
+        var redisPassword = new Pulumi.Random.RandomPassword("argo-redis-password", new()
+        {
+            Length = 32,
+            Special = false,
+        });
+
+        var redisSecret = new Secret("argo-redis-secret", new()
+        {
+            Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
+            {
+                Name = "argocd-redis",
+                Namespace = ns.Metadata.Apply(metadata => metadata.Name),
+            },
+            Type = "Opaque",
+            StringData =
+            {
+                { "auth", redisPassword.Result },
+            },
+        }, new()
+        {
+            Provider = provider,
+        });
+
         var argoCd = new Kubernetes.Helm.V4.Chart("argocd", new()
         {
             Namespace = ns.Metadata.Apply(metadata => metadata.Name),
@@ -36,6 +59,7 @@ internal class ArgoCD : ComponentResource
         }, new()
         {
             Provider = provider,
+            DependsOn = redisSecret,
         });
         
         var applications = new Kubernetes.ApiExtensions.CustomResource("applications", new ArgoApplicationArgs
