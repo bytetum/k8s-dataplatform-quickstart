@@ -1,6 +1,6 @@
 # Plan: remap the WSL-hosted GitOps setup to this Mac
 
-Status: **Approved — no cluster or GitOps changes have been made**
+Status: **Foundation implemented on 2026-07-26 — core and later gates await local secret inputs and ARM64 image validation**
 
 ## Outcome
 
