@@ -11,7 +11,7 @@ check_context=true
 
 usage() {
   cat <<'EOF'
-Usage: scripts/mac/preflight.sh [--profile foundation|core|full] [--for-create]
+Usage: scripts/mac/preflight.sh [--profile foundation|operators|core|full] [--for-create]
 
 Checks native Mac tooling and Docker Desktop resources. By default it also
 requires the active, reachable context to be exactly kind-dataplatform-mac.

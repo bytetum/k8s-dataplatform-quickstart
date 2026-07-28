@@ -19,6 +19,7 @@ does not add capacity. Configure Docker Desktop before creating the cluster.
 | Profile | Docker Desktop minimum | Intended scope |
 | --- | --- | --- |
 | `foundation` | 4 CPUs, 8 GiB RAM | Kind, Argo CD, cert-manager, External Secrets |
+| `operators` | 4 CPUs, 8 GiB RAM | Foundation plus Strimzi and Flink operators |
 | `core` | 8 CPUs, 16 GiB RAM | Foundation plus a staged subset of core data services |
 | `full` | 12 CPUs, 24 GiB RAM | Best-effort full stack; enable only after staged validation |
 

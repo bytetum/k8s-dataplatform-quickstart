@@ -15,7 +15,7 @@ usage() {
 Usage: scripts/mac/create-cluster.sh [options]
 
 Options:
-  --profile foundation|core|full  Docker resource gate (default: core)
+  --profile foundation|operators|core|full  Docker resource gate (default: core)
   --image IMAGE                   Explicit kindest/node image
                                   (default: Kubernetes v1.35.5, pinned by digest)
   --dry-run                       Print the exact create command only

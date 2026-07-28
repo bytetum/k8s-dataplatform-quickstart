@@ -22,11 +22,16 @@ internal class ArgoApplications : ComponentResource
         _ = new CertManager(provider, settings);
         _ = new ExternalSecrets(provider, settings);
 
+        if (Includes(selectedProfile, DeploymentProfile.Operators))
+        {
+            _ = new StrimziOperator(provider, settings);
+            _ = new FlinkOperator(provider, settings);
+        }
+
         if (Includes(selectedProfile, DeploymentProfile.Core))
         {
             _ = new WarpStream(provider, settings);
             _ = new WarpStreamSchemaRegistry(provider, settings);
-            _ = new StrimziOperator(provider, settings);
             _ = new Polaris(provider, settings);
         }
 
@@ -38,7 +43,6 @@ internal class ArgoApplications : ComponentResource
 
         if (Includes(selectedProfile, DeploymentProfile.Processing))
         {
-            _ = new FlinkOperator(provider, settings);
             _ = new FlinkDeployment(provider, settings);
             _ = new FlinkSessionMode(provider, settings);
         }
@@ -64,6 +68,7 @@ internal class ArgoApplications : ComponentResource
         profile.Trim().ToLowerInvariant() switch
         {
             "foundation" => DeploymentProfile.Foundation,
+            "operators" => DeploymentProfile.Operators,
             "core" => DeploymentProfile.Core,
             "query" or "query-lineage" or "query_lineage" => DeploymentProfile.QueryLineage,
             "processing" => DeploymentProfile.Processing,
@@ -71,13 +76,14 @@ internal class ArgoApplications : ComponentResource
             "full" or "heavy-metadata" or "heavy_metadata" => DeploymentProfile.Full,
             _ => throw new System.ArgumentException(
                 $"Unknown Argo application profile '{profile}'. " +
-                "Expected foundation, core, query-lineage, processing, integration, or full.",
+                "Expected foundation, operators, core, query-lineage, processing, integration, or full.",
                 nameof(profile)),
         };
 
     private enum DeploymentProfile
     {
         Foundation,
+        Operators,
         Core,
         QueryLineage,
         Processing,

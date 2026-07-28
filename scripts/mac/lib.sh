@@ -85,6 +85,9 @@ profile_minimums() {
     foundation)
       printf '%s %s\n' 4 8
       ;;
+    operators)
+      printf '%s %s\n' 4 8
+      ;;
     core)
       printf '%s %s\n' 8 16
       ;;
@@ -92,7 +95,7 @@ profile_minimums() {
       printf '%s %s\n' 12 24
       ;;
     *)
-      die "Unknown profile '${profile}'. Use foundation, core, or full."
+      die "Unknown profile '${profile}'. Use foundation, operators, core, or full."
       ;;
   esac
 }

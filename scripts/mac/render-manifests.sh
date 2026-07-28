@@ -68,6 +68,7 @@ esac
 
 require_command pulumi
 require_command dotnet
+require_command jq
 require_expected_context
 
 render_project() {
@@ -118,8 +119,46 @@ clean_mac_argocd_manifests() {
   log "Cleared the dedicated Mac Argo manifest directory before profile rendering."
 }
 
+reset_mac_argocd_render_stack() {
+  local unexpected_types
+
+  unexpected_types="$(
+    cd "${REPO_ROOT}/gitops/argocd"
+    pulumi stack export \
+      --stack "${argocd_stack}" \
+      --show-secrets=false |
+      jq -r '.deployment.resources[]?.type' |
+      sort -u |
+      awk '
+        $0 != "pulumi:pulumi:Stack" &&
+        $0 != "pulumi:providers:kubernetes" &&
+        $0 != "manifests" &&
+        $0 != "kubernetes:argoproj.io/v1alpha1:Application" {
+          print
+        }
+      '
+  )"
+
+  [[ -z "${unexpected_types}" ]] ||
+    die "Argo render stack contains non-render resources; refusing to reset it: ${unexpected_types}"
+
+  log "Resetting the clusterless Argo render stack so every selected Application is rewritten."
+  (
+    cd "${REPO_ROOT}/gitops/argocd"
+    pulumi destroy \
+      --stack "${argocd_stack}" \
+      --yes \
+      --skip-preview \
+      --non-interactive \
+      --suppress-outputs
+  )
+}
+
 if [[ "${project}" == "argocd" || "${project}" == "all" ]]; then
   load_pulumi_passphrase
+  require_pulumi_stack "${REPO_ROOT}/gitops/argocd" "${argocd_stack}"
+  require_pulumi_context_config "${REPO_ROOT}/gitops/argocd" "${argocd_stack}"
+  reset_mac_argocd_render_stack
   clean_mac_argocd_manifests
   render_project "${REPO_ROOT}/gitops/argocd" "${argocd_stack}" true
 fi
