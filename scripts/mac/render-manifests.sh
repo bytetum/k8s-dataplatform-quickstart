@@ -69,6 +69,7 @@ esac
 require_command pulumi
 require_command dotnet
 require_command jq
+configure_dotnet_runtime
 require_expected_context
 
 render_project() {

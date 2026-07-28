@@ -194,12 +194,26 @@ chmod 600 .local-secrets/mac.env
 # Also chmod 600 each exact PEM path referenced by the env file.
 ```
 
-Fill `.local-secrets/mac.env` and the referenced PEM files without sending their
-values through chat or shell output. Then run:
+Fill only the entries required by the profile you are about to enable, and the
+referenced PEM files, without sending values through chat or shell output. Then
+run the corresponding seed command:
 
 ```bash
-./scripts/mac/seed-secrets.sh
+./scripts/mac/seed-secrets.sh --profile core
 ```
+
+`core` seeds only the source Secrets used by WarpStream, WarpStream Schema
+Registry, Polaris/Postgres, and Iceberg. It does not require or seed the Flink,
+Kafka Connect, registry, or Pricefiles database entries. `full` seeds core and
+adds the Flink and Kafka Connect requirements:
+
+```bash
+./scripts/mac/seed-secrets.sh --profile full
+```
+
+Use `./scripts/mac/seed-secrets.sh --help` for the complete profile summary.
+The `foundation` and `operators` profiles do not have workload source Secrets
+to seed.
 
 The seed helper refuses a context other than `kind-dataplatform-mac`, requires
 private file permissions, and writes only source Secrets in `local-secrets`.

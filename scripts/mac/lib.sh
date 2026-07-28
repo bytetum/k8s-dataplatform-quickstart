@@ -34,6 +34,18 @@ require_command() {
     die "Required command not found: ${command_name}"
 }
 
+configure_dotnet_runtime() {
+  if [[ "$(uname -s)" == "Darwin" &&
+        "$(uname -m)" == "arm64" &&
+        -n "${DOTNET_ROOT:-}" &&
+        -x "${DOTNET_ROOT}/dotnet" ]]; then
+    # Native apphosts prefer the architecture-specific variable. Without it,
+    # a Homebrew .NET 9 host can be selected even when the project targets and
+    # the shell uses the installed .NET 8 runtime.
+    export DOTNET_ROOT_ARM64="${DOTNET_ROOT_ARM64:-${DOTNET_ROOT}}"
+  fi
+}
+
 require_macos() {
   [[ "$(uname -s)" == "Darwin" ]] ||
     die "This workflow is only for the Mac-local environment."

@@ -9,6 +9,14 @@ spec:
   destination:
     namespace: flink-kubernetes-operator
     server: https://kubernetes.default.svc
+  ignoreDifferences:
+  - group: apiextensions.k8s.io
+    jqPathExpressions:
+    - .spec.versions[].additionalPrinterColumns[].priority
+    jsonPointers:
+    - /spec/conversion
+    - /spec/names/listKind
+    kind: CustomResourceDefinition
   project: default
   source:
     chart: flink-kubernetes-operator

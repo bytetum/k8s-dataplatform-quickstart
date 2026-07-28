@@ -36,6 +36,7 @@ done
 
 require_command pulumi
 require_command dotnet
+configure_dotnet_runtime
 load_pulumi_passphrase
 require_expected_context
 require_pulumi_stack "${REPO_ROOT}/infrastructure" "${stack_name}"

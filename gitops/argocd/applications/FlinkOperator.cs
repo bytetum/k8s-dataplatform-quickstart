@@ -9,6 +9,7 @@ internal class FlinkOperator
             .SyncWave(1)
             .Branch("1.13.0")
             .RepoUrl("https://archive.apache.org/dist/flink/flink-kubernetes-operator-1.13.0/")
+            .IgnoreApiDefaultedCrds()
             .Build();
     }
 }

@@ -16,6 +16,7 @@ internal class ArgoApplicationBuilder
     private int syncWave = 0;
     private readonly List<ArgoApplicationSource> sources = [];
     private readonly List<string> syncOptions = [];
+    private readonly List<ApplicationSpecIgnoreDifferencesArgs> ignoreDifferences = [];
 
     public ArgoApplicationBuilder(
         string name,
@@ -60,6 +61,25 @@ internal class ArgoApplicationBuilder
     public ArgoApplicationBuilder CreateNamespace()
     {
         syncOptions.Add("CreateNamespace=true");
+        return this;
+    }
+
+    public ArgoApplicationBuilder IgnoreApiDefaultedCrds()
+    {
+        ignoreDifferences.Add(new ApplicationSpecIgnoreDifferencesArgs
+        {
+            Group = "apiextensions.k8s.io",
+            Kind = "CustomResourceDefinition",
+            JsonPointers = new InputList<string>
+            {
+                "/spec/conversion",
+                "/spec/names/listKind",
+            },
+            JqPathExpressions = new InputList<string>
+            {
+                ".spec.versions[].additionalPrinterColumns[].priority",
+            },
+        });
         return this;
     }
 
@@ -140,6 +160,11 @@ internal class ArgoApplicationBuilder
             },
             SyncPolicy = syncPolicy,
         };
+
+        if (ignoreDifferences.Count > 0)
+        {
+            spec.IgnoreDifferences = ignoreDifferences;
+        }
 
         if (sources.Count > 1)
         {
