@@ -8,6 +8,7 @@ using applications.warpstream;
 using applications.polaris;
 using applications.postgres;
 using applications.kafkaconnect;
+using applications.trino;
 
 return await Deployment.RunAsync(() =>
 {
@@ -17,6 +18,7 @@ return await Deployment.RunAsync(() =>
     var polaris = new Polaris("../manifests");
     var postgres = new Postgres("../manifests");
     var kafkaConnect = new KafkaConnect("../manifests");
+    var trino = new Trino("../manifests");
     // PostgreSQL CDC Source Connector (Debezium)
     // Migrated from PostgresDebeziumConnector to use the generic builder pattern
     var postgresDebeziumSource = new DebeziumSourceConnectorBuilder("../manifests")
@@ -55,7 +57,7 @@ return await Deployment.RunAsync(() =>
     // Kafka Connect Cluster
     var kafkaConnectCluster = new KafkaConnectClusterBuilder("../manifests", "m3-kafka-connect")
         .WithBootstrapServers(Constants.KafkaBootstrapServers)
-        .WithImage("ttl.sh/hxt-kafka-connect-amd64-20-12:24h")
+        .WithImage("local/kafka-connect:0.47.0-kafka-4.0.0-arm64")
         .WithReplicas(1)
         .WithMetricsConfig("kafka-connect-metrics", "metrics-config.yml")
         .WithResources(

@@ -204,11 +204,13 @@ run the corresponding seed command:
 
 `core` seeds only the source Secrets used by WarpStream, WarpStream Schema
 Registry, Polaris/Postgres, and Iceberg. It does not require or seed the Flink,
-Kafka Connect, registry, or Pricefiles database entries. `full` seeds core and
-adds the Flink and Kafka Connect requirements:
+Kafka Connect, registry, or Pricefiles database entries. `query-lineage` has
+the same source-secret requirements as `core`. `processing` adds Flink; both
+`integration` and `full` add Kafka Connect as well:
 
 ```bash
-./scripts/mac/seed-secrets.sh --profile full
+./scripts/mac/seed-secrets.sh --profile processing
+./scripts/mac/seed-secrets.sh --profile integration
 ```
 
 Use `./scripts/mac/seed-secrets.sh --help` for the complete profile summary.

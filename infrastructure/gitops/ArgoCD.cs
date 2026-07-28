@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Pulumi;
 using Kubernetes = Pulumi.Kubernetes;
 using Pulumi.Kubernetes.Core.V1;
@@ -56,6 +57,19 @@ internal class ArgoCD : ComponentResource
             {
                 Repo = "https://argoproj.github.io/argo-helm",
             },
+            Values =
+            {
+                ["server"] = new Dictionary<string, object>
+                {
+                    ["readinessProbe"] = LaptopProbeSettings(),
+                    ["livenessProbe"] = LaptopProbeSettings(),
+                },
+                ["repoServer"] = new Dictionary<string, object>
+                {
+                    ["readinessProbe"] = LaptopProbeSettings(),
+                    ["livenessProbe"] = LaptopProbeSettings(),
+                },
+            },
         }, new()
         {
             Provider = provider,
@@ -104,6 +118,15 @@ internal class ArgoCD : ComponentResource
             DependsOn = argoCd,
         });
     }
+
+    private static Dictionary<string, object> LaptopProbeSettings() => new()
+    {
+        ["failureThreshold"] = 6,
+        ["initialDelaySeconds"] = 10,
+        ["periodSeconds"] = 10,
+        ["successThreshold"] = 1,
+        ["timeoutSeconds"] = 5,
+    };
 }
 internal class ArgoApplicationArgs : Kubernetes.ApiExtensions.CustomResourceArgs
 {

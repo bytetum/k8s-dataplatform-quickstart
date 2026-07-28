@@ -16,7 +16,7 @@ public class KafkaConnectClusterBuilder
     private readonly string _manifestsRoot;
     private readonly string _clusterName;
     private string _bootstrapServers = Constants.KafkaBootstrapServers;
-    private string _image = "ttl.sh/hxt-kafka-connect-amd64:24h";
+    private string _image = "local/kafka-connect:0.47.0-kafka-4.0.0-arm64";
     private int _replicas = 1;
     private string _namespace = Constants.KafkaConnectNamespace;
 

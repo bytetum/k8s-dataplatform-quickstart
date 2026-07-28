@@ -2,7 +2,7 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnect
 metadata:
   annotations:
-    config-hash: 42c1ad159e36722a
+    config-hash: a1d1aad851866624
     strimzi.io/use-connector-resources: "true"
   labels:
     app: m3-kafka
@@ -44,7 +44,7 @@ spec:
     status.storage.replication.factor: 1
     status.storage.topic: m3.kafka.connect.status
     worker.sync.timeout.ms: 3000
-  image: ttl.sh/hxt-kafka-connect-amd64-20-12:24h
+  image: local/kafka-connect:0.47.0-kafka-4.0.0-arm64
   jvmOptions:
     -Xmx: 5G
   metricsConfig:

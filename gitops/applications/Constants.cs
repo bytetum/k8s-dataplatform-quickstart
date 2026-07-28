@@ -25,6 +25,9 @@ public static class Constants
     // Kafka Connect
     public const string KafkaConnectNamespace = "kafka-connect";
 
+    // Trino
+    public const string TrinoNamespace = "trino";
+
     // S3 / Object Storage
     public const string S3BucketPath = "s3://local-rocksdb-test";
 

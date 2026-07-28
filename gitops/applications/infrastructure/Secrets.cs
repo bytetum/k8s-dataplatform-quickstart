@@ -107,6 +107,7 @@ internal class Secrets : ComponentResource
                         {
                             Constants.KafkaConnectNamespace,
                             Constants.PolarisNamespace,
+                            Constants.TrinoNamespace,
                             Constants.WarpStreamNamespace,
                             applications.flink.Constants.Namespace,
                         },

@@ -17,7 +17,7 @@ fail() {
 
 usage() {
     cat <<'EOF'
-Usage: scripts/mac/seed-secrets.sh [--profile foundation|operators|core|full]
+Usage: scripts/mac/seed-secrets.sh [--profile PROFILE]
 
 Seed only the local source Secrets required by the selected Mac-local profile.
 
@@ -25,7 +25,10 @@ Profiles:
   foundation  No workload source Secrets.
   operators   No workload source Secrets.
   core        WarpStream, WarpStream Schema Registry, Polaris/Postgres, and Iceberg.
-  full        Core plus Flink and Kafka Connect source Secrets.
+  query-lineage  Core requirements; Trino and Marquez add no source inputs.
+  processing  Core plus Flink source Secrets.
+  integration Core plus Flink and Kafka Connect source Secrets.
+  full        Integration requirements plus OpenMetadata (no additional source inputs).
 
 The script accepts only the kind-dataplatform-mac context, never displays secret
 values, and requires the local environment file and referenced PEM files to be
@@ -156,7 +159,7 @@ parse_args() {
     done
 
     case "${profile}" in
-        foundation|operators|core|full) ;;
+        foundation|operators|core|query|query-lineage|query_lineage|processing|integration|full|heavy-metadata|heavy_metadata) ;;
         *) fail "invalid profile: ${profile} (use --help)" ;;
     esac
 }
@@ -299,10 +302,14 @@ case "${profile}" in
     foundation|operators)
         printf 'No workload source Secrets are required for the %s profile.\n' "${profile}"
         ;;
-    core)
+    core|query|query-lineage|query_lineage)
         seed_core_secrets
         ;;
-    full)
+    processing)
+        seed_core_secrets
+        seed_flink_secrets
+        ;;
+    integration|full|heavy-metadata|heavy_metadata)
         seed_core_secrets
         seed_flink_secrets
         seed_kafka_connect_secrets
