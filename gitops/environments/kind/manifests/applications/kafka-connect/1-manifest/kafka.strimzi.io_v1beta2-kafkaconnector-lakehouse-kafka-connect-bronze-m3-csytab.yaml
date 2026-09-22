@@ -8,7 +8,7 @@ metadata:
   name: bronze-m3-csytab
   namespace: lakehouse-kafka-connect
 spec:
-  class: io.tabular.iceberg.connect.IcebergSinkConnector
+  class: org.apache.iceberg.connect.IcebergSinkConnector
   config:
     errors.deadletterqueue.context.headers.enable: true
     errors.deadletterqueue.producer.acks: all
