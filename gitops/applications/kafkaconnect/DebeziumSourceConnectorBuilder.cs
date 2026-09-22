@@ -66,7 +66,7 @@ public class DebeziumSourceConnectorBuilder
     // Connector identity
     private string? _connectorName;
     private string? _topicPrefix;
-    private string _clusterName = "m3-kafka-connect";
+    private string _clusterName = Constants.KafkaConnectClusterName;
     private int _tasksMax = 1;
     // DD130 Naming Convention fields
     private NamingConventionHelper.DataLayer? _layer;
@@ -92,8 +92,7 @@ public class DebeziumSourceConnectorBuilder
     // MongoDB-specific configuration
     private string? _mongoDbConnectionString;
     // Schema Registry configuration
-    private string _schemaRegistryUrl =
-        "http://warpstream-schema-registry-warpstream-agent.warpstream.svc.cluster.local:9094";
+    private string _schemaRegistryUrl = Constants.SchemaRegistryUrl;
     private string _schemaRegistryAuth = "${env:SCHEMA_REGISTRY_USERNAME}:${env:SCHEMA_REGISTRY_PASSWORD}";
     // Transform configuration
     private bool _unwrapTransformEnabled = false;
@@ -238,7 +237,7 @@ public class DebeziumSourceConnectorBuilder
     /// <returns>The builder for method chaining.</returns>
     public DebeziumSourceConnectorBuilder WithTopicPrefix(string topicPrefix)
     {
-        _topicPrefix = topicPrefix ?? throw new ArgumentNullException(nameof(topicPrefix));
+        _topicPrefix = Constants.KafkaTopic(topicPrefix ?? throw new ArgumentNullException(nameof(topicPrefix)));
         return this;
     }
     /// <summary>
@@ -411,8 +410,9 @@ public class DebeziumSourceConnectorBuilder
     /// <param name="replacement">Replacement pattern (can use capture groups like $1, $2).</param>
     /// <returns>The builder for method chaining.</returns>
     /// <example>
-    /// // Route topics from "m3-cdc.public.tablename" to "bronze.m3.tablename"
-    /// .WithRouteTransform(@"m3-cdc\.public\.(.*)", "bronze.m3.$1")
+    /// // Route isolated topics from "kind-local.m3-cdc.public.tablename"
+    /// // to "kind-local.bronze.m3.tablename"
+    /// .WithRouteTransform(@"kind-local\.m3-cdc\.public\.(.*)", "kind-local.bronze.m3.$1")
     /// </example>
     public DebeziumSourceConnectorBuilder WithRouteTransform(string regex, string replacement)
     {
@@ -477,7 +477,7 @@ public class DebeziumSourceConnectorBuilder
     /// <returns>The builder for method chaining.</returns>
     public DebeziumSourceConnectorBuilder WithDeadLetterQueue(string topicName)
     {
-        _dlqTopicName = topicName ?? throw new ArgumentNullException(nameof(topicName));
+        _dlqTopicName = Constants.KafkaTopic(topicName ?? throw new ArgumentNullException(nameof(topicName)));
         return this;
     }
     #endregion
@@ -625,19 +625,19 @@ public class DebeziumSourceConnectorBuilder
                 _dataset,
                 _processingStage);
             // Derive topic prefix from DD130 (layer.domain or layer.domain.subdomain)
-            topicPrefix = _topicPrefix ?? BuildTopicPrefix(components);
+            topicPrefix = Constants.KafkaTopic(_topicPrefix ?? BuildTopicPrefix(components));
             connectorName = _connectorName ?? NamingConventionHelper.ToConnectorName(components);
             // Auto-derive DLQ topic if error tolerance is enabled but no DLQ was specified
             if (_errorToleranceAll && string.IsNullOrEmpty(dlqTopic))
             {
                 var baseTopicName = NamingConventionHelper.ToTopicName(components);
-                dlqTopic = NamingConventionHelper.ToDlqTopic(baseTopicName);
+                dlqTopic = NamingConventionHelper.ToDlqTopic(Constants.KafkaTopic(baseTopicName));
             }
         }
         else
         {
             // Use explicit naming
-            topicPrefix = _topicPrefix!;
+            topicPrefix = Constants.KafkaTopic(_topicPrefix!);
             connectorName = _connectorName ?? $"{topicPrefix.Replace(".", "-")}-source";
         }
         return (connectorName, topicPrefix, dlqTopic);
@@ -652,7 +652,7 @@ public class DebeziumSourceConnectorBuilder
         };
         if (!string.IsNullOrEmpty(components.Subdomain))
             parts.Add(components.Subdomain);
-        return string.Join(".", parts);
+        return Constants.KafkaTopic(string.Join(".", parts));
     }
     private Dictionary<string, object> BuildConfiguration(string topicPrefix, string? dlqTopic)
     {
@@ -866,7 +866,7 @@ internal class DebeziumConnectorComponent : ComponentResource
                 Metadata = new ObjectMetaArgs
                 {
                     Name = name,
-                    Namespace = "kafka-connect",
+                    Namespace = Constants.KafkaConnectNamespace,
                     Labels = new Dictionary<string, string>
                     {
                         { "strimzi.io/cluster", clusterName }

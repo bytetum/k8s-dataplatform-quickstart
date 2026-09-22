@@ -16,10 +16,12 @@ internal class FlinkDeploymentBuilder
     private string _image = "flink-test:2.1.1";
     private string _flinkVersion = "v2_1";
     private int _taskSlots = 1;
+    // Kind-local SQL jobs load the parser and connectors in the JobManager.
+    // 512m with a 128m metaspace floor hits Metaspace OOM before the job registers.
     private string _jobManagerMemory = "1024m";
-    private double _jobManagerCpu = 0.6;
-    private string _taskManagerMemory = "2048m";
-    private double _taskManagerCpu = 0.6;
+    private double _jobManagerCpu = applications.Constants.IsKindLocal ? 0.2 : 0.6;
+    private string _taskManagerMemory = applications.Constants.IsKindLocal ? "768m" : "2048m";
+    private double _taskManagerCpu = applications.Constants.IsKindLocal ? 0.3 : 0.6;
     private int _jobParallelism = 1;
     private string _kafkaBootstrapServers = applications.Constants.KafkaBootstrapServers;
     private string _sqlFilePath = "";
@@ -193,6 +195,36 @@ internal class FlinkDeploymentBuilder
         // OpenLineage config content (written by init container into emptyDir)
         var openlineageConfigYaml = $"transport:\\n  type: http\\n  url: {applications.Constants.MarquezApiUrl}\\n  endpoint: /api/v1/lineage\\n  timeoutInMillis: 5000";
 
+        var jobSpec = new JobSpecArgs
+        {
+            JarURI = !string.IsNullOrEmpty(_jarFilePath)
+                ? $"local:///opt/flink/jar/{System.IO.Path.GetFileName(_jarFilePath)}"
+                : "local:///opt/flink/usrlib/runner.jar",
+            Parallelism = _jobParallelism,
+            UpgradeMode = _upgradeMode switch
+            {
+                UpgradeMode.Stateless => "stateless",
+                UpgradeMode.Savepoint => "savepoint",
+                UpgradeMode.LastState => "last-state",
+                _ => throw new ArgumentOutOfRangeException()
+            }
+        };
+
+        if (!string.IsNullOrEmpty(_jarFilePath))
+        {
+            if (!string.IsNullOrEmpty(_entryClass))
+            {
+                jobSpec.EntryClass = _entryClass;
+            }
+        }
+        else
+        {
+            jobSpec.Args = new InputList<string>
+            {
+                $"/opt/flink/sql/{System.IO.Path.GetFileName(_sqlFilePath)}"
+            };
+        }
+
         var flinkDeployment = new FlinkDeployment(_deploymentName,
             new FlinkDeploymentArgs()
             {
@@ -245,8 +277,12 @@ internal class FlinkDeploymentBuilder
                         
                         // OpenLineage job status listener for lineage tracking (Flink 2.1+)
                         ExecutionJobStatusChangedListeners = "io.openlineage.flink.listener.OpenLineageJobStatusChangedListenerFactory",
+                        JobManagerMemoryJvmOverheadMin = applications.Constants.IsKindLocal ? "64m" : null!,
+                        JobManagerMemoryJvmMetaspaceSize = applications.Constants.IsKindLocal ? "256m" : null!,
+                        TaskManagerMemoryJvmOverheadMin = applications.Constants.IsKindLocal ? "64m" : null!,
+                        TaskManagerMemoryJvmMetaspaceSize = applications.Constants.IsKindLocal ? "128m" : null!,
                     },
-                    ServiceAccount = "flink-sql-gateway-sa",
+                    ServiceAccount = applications.Constants.FlinkServiceAccount,
                     JobManager = new JobManagerSpecArgs
                     {
                         Resource = new ResourceSpecArgs
@@ -429,26 +465,7 @@ internal class FlinkDeploymentBuilder
                             }
                         }
                     },
-                    Job = new JobSpecArgs
-                    {
-                        // Use downloaded JAR if jarFilePath is set, otherwise use default SQL runner
-                        JarURI = !string.IsNullOrEmpty(_jarFilePath)
-                            ? $"local:///opt/flink/jar/{System.IO.Path.GetFileName(_jarFilePath)}"
-                            : "local:///opt/flink/usrlib/runner.jar",
-                        EntryClass = !string.IsNullOrEmpty(_jarFilePath) && !string.IsNullOrEmpty(_entryClass) ? _entryClass : null,
-                        // Only pass SQL script args when NOT using custom JAR
-                        Args = string.IsNullOrEmpty(_jarFilePath)
-                            ? new InputList<string> { $"/opt/flink/sql/{System.IO.Path.GetFileName(_sqlFilePath)}" }
-                            : null,
-                        Parallelism = _jobParallelism,
-                        UpgradeMode = _upgradeMode switch
-                        {
-                            UpgradeMode.Stateless => "stateless",
-                            UpgradeMode.Savepoint => "savepoint",
-                            UpgradeMode.LastState => "last-state",
-                            _ => throw new ArgumentOutOfRangeException()
-                        }
-                    }
+                    Job = jobSpec
                 }
             }, new CustomResourceOptions
             {

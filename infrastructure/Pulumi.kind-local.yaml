@@ -1,0 +1,9 @@
+config:
+  Infrastructure:kube_context: kind-kind
+  Infrastructure:repo_url: https://github.com/bytetum/k8s-dataplatform-quickstart.git
+  Infrastructure:target_revision: master
+  Infrastructure:manifests_path: gitops/environments/kind/manifests/argocd
+  Infrastructure:auto_sync: "false"
+  Infrastructure:auto_prune: "false"
+  Infrastructure:self_heal: "false"
+encryptionsalt: v1:we7WqBwK6nw=:v1:E5o0eg+CpSdkMG1e:Whb0AiYSpPyFslU08mDFNczWrEjiiQ==

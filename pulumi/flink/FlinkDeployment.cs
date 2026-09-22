@@ -257,5 +257,17 @@ namespace Pulumi.Crds.FlinkDeployment
 
         [Input("execution.job-status-changed-listeners")]
         public Input<string>? ExecutionJobStatusChangedListeners { get; set; }
+
+        [Input("jobmanager.memory.jvm-overhead.min")]
+        public Input<string>? JobManagerMemoryJvmOverheadMin { get; set; }
+
+        [Input("jobmanager.memory.jvm-metaspace.size")]
+        public Input<string>? JobManagerMemoryJvmMetaspaceSize { get; set; }
+
+        [Input("taskmanager.memory.jvm-overhead.min")]
+        public Input<string>? TaskManagerMemoryJvmOverheadMin { get; set; }
+
+        [Input("taskmanager.memory.jvm-metaspace.size")]
+        public Input<string>? TaskManagerMemoryJvmMetaspaceSize { get; set; }
     }
 }

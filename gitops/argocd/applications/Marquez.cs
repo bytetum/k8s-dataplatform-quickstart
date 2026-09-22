@@ -2,18 +2,18 @@ namespace argocd.applications;
 
 public class Marquez
 {
-    public Marquez(Kubernetes.Provider provider)
+    public Marquez(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("marquez", provider)
+        new ArgoApplicationBuilder("marquez", provider, settings)
             .AddSource(ApplicationType.HelmGit)
             .RepoUrl("https://github.com/MarquezProject/marquez.git")
             .Branch("main")
             .Path("chart")
-            .AddValueFile("$values/gitops/manifests/marquez/values.yaml")
+            .AddValueFile($"$values/{settings.ManifestRoot}/marquez/values.yaml")
             .AddSource(ApplicationType.Yaml)
             .AsValueSource("values")
             .SyncWave(1)
-            .InNamespace("marquez")
+            .InNamespace(settings.WorkloadNamespace("marquez", "lakehouse-marquez"))
             .CreateNamespace()
             .Build();
     }

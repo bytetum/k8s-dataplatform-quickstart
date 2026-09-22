@@ -21,7 +21,7 @@ public class IcebergSinkConnectorBuilder
     private string? _idColumns;
     private string? _defaultIdColumns;
     private string? _partitionBy;
-    private string _clusterName = "m3-kafka-connect";
+    private string _clusterName = Constants.KafkaConnectClusterName;
     private int _tasksMax = 1;
     private bool _upsertModeEnabled = true;
 
@@ -66,7 +66,7 @@ public class IcebergSinkConnectorBuilder
 
     private string _polarisUri = Constants.PolarisUri;
     private string _catalogName = Constants.PolarisCatalog;
-    private string _dlqTopic = "m3.iceberg.dlq";
+    private string _dlqTopic = Constants.KafkaTopic("m3.iceberg.dlq");
 
     public IcebergSinkConnectorBuilder(string manifestsRoot)
     {
@@ -81,14 +81,24 @@ public class IcebergSinkConnectorBuilder
 
     public IcebergSinkConnectorBuilder WithSourceTopic(string sourceTopic)
     {
-        _sourceTopic = sourceTopic;
+        _sourceTopic = Constants.KafkaTopic(sourceTopic);
         _topicsRegex = null; // Clear regex if explicit topic is set
         return this;
     }
 
     public IcebergSinkConnectorBuilder WithTopicsRegex(string topicsRegex)
     {
-        _topicsRegex = topicsRegex;
+        // Regexes are configuration, not topic names.  mac-local keeps the
+        // caller's pattern.  kind-local anchors its isolation prefix once.
+        if (!Constants.IsKindLocal
+            || topicsRegex.StartsWith($"^{Constants.IsolationPrefix}\\.", StringComparison.Ordinal))
+        {
+            _topicsRegex = topicsRegex;
+        }
+        else
+        {
+            _topicsRegex = $"^{Constants.IsolationPrefix}\\.{topicsRegex.TrimStart('^')}";
+        }
         _sourceTopic = ""; // Clear explicit topic if regex is set
         return this;
     }
@@ -241,7 +251,7 @@ public class IcebergSinkConnectorBuilder
             // Auto-derive topic, table, connector name, and DLQ if not explicitly set
             if (string.IsNullOrEmpty(_sourceTopic) && string.IsNullOrEmpty(_topicsRegex))
             {
-                _sourceTopic = NamingConventionHelper.ToTopicName(parsedComponents);
+                _sourceTopic = Constants.KafkaTopic(NamingConventionHelper.ToTopicName(parsedComponents));
             }
             if (string.IsNullOrEmpty(_destinationTable))
             {
@@ -283,8 +293,8 @@ public class IcebergSinkConnectorBuilder
                 : (NamingConventionHelper.SchemaCompatibility?)null);
 
         // Auto-derive DLQ topic if not explicitly set and using explicit topic
-        var effectiveDlqTopic = !string.IsNullOrEmpty(_dlqTopic) && _dlqTopic != "m3.iceberg.dlq"
-            ? _dlqTopic
+        var effectiveDlqTopic = !string.IsNullOrEmpty(_dlqTopic) && _dlqTopic != Constants.KafkaTopic("m3.iceberg.dlq")
+            ? Constants.KafkaTopic(_dlqTopic)
             : (!string.IsNullOrEmpty(_sourceTopic)
                 ? NamingConventionHelper.ToDlqTopic(_sourceTopic)
                 : _dlqTopic);
@@ -300,8 +310,9 @@ public class IcebergSinkConnectorBuilder
             Parent = componentResource
         });
 
-        // Create PreSync schema check job if using explicit topic (not regex)
-        if (!string.IsNullOrEmpty(_sourceTopic))
+        // Kind-local subjects are created by this connect cluster, so a PreSync
+        // check would block the cluster it is waiting for. Mac keeps the check.
+        if (!Constants.IsKindLocal && !string.IsNullOrEmpty(_sourceTopic))
         {
             var schemaJobBuilder = new SchemaValidationJobBuilder()
                 .WithProvider(provider)
@@ -368,8 +379,8 @@ public class IcebergSinkConnectorBuilder
             ["iceberg.control.commit.interval-ms"] = _commitIntervalMs,
             ["iceberg.control.commit.threads"] = 2,
             ["iceberg.control.commit.timeout-ms"] = 30000,
-            ["iceberg.control.topic"] = _controlTopic ?? $"sink-control-{_connectorPrefix}-{_connectorName}",
-            ["iceberg.control.group-id-prefix"] = _controlGroupIdPrefix ?? $"{_connectorPrefix}-{_connectorName}-control",
+            ["iceberg.control.topic"] = Constants.KafkaTopic(_controlTopic ?? $"sink-control-{_connectorPrefix}-{_connectorName}"),
+            ["iceberg.control.group-id-prefix"] = Constants.KafkaGroup(_controlGroupIdPrefix ?? $"{_connectorPrefix}-{_connectorName}-control"),
 
             // ========================================================================
             // 6. ERROR HANDLING (base configuration)
@@ -484,7 +495,9 @@ public class IcebergSinkConnectorBuilder
             },
             Spec = new KafkaConnectorSpecArgs
             {
-                Class = "io.tabular.iceberg.connect.IcebergSinkConnector",
+                Class = Constants.IsKindLocal
+                    ? "org.apache.iceberg.connect.IcebergSinkConnector"
+                    : "io.tabular.iceberg.connect.IcebergSinkConnector",
                 TasksMax = _tasksMax,
                 Config = config
             }

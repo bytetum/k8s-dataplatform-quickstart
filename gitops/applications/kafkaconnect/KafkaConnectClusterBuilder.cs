@@ -16,7 +16,7 @@ public class KafkaConnectClusterBuilder
     private readonly string _manifestsRoot;
     private readonly string _clusterName;
     private string _bootstrapServers = Constants.KafkaBootstrapServers;
-    private string _image = "ttl.sh/hxt-kafka-connect-amd64:24h";
+    private string _image = "local/kafka-connect:0.47.0-kafka-4.0.0-arm64";
     private int _replicas = 1;
     private string _namespace = Constants.KafkaConnectNamespace;
 
@@ -39,7 +39,7 @@ public class KafkaConnectClusterBuilder
     {
         _manifestsRoot = manifestsRoot;
         _clusterName = clusterName;
-        _groupIdPrefix = clusterName.Replace("-kafka-connect", "");
+        _groupIdPrefix = Constants.KafkaGroup(clusterName.Replace("-kafka-connect", ""));
     }
 
     public KafkaConnectClusterBuilder WithBootstrapServers(string bootstrapServers)
@@ -124,7 +124,7 @@ public class KafkaConnectClusterBuilder
             ["metadata.max.age.ms"] = 60000,
 
             // Consumer tuning
-            ["consumer.group.instance.id"] = $"{_clusterName}-connect-0",
+            ["consumer.group.instance.id"] = Constants.KafkaGroup($"{_clusterName}-connect-0"),
             ["consumer.fetch.max.wait.ms"] = 10000,
             ["consumer.fetch.max.bytes"] = 50242880,
             ["consumer.max.partition.fetch.bytes"] = 50242880,

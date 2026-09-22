@@ -14,13 +14,13 @@ using Kubernetes.Types.Inputs.Rbac.V1;
 
 internal class FlinkClusterBuilder
 {
-    private string _namespace = "flink-kubernetes-operator";
+    private string _namespace = Constants.Namespace;
     private string _manifestRoot = "";
     private int _taskSlots = 1;
     private int _taskManagerReplicas = 2;
-    private string _jobManagerMemory = "1024m";
-    private string _taskManagerMemory = "2048m";
-    private int _parallelismDefault = 2;
+    private string _jobManagerMemory = applications.Constants.IsKindLocal ? "512m" : "1024m";
+    private string _taskManagerMemory = applications.Constants.IsKindLocal ? "768m" : "2048m";
+    private int _parallelismDefault = applications.Constants.IsKindLocal ? 1 : 2;
 
     public FlinkClusterBuilder(string manifestsRoot)
     {
@@ -101,7 +101,7 @@ internal class FlinkClusterBuilder
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -112,7 +112,7 @@ internal class FlinkClusterBuilder
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:flink-s3-credentials-secret"
+                        Key = SecretSources.FlinkBucketCredentials
                     }
                 }
             }
@@ -133,7 +133,7 @@ internal class FlinkClusterBuilder
             {
                 SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                 {
-                    Name = "secret-store",
+                    Name = SecretSources.StoreName,
                     Kind = "ClusterSecretStore"
                 },
                 Target = new ExternalSecretSpecTargetArgs()
@@ -144,7 +144,7 @@ internal class FlinkClusterBuilder
                 {
                     Extract = new ExternalSecretSpecDataFromExtractArgs()
                     {
-                        Key = "id:schema-registry-credentials"
+                        Key = SecretSources.SchemaRegistryCredentials
                     }
                 }
             }
@@ -154,58 +154,73 @@ internal class FlinkClusterBuilder
             Provider = provider
         });
 
-        var registryReadCredentials = new ExternalSecret("container-registry-read-credentials", new()
+
+        if (!applications.Constants.IsKindLocal)
         {
-            Metadata = new ObjectMetaArgs
+            _ = new ExternalSecret("container-registry-read-credentials", new()
             {
-                Name = "container-registry-read-credentials",
-                Namespace = _namespace,
-            },
-            Spec = new ExternalSecretSpecArgs()
-            {
-                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
-                {
-                    Name = "shared-secret-store",
-                    Kind = "ClusterSecretStore"
-                },
-                Target = new ExternalSecretSpecTargetArgs()
+                Metadata = new ObjectMetaArgs
                 {
                     Name = "container-registry-read-credentials",
-                    Template = new ExternalSecretSpecTargetTemplateArgs()
+                    Namespace = _namespace,
+                },
+                Spec = new ExternalSecretSpecArgs()
+                {
+                    SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
                     {
-                        Type = "kubernetes.io/dockerconfigjson",
-                        Data = new Dictionary<string, string>
+                        Name = SecretSources.StoreName,
+                        Kind = "ClusterSecretStore"
+                    },
+                    Target = new ExternalSecretSpecTargetArgs()
+                    {
+                        Name = "container-registry-read-credentials",
+                        Template = new ExternalSecretSpecTargetTemplateArgs()
                         {
-                            [".dockerconfigjson"] =
+                            Type = "kubernetes.io/dockerconfigjson",
+                            Data = new Dictionary<string, string>
+                            {
+                                [".dockerconfigjson"] =
                                 "{\"auths\":{\"rg.nl-ams.scw.cloud\":{\"auth\":\"{{ printf \"%s:%s\" .SCALEWAY_ACCESS_KEY .SCALEWAY_SECRET_KEY | b64enc }}\"}}}"
+                            }
+                        }
+                    },
+                    DataFrom = new ExternalSecretSpecDataFromArgs()
+                    {
+                        Extract = new ExternalSecretSpecDataFromExtractArgs()
+                        {
+                            Key = SecretSources.ContainerRegistryReadCredentials
                         }
                     }
-                },
-                DataFrom = new ExternalSecretSpecDataFromArgs()
-                {
-                    Extract = new ExternalSecretSpecDataFromExtractArgs()
-                    {
-                        Key = "id:1cf21d4a-b561-4353-9981-fecafe592689"
-                    }
                 }
-            }
-        }, new()
-        {
-            Parent = flinkClusterComponent,
-            Provider = provider
-        });
+            }, new()
+            {
+                Parent = flinkClusterComponent,
+                Provider = provider
+            });
+        }
 
-        // Service account for JobManager and TaskManager
-        var sqlGatewaySA = new ServiceAccount("flink-sql-gateway-sa", new ServiceAccountArgs
+        // Service account for JobManager and TaskManager.  Kind-local uses a
+        // distinct name so it cannot adopt the existing operator binding.
+        var sqlGatewayServiceAccount = applications.Constants.FlinkServiceAccount;
+        var flinkRoleBindingName = applications.Constants.IsKindLocal
+            ? "lakehouse-flink-role-binding-flink"
+            : "flink-role-binding-flink";
+        var sqlGatewayRoleName = applications.Constants.IsKindLocal
+            ? "lakehouse-flink-sql-gateway-role"
+            : "flink-sql-gateway-role";
+        var sqlGatewayRoleBindingName = applications.Constants.IsKindLocal
+            ? "lakehouse-flink-sql-gateway-rb"
+            : "flink-sql-gateway-rb";
+        var sqlGatewaySA = new ServiceAccount(sqlGatewayServiceAccount, new ServiceAccountArgs
         {
-            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-sa", Namespace = _namespace }
+            Metadata = new ObjectMetaArgs { Name = sqlGatewayServiceAccount, Namespace = _namespace }
         }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
 
-        var flinkClusterRoleBinding = new ClusterRoleBinding("flink-role-binding-flink", new ClusterRoleBindingArgs
+        var flinkClusterRoleBinding = new ClusterRoleBinding(flinkRoleBindingName, new ClusterRoleBindingArgs
         {
             Metadata = new ObjectMetaArgs
             {
-                Name = "flink-role-binding-flink"
+                Name = flinkRoleBindingName
             },
             RoleRef = new RoleRefArgs
             {
@@ -218,15 +233,15 @@ internal class FlinkClusterBuilder
                 new SubjectArgs
                 {
                     Kind = "ServiceAccount",
-                    Name = "flink-sql-gateway-sa",
+                    Name = sqlGatewayServiceAccount,
                     Namespace = _namespace
                 }
             }
         }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
 
-        var sqlGatewayRole = new ClusterRole("flink-sql-gateway-role", new ClusterRoleArgs
+        var sqlGatewayRole = new ClusterRole(sqlGatewayRoleName, new ClusterRoleArgs
         {
-            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-role" },
+            Metadata = new ObjectMetaArgs { Name = sqlGatewayRoleName },
             Rules = new InputList<PolicyRuleArgs>
             {
                 new PolicyRuleArgs
@@ -244,25 +259,36 @@ internal class FlinkClusterBuilder
             }
         }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
 
-        var sqlGatewayRB = new ClusterRoleBinding("flink-sql-gateway-rb", new ClusterRoleBindingArgs
+        var sqlGatewayRB = new ClusterRoleBinding(sqlGatewayRoleBindingName, new ClusterRoleBindingArgs
         {
-            Metadata = new ObjectMetaArgs { Name = "flink-sql-gateway-rb" },
+            Metadata = new ObjectMetaArgs { Name = sqlGatewayRoleBindingName },
             Subjects = new InputList<SubjectArgs>
             {
                 new SubjectArgs
                 {
                     Kind = "ServiceAccount",
-                    Name = "flink-sql-gateway-sa",
+                    Name = sqlGatewayServiceAccount,
                     Namespace = _namespace
                 }
             },
             RoleRef = new RoleRefArgs
             {
                 Kind = "ClusterRole",
-                Name = "flink-sql-gateway-role",
+                Name = sqlGatewayRoleName,
                 ApiGroup = "rbac.authorization.k8s.io"
             }
         }, new CustomResourceOptions { Provider = provider, Parent = flinkClusterComponent });
+
+        // Flink 2.1 reserves 192Mi JVM overhead and 256Mi metaspace. Those floors
+        // do not fit the kind-local 512Mi/768Mi process sizes, so lower only those floors.
+        var kindMemoryFloor = applications.Constants.IsKindLocal
+            ? """
+                         jobmanager.memory.jvm-overhead.min: 64m
+                         jobmanager.memory.jvm-metaspace.size: 128m
+                         taskmanager.memory.jvm-overhead.min: 64m
+                         taskmanager.memory.jvm-metaspace.size: 128m
+                         """
+            : "";
 
         var configMap = new ConfigMap("flink-config", new ConfigMapArgs
         {
@@ -285,19 +311,20 @@ internal class FlinkClusterBuilder
                          taskmanager.rpc.port: 6122
                          jobmanager.memory.process.size: {_jobManagerMemory}
                          taskmanager.memory.process.size: {_taskManagerMemory}
+                         {kindMemoryFloor}
                          parallelism.default: {_parallelismDefault}
 
                          execution.checkpointing.interval: 1min
                          execution.checkpointing.storage: filesystem
-                         execution.checkpointing.dir: s3://local-rocksdb-test/flink-session-mode/checkpoints
+                         execution.checkpointing.dir: {applications.Constants.S3BucketPath}/flink-session-mode/checkpoints
 
                          state.backend.type: rocksdb
                          execution.checkpointing.incremental: true
-                         execution.checkpointing.savepoint-dir: s3://local-rocksdb-test/flink-session-mode/savepoints
+                         execution.checkpointing.savepoint-dir: {applications.Constants.S3BucketPath}/flink-session-mode/savepoints
                          state.backend.rocksdb.localdir: /data/rocksdb
-                         jobmanager.archive.fs.dir: s3://local-rocksdb-test/flink-session-mode/completed-jobs
-                         high-availability.storageDir: s3://local-rocksdb-test/flink-session-mode/ha
-                         kubernetes.cluster-id: flink-session-cluster-01
+                         jobmanager.archive.fs.dir: {applications.Constants.S3BucketPath}/flink-session-mode/completed-jobs
+                         high-availability.storageDir: {applications.Constants.S3BucketPath}/flink-session-mode/ha
+                         kubernetes.cluster-id: {applications.Constants.FlinkSessionClusterId}
                          high-availability.type: kubernetes
 
                          # Prometheus metrics reporter
@@ -383,6 +410,19 @@ internal class FlinkClusterBuilder
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
                             Image = "flink-test:2.1.1",
                             ImagePullPolicy = "Never",
+                            Resources = applications.Constants.IsKindLocal ? new ResourceRequirementsArgs
+                            {
+                                Requests = new InputMap<string>
+                                {
+                                    { "cpu", "100m" },
+                                    { "memory", "512Mi" },
+                                },
+                                Limits = new InputMap<string>
+                                {
+                                    { "cpu", "500m" },
+                                    { "memory", "768Mi" },
+                                },
+                            } : null!,
                             Args = new InputList<string> { "jobmanager" },
                             Ports = new InputList<ContainerPortArgs>
                             {
@@ -519,6 +559,19 @@ internal class FlinkClusterBuilder
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
                             Image = "flink-test:2.1.1",
                             ImagePullPolicy = "Never",
+                            Resources = applications.Constants.IsKindLocal ? new ResourceRequirementsArgs
+                            {
+                                Requests = new InputMap<string>
+                                {
+                                    { "cpu", "150m" },
+                                    { "memory", "768Mi" },
+                                },
+                                Limits = new InputMap<string>
+                                {
+                                    { "cpu", "750m" },
+                                    { "memory", "1280Mi" },
+                                },
+                            } : null!,
                             Args = new InputList<string> { "taskmanager" },
                             Ports = new InputList<ContainerPortArgs>
                             {
@@ -631,6 +684,19 @@ internal class FlinkClusterBuilder
                             //Image = "rg.nl-ams.scw.cloud/b2b-data-platform-shared-registry/flink:1.20.2",
                             Image = "flink-test:2.1.1",
                             ImagePullPolicy = "Never",
+                            Resources = applications.Constants.IsKindLocal ? new ResourceRequirementsArgs
+                            {
+                                Requests = new InputMap<string>
+                                {
+                                    { "cpu", "100m" },
+                                    { "memory", "512Mi" },
+                                },
+                                Limits = new InputMap<string>
+                                {
+                                    { "cpu", "500m" },
+                                    { "memory", "768Mi" },
+                                },
+                            } : null!,
                             Command = new InputList<string> { "/bin/sh", "-c" },
                             Args = new InputList<string>
                             {

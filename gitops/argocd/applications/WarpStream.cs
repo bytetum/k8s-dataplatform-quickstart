@@ -2,16 +2,16 @@
 
 internal class WarpStream
 {
-    public WarpStream(Kubernetes.Provider provider)
+    public WarpStream(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("warpstream-agent", provider)
+        new ArgoApplicationBuilder("warpstream-agent", provider, settings)
             .AddSource(ApplicationType.Yaml)
             .AsValueSource("values")
             .AddSource(ApplicationType.Helm)
             .RepoUrl("https://warpstreamlabs.github.io/charts")
             .Branch("1.0.5")
-            .AddValueFile("$values/gitops/manifests/warpstream-agent/values.yaml")
-            .InNamespace("warpstream")
+            .AddValueFile($"$values/{settings.ManifestRoot}/warpstream-agent/values.yaml")
+            .InNamespace(settings.WorkloadNamespace("warpstream", "lakehouse-warpstream"))
             .Build();
     }
 }

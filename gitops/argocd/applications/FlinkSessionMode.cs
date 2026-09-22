@@ -2,11 +2,15 @@ namespace argocd.applications;
 
 public class FlinkSessionMode
 {
-    public FlinkSessionMode(Kubernetes.Provider provider)
+    public FlinkSessionMode(Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("flink-session-mode", provider)
+        var application = new ArgoApplicationBuilder("flink-session-mode", provider, settings)
             .SyncWave(2)
-            .InNamespace("flink-kubernetes-operator")
-            .Build();
+            .InNamespace(settings.WorkloadNamespace("flink-kubernetes-operator", "lakehouse-flink"));
+        if (settings.IsolatedNamespaces)
+        {
+            application = application.CreateNamespace();
+        }
+        application.Build();
     }
 }

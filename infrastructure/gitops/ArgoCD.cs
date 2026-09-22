@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Pulumi;
 using Kubernetes = Pulumi.Kubernetes;
 using Pulumi.Kubernetes.Core.V1;
@@ -6,11 +7,16 @@ namespace infrastructure.gitops;
 
 internal class ArgoCD : ComponentResource
 {
-    public ArgoCD(Kubernetes.Provider provider)
+    public ArgoCD(
+        Kubernetes.Provider provider,
+        string repoUrl,
+        string targetRevision,
+        string manifestsPath,
+        bool automatedSync,
+        bool automatedPrune,
+        bool automatedSelfHeal)
         : base("argocd-installation", "argocd-installation")
     {
-        var config = new Config();
-
         var ns = new Namespace("ns-argocd", new()
         {
             Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
@@ -22,9 +28,10 @@ internal class ArgoCD : ComponentResource
           Provider = provider,
         });
 
-        var redisPasswordResource = new Pulumi.Random.RandomPassword("argo-redis-password", new()
+        var redisPassword = new Pulumi.Random.RandomPassword("argo-redis-password", new()
         {
-            Length = 16,
+            Length = 32,
+            Special = false,
         });
 
         var redisSecret = new Secret("argo-redis-secret", new()
@@ -37,8 +44,11 @@ internal class ArgoCD : ComponentResource
             Type = "Opaque",
             StringData =
             {
-                { "auth", "conmemay" },
+                { "auth", redisPassword.Result },
             },
+        }, new()
+        {
+            Provider = provider,
         });
 
         var argoCd = new Kubernetes.Helm.V4.Chart("argocd", new()
@@ -50,59 +60,35 @@ internal class ArgoCD : ComponentResource
             {
                 Repo = "https://argoproj.github.io/argo-helm",
             },
-        }, new()
-        {
-            Provider = provider,
-            DependsOn = { redisSecret }
-        });
-
-        var repoCredentials = new Secret("repo-credentials", new()
-        {
-            Type = "Opaque",
-            Data =
+            Values =
             {
-                { "url", ToBase64("git@github.com:bytetum/k8s-dataplatform-quickstart.git") },
-                { "sshPrivateKey",  config.RequireSecret("argo_secret_key").Apply(ToBase64) },
-                { "type", ToBase64("git") }
-            },
-            Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
-            {
-                Name = "repo-credentials",
-                Namespace = ns.Metadata.Apply(metadata => metadata.Name),
-                Labels =
+                ["server"] = new Dictionary<string, object>
                 {
-                    { "argocd.argoproj.io/secret-type", "repo-creds" }  
-                }
-            }
-        }, new()
-        {
-            Provider = provider,
-        });
-
-        var repo = new Secret("repo", new()
-        {
-            Type = "Opaque",
-            Data =
-            {
-                { "name", ToBase64("essence") },
-                { "url", ToBase64("git@github.com:bytetum/k8s-dataplatform-quickstart.git") },
-                { "insecure", ToBase64("true") },
-                { "type", ToBase64("git") },
-            },
-            Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
-            {
-                Name = "repo",
-                Namespace = ns.Metadata.Apply(metadata => metadata.Name),
-                Labels =
+                    ["readinessProbe"] = LaptopProbeSettings(),
+                    ["livenessProbe"] = LaptopProbeSettings(),
+                },
+                ["repoServer"] = new Dictionary<string, object>
                 {
-                    { "argocd.argoproj.io/secret-type", "repository" }  
-                }
-            }
+                    ["readinessProbe"] = LaptopProbeSettings(),
+                    ["livenessProbe"] = LaptopProbeSettings(),
+                },
+            },
         }, new()
         {
             Provider = provider,
+            DependsOn = redisSecret,
         });
         
+        var syncPolicy = new InputMap<InputMap<bool>>();
+        if (automatedSync)
+        {
+            syncPolicy.Add("automated", new InputMap<bool>
+            {
+                { "prune", automatedPrune },
+                { "selfHeal", automatedSelfHeal },
+            });
+        }
+
         var applications = new Kubernetes.ApiExtensions.CustomResource("applications", new ArgoApplicationArgs
         {
             Metadata = new Kubernetes.Types.Inputs.Meta.V1.ObjectMetaArgs
@@ -114,8 +100,9 @@ internal class ArgoCD : ComponentResource
             {
                 Source = new ArgoApplicationSourceArgs
                 {
-                    Path = "gitops/manifests/argocd",
-                    RepoUrl = "git@github.com:bytetum/k8s-dataplatform-quickstart.git",
+                    Path = manifestsPath,
+                    RepoUrl = repoUrl,
+                    TargetRevision = targetRevision,
                     Directory =
                     {
                         { "recurse", true }
@@ -126,17 +113,7 @@ internal class ArgoCD : ComponentResource
                     { "server", "https://kubernetes.default.svc" },
                     { "namespace", "argocd" }
                 },
-                SyncPolicy =
-                {
-                    {
-                        "automated",
-                        new InputMap<bool>
-                        {
-                            { "prune", true },
-                            { "selfHeal", true },
-                        }
-                    }
-                }
+                SyncPolicy = syncPolicy
             }
         }, new()
         {
@@ -145,11 +122,14 @@ internal class ArgoCD : ComponentResource
         });
     }
 
-    private static string ToBase64(string input)
+    private static Dictionary<string, object> LaptopProbeSettings() => new()
     {
-        var bytes = System.Text.Encoding.UTF8.GetBytes(input);
-        return System.Convert.ToBase64String(bytes);
-    }
+        ["failureThreshold"] = 6,
+        ["initialDelaySeconds"] = 10,
+        ["periodSeconds"] = 10,
+        ["successThreshold"] = 1,
+        ["timeoutSeconds"] = 5,
+    };
 }
 internal class ArgoApplicationArgs : Kubernetes.ApiExtensions.CustomResourceArgs
 {
@@ -185,7 +165,7 @@ internal class ArgoApplicationSourceArgs: ResourceArgs
     public required Input<string> RepoUrl { get; set; }
 
     [Input("targetRevision")]
-    public Input<string> Branch = "HEAD";
+    public required Input<string> TargetRevision { get; set; }
 
     [Input("directory")]
     public InputMap<bool> Directory { get; set; } = [];
