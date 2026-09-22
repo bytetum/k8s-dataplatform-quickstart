@@ -1,0 +1,26 @@
+openmetadata:
+  config:
+    pipelineServiceClientConfig:
+      enabled: true
+      type: airflow
+      airflow:
+        apiEndpoint: http://openmetadata-dependencies-api-server.lakehouse-openmetadata.svc.cluster.local:8080
+        auth:
+          enabled: true
+          username: admin
+          password:
+            secretRef: airflow-secrets
+            secretKey: openmetadata-airflow-password
+    database:
+      auth:
+        password:
+          secretRef: mysql-secrets
+          secretKey: openmetadata-mysql-password
+
+resources:
+  requests:
+    cpu: 150m
+    memory: 512Mi
+  limits:
+    cpu: 750m
+    memory: 1280Mi

@@ -1,0 +1,46 @@
+apiVersion: v1
+data:
+  001-kind-local.sql: |-
+    CREATE TABLE IF NOT EXISTS public.csytab (
+      ctstky text NOT NULL,
+      ctstco text NOT NULL,
+      description text,
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (ctstky, ctstco)
+    );
+    CREATE TABLE IF NOT EXISTS public.cidmas (
+      idsuno text PRIMARY KEY,
+      idcono text NOT NULL,
+      name text,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS public.cidven (
+      iisuno text PRIMARY KEY,
+      iisugr text NOT NULL,
+      name text,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+    INSERT INTO public.csytab (ctstky, ctstco, description)
+    VALUES ('ITEM', '001', 'Kind-local validation item')
+    ON CONFLICT (ctstky, ctstco) DO UPDATE
+      SET description = EXCLUDED.description, updated_at = now();
+    INSERT INTO public.cidmas (idsuno, idcono, name)
+    VALUES ('10001', '001', 'Kind-local validation customer')
+    ON CONFLICT (idsuno) DO UPDATE
+      SET idcono = EXCLUDED.idcono, name = EXCLUDED.name, updated_at = now();
+    INSERT INTO public.cidven (iisuno, iisugr, name)
+    VALUES ('20001', '001', 'Kind-local validation vendor')
+    ON CONFLICT (iisuno) DO UPDATE
+      SET iisugr = EXCLUDED.iisugr, name = EXCLUDED.name, updated_at = now();
+    ALTER TABLE public.csytab REPLICA IDENTITY FULL;
+    ALTER TABLE public.cidmas REPLICA IDENTITY FULL;
+    ALTER TABLE public.cidven REPLICA IDENTITY FULL;
+    -- The image creates POSTGRES_USER as a superuser.  That user
+    -- owns these tables and can manage the publication, so the
+    -- fresh database does not need a separate debezium role.
+    CREATE PUBLICATION kind_local_cdc_publication
+      FOR TABLE public.csytab, public.cidmas, public.cidven;
+kind: ConfigMap
+metadata:
+  name: postgres-m3-test-init
+  namespace: lakehouse-kafka-connect
