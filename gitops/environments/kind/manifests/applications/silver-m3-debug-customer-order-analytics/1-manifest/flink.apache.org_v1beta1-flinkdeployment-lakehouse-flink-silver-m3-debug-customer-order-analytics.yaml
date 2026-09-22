@@ -22,9 +22,13 @@ spec:
     high-availability.storageDir: s3://local-rocksdb-test/kind-local/flink-apps/silver-m3-debug-customer-order-analytics/ha
     high-availability.type: kubernetes
     jobmanager.archive.fs.dir: s3://local-rocksdb-test/kind-local/flink-common/completed-jobs
+    jobmanager.memory.jvm-metaspace.size: 128m
+    jobmanager.memory.jvm-overhead.min: 64m
     kafka.bootstrap.servers: warpstream-agent.lakehouse-warpstream.svc.cluster.local:9092
     state.backend.rocksdb.localdir: /data/rocksdb
     state.backend.type: rocksdb
+    taskmanager.memory.jvm-metaspace.size: 128m
+    taskmanager.memory.jvm-overhead.min: 64m
     taskmanager.numberOfTaskSlots: "1"
   flinkVersion: v2_1
   image: flink-test:2.1.1
