@@ -1,0 +1,90 @@
+coordinator:
+  jvm:
+    maxHeapSize: "512M"
+  additionalJVMConfig:
+    - "-XX:ReservedCodeCacheSize=128M"
+  config:
+    memory:
+      heapHeadroomPerNode: "128MB"
+    query:
+      maxMemoryPerNode: "256MB"
+  resources:
+    requests:
+      memory: 768Mi
+      cpu: 150m
+    limits:
+      memory: 1280Mi
+      cpu: 750m
+
+env:
+  - name: POLARIS_ROOT_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: trino-polaris-credentials
+        key: polaris-root-password
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_ACCESS_KEY
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_SECRET_KEY
+  - name: AWS_REGION
+    valueFrom:
+      secretKeyRef:
+        name: iceberg-bucket-credentials
+        key: AWS_REGION
+
+worker:
+  jvm:
+    maxHeapSize: "512M"
+  additionalJVMConfig:
+    - "-XX:ReservedCodeCacheSize=128M"
+  config:
+    memory:
+      heapHeadroomPerNode: "128MB"
+    query:
+      maxMemoryPerNode: "256MB"
+  replicas: 1
+  resources:
+    requests:
+      memory: 768Mi
+      cpu: 150m
+    limits:
+      memory: 1280Mi
+      cpu: 750m
+
+server:
+  workers: 1
+  config:
+    query:
+      maxMemory: "256MB"
+
+additionalConfigProperties:
+  - query.max-run-time=10m
+  - query.max-execution-time=10m
+  - spill-enabled=true
+  - spiller-spill-path=/tmp/trino-spill
+
+catalogs:
+  polaris: |
+    connector.name=iceberg
+    iceberg.catalog.type=rest
+    iceberg.rest-catalog.uri=http://polaris.lakehouse-polaris.svc.cluster.local:8181/api/catalog
+    iceberg.rest-catalog.warehouse=lakehouse_kind_local
+    iceberg.rest-catalog.security=OAUTH2
+    iceberg.rest-catalog.oauth2.credential=root:${ENV:POLARIS_ROOT_PASSWORD}
+    iceberg.rest-catalog.oauth2.scope=PRINCIPAL_ROLE:ALL
+    iceberg.rest-catalog.oauth2.server-uri=http://polaris.lakehouse-polaris.svc.cluster.local:8181/api/catalog/v1/oauth/tokens
+    fs.native-s3.enabled=true
+    s3.endpoint=https://s3.amazonaws.com
+    s3.region=${ENV:AWS_REGION}
+  tpch: |
+    connector.name=tpch
+    tpch.splits-per-node=4
+  tpcds: |
+    connector.name=tpcds
+    tpcds.splits-per-node=4

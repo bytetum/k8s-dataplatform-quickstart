@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  name: openmetadata-dependencies
+  namespace: argocd
+spec:
+  destination:
+    namespace: openmetadata
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+  - chart: openmetadata-dependencies
+    helm:
+      valueFiles:
+      - $values/gitops/manifests/openmetadata-dependencies/values.yaml
+    repoURL: https://helm.open-metadata.org/
+    targetRevision: 1.12.1
+  - directory:
+      recurse: true
+    path: gitops/manifests/openmetadata-dependencies
+    ref: values
+    repoURL: git@github.com:bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: HEAD
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - CreateNamespace=true

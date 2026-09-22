@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marquez-postgres
+  namespace: marquez
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marquez-postgres
+  template:
+    metadata:
+      labels:
+        app: marquez-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: marquez
+            - name: POSTGRES_USER
+              value: marquez
+            - name: POSTGRES_PASSWORD
+              value: marquez
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marquez-postgres
+  namespace: marquez
+spec:
+  selector:
+    app: marquez-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

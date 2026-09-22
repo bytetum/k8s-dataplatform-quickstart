@@ -1,0 +1,5 @@
+config:
+  applications:manifests_root: ../environments/kind/manifests/applications
+  applications:profile: kind-local
+  applications:reuse_existing_operators: "true"
+encryptionsalt: v1:1uxEZhjupGo=:v1:4Wl1Udk62bej8xdI:a9/9Yq8nio6S6lKa5jymzvGMqX/oUg==

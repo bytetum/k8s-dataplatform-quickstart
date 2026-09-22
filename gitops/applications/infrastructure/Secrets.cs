@@ -1,5 +1,10 @@
+using System.Collections.Generic;
 ﻿using Pulumi.Crds.ExternalSecrets;
+using Pulumi.Kubernetes.Core.V1;
+using Pulumi.Kubernetes.Rbac.V1;
+using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
+using Pulumi.Kubernetes.Types.Inputs.Rbac.V1;
 
 namespace applications.infrastructure;
 
@@ -8,8 +13,6 @@ internal class Secrets : ComponentResource
     public Secrets(string manifestsRoot)
         : base("secrets", "secrets")
     {
-        var config = new Config("scaleway");
-
         var provider = new Kubernetes.Provider("yaml-provider", new()
         {
             RenderYamlToDirectory = $"{manifestsRoot}/secrets"
@@ -18,57 +21,141 @@ internal class Secrets : ComponentResource
             Parent = this
         });
 
-        var secretStore = new ClusterSecretStore("secret-store", new()
-        {
-            Metadata = new ObjectMetaArgs
-            {
-                Name = "secret-store",
-                Namespace = "external-secrets",
-            },
-            Spec = new ClusterSecretStoreSpecArgs
-            {
-                Provider = new ClusterSecretStoreSpecProviderArgs
-                {
-                    //MARK: change
-                    Fake = new ClusterSecretStoreSpecProviderFakeArgs
-                    {
-                        Data = new InputList<ClusterSecretStoreProviderDataFakeArgs>()
-                        {
-                            new ClusterSecretStoreProviderDataFakeArgs
-                            {
-                                Key = "id:c2f85be8-7fd0-402d-8229-6de987bcbbb4",
-                                Value = "{\"SCALEWAY_ACCESS_KEY\": \"ACCESS_KEY\", \"SCALEWAY_SECRET_KEY\": \"SECRET_KEY\"}",
-                                Version = "latest_enabled"
-                            },
-                            new ClusterSecretStoreProviderDataFakeArgs
-                            {
-                                //wait for PE to generate
-                                Key = "id:842cb98e-9786-4cc6-9af7-424f9278d802",
-                                Value = "{\"public.pem\": \"value\", \"private.pem\": \"value\"}",
-                                Version = "latest_enabled",
-                            },
-                            new ClusterSecretStoreProviderDataFakeArgs
-                            {
-                                Key = "id:842cb98e-9786-4cc6-9af7-424f9278d808",
-                                Value = "{\"db-address\": \"postgres-service\", \"username\": \"value\", \"password\": \"value\"}",
-                                Version = "latest_enabled",
-                            },
-                            new ClusterSecretStoreProviderDataFakeArgs
-                            {
-                                Key = "id:polaris-root-password",
-                                Value = "{\"polaris-root-password\": \"s3cr3t\"}",
-                                Version = "latest_enabled",
-                            }
-                        }
-                    }
-                    //MARK: endchange
-                }
-            }
-        }, new()
+        var resourceOptions = new CustomResourceOptions
         {
             Provider = provider,
             Parent = this,
+        };
+
+        var sourceNamespace = new Namespace("local-secrets-namespace", new NamespaceArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = SecretSources.Namespace,
+            },
+        }, resourceOptions);
+
+        var readerServiceAccount = new ServiceAccount("local-secret-store-reader", new ServiceAccountArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = SecretSources.ReaderServiceAccountName,
+                Namespace = SecretSources.Namespace,
+            },
+        }, resourceOptions);
+
+        var readerRole = new Role("local-secret-store-reader", new RoleArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = SecretSources.ReaderServiceAccountName,
+                Namespace = SecretSources.Namespace,
+            },
+            Rules = new InputList<PolicyRuleArgs>
+            {
+                new PolicyRuleArgs
+                {
+                    ApiGroups = new InputList<string> { "" },
+                    Resources = new InputList<string> { "secrets" },
+                    Verbs = new InputList<string> { "get", "list", "watch" },
+                },
+                new PolicyRuleArgs
+                {
+                    ApiGroups = new InputList<string> { "authorization.k8s.io" },
+                    Resources = new InputList<string> { "selfsubjectrulesreviews" },
+                    Verbs = new InputList<string> { "create" },
+                },
+            },
+        }, resourceOptions);
+
+        var readerRoleBinding = new RoleBinding("local-secret-store-reader", new RoleBindingArgs
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = SecretSources.ReaderServiceAccountName,
+                Namespace = SecretSources.Namespace,
+            },
+            RoleRef = new RoleRefArgs
+            {
+                ApiGroup = "rbac.authorization.k8s.io",
+                Kind = "Role",
+                Name = readerRole.Metadata.Apply(metadata => metadata.Name),
+            },
+            Subjects = new InputList<SubjectArgs>
+            {
+                new SubjectArgs
+                {
+                    Kind = "ServiceAccount",
+                    Name = readerServiceAccount.Metadata.Apply(metadata => metadata.Name),
+                    Namespace = SecretSources.Namespace,
+                },
+            },
+        }, resourceOptions);
+
+        var secretStore = new ClusterSecretStore("local-kubernetes-secret-store", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = SecretSources.StoreName,
+            },
+            Spec = new ClusterSecretStoreSpecArgs
+            {
+                Conditions = new InputList<ClusterSecretStoreSpecConditionsArgs>
+                {
+                    new ClusterSecretStoreSpecConditionsArgs
+                    {
+                        Namespaces = WatchedNamespaces(),
+                    },
+                },
+                Provider = new ClusterSecretStoreSpecProviderArgs
+                {
+                    Kubernetes = new ClusterSecretStoreSpecProviderKubernetesArgs
+                    {
+                        RemoteNamespace = SecretSources.Namespace,
+                        Server = new ClusterSecretStoreSpecProviderKubernetesServerArgs
+                        {
+                            CaProvider = new ClusterSecretStoreSpecProviderKubernetesCaProviderArgs
+                            {
+                                Type = "ConfigMap",
+                                Name = "kube-root-ca.crt",
+                                Key = "ca.crt",
+                                Namespace = SecretSources.Namespace,
+                            },
+                        },
+                        Auth = new ClusterSecretStoreSpecProviderKubernetesAuthArgs
+                        {
+                            ServiceAccount = new ClusterSecretStoreSpecProviderKubernetesServiceAccountArgs
+                            {
+                                Name = SecretSources.ReaderServiceAccountName,
+                                Namespace = SecretSources.Namespace,
+                            },
+                        },
+                    },
+                },
+            },
+        }, new CustomResourceOptions
+        {
+            Provider = provider,
+            Parent = this,
+            DependsOn = readerRoleBinding,
         });
     }
-}
 
+    private static InputList<string> WatchedNamespaces()
+    {
+        var namespaces = new List<string>
+        {
+            Constants.KafkaConnectNamespace,
+            Constants.PolarisNamespace,
+            Constants.TrinoNamespace,
+            Constants.WarpStreamNamespace,
+            applications.flink.Constants.Namespace,
+        };
+        if (Constants.IsKindLocal)
+        {
+            namespaces.Add(Constants.MarquezNamespace);
+            namespaces.Add(Constants.OpenMetadataNamespace);
+        }
+        return namespaces;
+    }
+}

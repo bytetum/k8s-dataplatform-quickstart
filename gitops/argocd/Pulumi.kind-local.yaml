@@ -1,0 +1,13 @@
+config:
+  argocd:kube_context: kind-kind
+  argocd:repo_url: https://github.com/bytetum/k8s-dataplatform-quickstart.git
+  argocd:target_revision: master
+  argocd:manifests_path: ../environments/kind/manifests/argocd
+  argocd:profile: full
+  argocd:auto_sync: "false"
+  argocd:auto_prune: "false"
+  argocd:self_heal: "false"
+  argocd:manifest_root: gitops/environments/kind/manifests/applications
+  argocd:reuse_existing_operators: "true"
+  argocd:isolated_namespaces: "true"
+encryptionsalt: v1:obd0RLF96JI=:v1:JsuNxKNGObTqbgQW:StiZ8cVH6r3Q+w8X33kiGu7he3gFGg==

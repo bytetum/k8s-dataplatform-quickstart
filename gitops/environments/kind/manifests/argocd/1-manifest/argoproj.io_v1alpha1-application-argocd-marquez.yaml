@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  name: marquez
+  namespace: argocd
+spec:
+  destination:
+    namespace: lakehouse-marquez
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+  - helm:
+      valueFiles:
+      - $values/gitops/environments/kind/manifests/applications/marquez/values.yaml
+    path: chart
+    repoURL: https://github.com/MarquezProject/marquez.git
+    targetRevision: main
+  - directory:
+      exclude: values.yaml
+      recurse: true
+    path: gitops/environments/kind/manifests/applications/marquez
+    ref: values
+    repoURL: https://github.com/bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: master
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+    - CreateNamespace=true

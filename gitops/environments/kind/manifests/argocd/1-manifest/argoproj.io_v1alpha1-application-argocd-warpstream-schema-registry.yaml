@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  name: warpstream-schema-registry
+  namespace: argocd
+spec:
+  destination:
+    namespace: lakehouse-warpstream
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+  - directory:
+      exclude: values.yaml
+      recurse: true
+    path: gitops/environments/kind/manifests/applications/warpstream-schema-registry
+    ref: values
+    repoURL: https://github.com/bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: master
+  - chart: warpstream-agent
+    helm:
+      valueFiles:
+      - $values/gitops/environments/kind/manifests/applications/warpstream-schema-registry/values.yaml
+    repoURL: https://warpstreamlabs.github.io/charts
+    targetRevision: 1.0.5
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true

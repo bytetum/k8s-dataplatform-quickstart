@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  name: openmetadata
+  namespace: argocd
+spec:
+  destination:
+    namespace: lakehouse-openmetadata
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+  - chart: openmetadata
+    helm:
+      valueFiles:
+      - $values/gitops/environments/kind/manifests/applications/openmetadata/values.yaml
+    repoURL: https://helm.open-metadata.org/
+    targetRevision: 1.12.1
+  - directory:
+      exclude: values.yaml
+      recurse: true
+    path: gitops/environments/kind/manifests/applications/openmetadata
+    ref: values
+    repoURL: https://github.com/bytetum/k8s-dataplatform-quickstart.git
+    targetRevision: master
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+    - CreateNamespace=true

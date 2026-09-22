@@ -1,0 +1,56 @@
+marquez:
+  # marquezproject/marquez:0.51.1 and marquez-web:0.51.1 are linux/amd64 only.
+  port: 5000
+  adminPort: 5001
+  migrateOnStartup: true
+  db:
+    host: marquez-postgresql
+    port: 5432
+    name: marquez
+    user: marquez
+    # The chart reads this from postgresql.auth.existingSecret.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+
+web:
+  enabled: true
+  port: 3000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# Use the chart's PostgreSQL subchart for a fresh local database.  Its data
+# volume is durable and its password is sourced from the ExternalSecret emitted
+# by the applications Pulumi stack.
+postgresql:
+  enabled: true
+  # The Marquez chart's default tag is not a Bitnami image tag, and current
+  # docker.io/bitnami images are not available to this cluster.
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/postgresql
+    tag: 14.17.0-debian-12-r1
+  auth:
+    username: marquez
+    database: marquez
+    existingSecret: marquez-postgres-credentials
+  primary:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    persistence:
+      enabled: true
+      size: 1Gi

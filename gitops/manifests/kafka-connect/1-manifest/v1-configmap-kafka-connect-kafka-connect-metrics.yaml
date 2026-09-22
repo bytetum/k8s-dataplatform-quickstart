@@ -1,0 +1,27 @@
+apiVersion: v1
+data:
+  metrics-config.yml: |-
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    rules:
+    # DLQ metrics (most important)
+    - pattern: kafka.connect<type=task-error-metrics, connector=(.+), task=(.+)><>(total-record-errors|deadletterqueue-produce-requests)
+      name: kafka_connect_task_error_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+
+    # Connector status
+    - pattern: kafka.connect<type=connect-worker-metrics><>(connector-count|task-count)
+      name: kafka_connect_worker_$1
+
+    # Task metrics
+    - pattern: kafka.connect<type=sink-task-metrics, connector=(.+), task=(.+)><>(sink-record-send-total|offset-commit-completion-total)
+      name: kafka_connect_sink_task_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+kind: ConfigMap
+metadata:
+  name: kafka-connect-metrics
+  namespace: kafka-connect

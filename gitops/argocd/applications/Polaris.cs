@@ -2,16 +2,17 @@ namespace argocd.applications;
 
 public class Polaris
 {
-    public Polaris(Pulumi.Kubernetes.Provider provider)
+    public Polaris(Pulumi.Kubernetes.Provider provider, ArgoApplicationSettings settings)
     {
-        new ArgoApplicationBuilder("polaris", provider)
+        new ArgoApplicationBuilder("polaris", provider, settings)
             .AddSource(ApplicationType.Helm)
-            .Branch("1.0.0-incubating")
+            .Branch("1.3.0-incubating")
             .RepoUrl("https://downloads.apache.org/incubator/polaris/helm-chart")
-            .AddValueFile("$values/gitops/manifests/polaris/values.yaml")
+            .AddValueFile($"$values/{settings.ManifestRoot}/polaris/values.yaml")
             .AddSource(ApplicationType.Yaml)
             .AsValueSource("values")
             .SyncWave(2)
+            .InNamespace(settings.WorkloadNamespace("polaris", "lakehouse-polaris"))
             .Build();
     }
 }

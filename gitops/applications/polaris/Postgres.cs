@@ -1,10 +1,11 @@
+using System.Collections.Generic;
 using Pulumi.Crds.ExternalSecrets;
 using Pulumi.Kubernetes.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Apps.V1;
 using Pulumi.Kubernetes.Types.Inputs.Core.V1;
 using Pulumi.Kubernetes.Types.Inputs.Meta.V1;
 
-namespace applications.Polaris;
+namespace applications.postgres;
 
 public class Postgres : ComponentResource
 {
@@ -18,37 +19,75 @@ public class Postgres : ComponentResource
             Parent = this
         });
 
-        var postgresCred = new ExternalSecret("polaris-postgres-credentials", new()
+        var postgresCredentials = new ExternalSecret("polaris-postgres-credentials", new()
         {
             Metadata = new ObjectMetaArgs
             {
                 Name = "polaris-postgres-credentials",
-                Namespace = "polaris",
+                Namespace = Constants.PolarisNamespace,
             },
             Spec = new ExternalSecretSpecArgs
             {
-                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs()
+                SecretStoreRef = new ExternalSecretSpecSecretStoreRefArgs
                 {
-                    Name = "secret-store",
-                    Kind = "ClusterSecretStore"
+                    Name = SecretSources.StoreName,
+                    Kind = "ClusterSecretStore",
                 },
-                Target = new ExternalSecretSpecTargetArgs()
+                Target = new ExternalSecretSpecTargetArgs
                 {
-                    Name = "polaris-postgres-credentials"
+                    Name = "polaris-postgres-credentials",
+                    Template = Constants.IsKindLocal
+                        ? new ExternalSecretSpecTargetTemplateArgs
+                        {
+                            Data = new Dictionary<string, string>
+                            {
+                                ["username"] = "{{ .username }}",
+                                ["password"] = "{{ .password }}",
+                                ["jdbcUrl"] = $"jdbc:postgresql://postgres-service:5432/{Constants.PolarisDatabase}",
+                            },
+                        }
+                        : null!,
                 },
-                DataFrom = new ExternalSecretSpecDataFromArgs()
+                DataFrom = new ExternalSecretSpecDataFromArgs
                 {
-                    Extract = new ExternalSecretSpecDataFromExtractArgs()
+                    Extract = new ExternalSecretSpecDataFromExtractArgs
                     {
-                        Key = "id:842cb98e-9786-4cc6-9af7-424f9278d808"
-                    }
-                }
-            }
+                        Key = SecretSources.PolarisPostgresCredentials,
+                    },
+                },
+            },
+        }, new CustomResourceOptions
+        {
+            Parent = this,
+            Provider = provider,
+        });
+
+        // Kind-local keeps catalog metadata on a durable PVC.  mac-local
+        // keeps the original pod-local database layout.
+        PersistentVolumeClaim? postgresData = null;
+        if (Constants.IsKindLocal)
+        {
+        postgresData = new PersistentVolumeClaim("polaris-postgres-data", new()
+        {
+            Metadata = new ObjectMetaArgs
+            {
+                Name = "polaris-postgres-data",
+                Namespace = Constants.PolarisNamespace,
+            },
+            Spec = new PersistentVolumeClaimSpecArgs
+            {
+                AccessModes = new InputList<string> { "ReadWriteOnce" },
+                Resources = new VolumeResourceRequirementsArgs
+                {
+                    Requests = new InputMap<string> { { "storage", "2Gi" } },
+                },
+            },
         }, new()
         {
             Parent = this,
-            Provider = provider
+            Provider = provider,
         });
+        }
 
         // Replace Pod with Deployment
         var postgresDeployment = new Pulumi.Kubernetes.Apps.V1.Deployment("postgres-deployment", new DeploymentArgs
@@ -56,7 +95,7 @@ public class Postgres : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "postgres-deployment",
-                Namespace = "polaris",
+                Namespace = Constants.PolarisNamespace,
                 Labels =
                 {
                     { "app", "postgres" }
@@ -88,7 +127,20 @@ public class Postgres : ComponentResource
                             new ContainerArgs
                             {
                                 Name = "postgres-container",
-                                Image = "postgres:14",
+                                Image = Constants.IsKindLocal ? "postgres:14.18-bookworm" : "postgres:14",
+                                Resources = Constants.IsKindLocal ? new ResourceRequirementsArgs
+                                {
+                                    Requests = new InputMap<string>
+                                    {
+                                        { "cpu", "50m" },
+                                        { "memory", "256Mi" },
+                                    },
+                                    Limits = new InputMap<string>
+                                    {
+                                        { "cpu", "500m" },
+                                        { "memory", "768Mi" },
+                                    },
+                                } : null!,
                                 Ports =
                                 {
                                     new ContainerPortArgs
@@ -96,24 +148,23 @@ public class Postgres : ComponentResource
                                         ContainerPortValue = 5432
                                     }
                                 },
-                                Env =
-                                {
+                                VolumeMounts = Constants.IsKindLocal
+                                    ? new InputList<VolumeMountArgs>
+                                    {
+                                        new VolumeMountArgs
+                                        {
+                                            Name = "postgres-data",
+                                            MountPath = "/var/lib/postgresql/data",
+                                        },
+                                    }
+                                    : null!,
+                                Env = Constants.IsKindLocal
+                                    ? new InputList<EnvVarArgs>
+                                    {
                                     new EnvVarArgs
                                     {
                                         Name = "POSTGRES_DB",
-                                        Value = "database-test"
-                                    },
-                                    new EnvVarArgs
-                                    {
-                                        Name = "POSTGRES_HOST",
-                                        ValueFrom = new EnvVarSourceArgs
-                                        {
-                                            SecretKeyRef = new SecretKeySelectorArgs
-                                            {
-                                                Name = postgresCred.Metadata.Apply(m => m.Name),
-                                                Key = "db-address"
-                                            }
-                                        }
+                                        Value = Constants.PolarisDatabase
                                     },
                                     new EnvVarArgs
                                     {
@@ -122,10 +173,10 @@ public class Postgres : ComponentResource
                                         {
                                             SecretKeyRef = new SecretKeySelectorArgs
                                             {
-                                                Name = postgresCred.Metadata.Apply(m => m.Name),
-                                                Key = "username"
-                                            }
-                                        }
+                                                Name = "polaris-postgres-credentials",
+                                                Key = "username",
+                                            },
+                                        },
                                     },
                                     new EnvVarArgs
                                     {
@@ -134,14 +185,71 @@ public class Postgres : ComponentResource
                                         {
                                             SecretKeyRef = new SecretKeySelectorArgs
                                             {
-                                                Name = postgresCred.Metadata.Apply(m => m.Name),
+                                                Name = "polaris-postgres-credentials",
                                                 Key = "password"
                                             }
                                         }
                                     },
-                                }
+                                    }
+                                    : new InputList<EnvVarArgs>
+                                    {
+                                        new EnvVarArgs
+                                        {
+                                            Name = "POSTGRES_DB",
+                                            Value = "polaris"
+                                        },
+                                        new EnvVarArgs
+                                        {
+                                            Name = "POSTGRES_HOST",
+                                            ValueFrom = new EnvVarSourceArgs
+                                            {
+                                                SecretKeyRef = new SecretKeySelectorArgs
+                                                {
+                                                    Name = postgresCredentials.Metadata.Apply(m => m.Name),
+                                                    Key = "db-address"
+                                                }
+                                            }
+                                        },
+                                        new EnvVarArgs
+                                        {
+                                            Name = "POSTGRES_USER",
+                                            ValueFrom = new EnvVarSourceArgs
+                                            {
+                                                SecretKeyRef = new SecretKeySelectorArgs
+                                                {
+                                                    Name = postgresCredentials.Metadata.Apply(m => m.Name),
+                                                    Key = "username"
+                                                }
+                                            }
+                                        },
+                                        new EnvVarArgs
+                                        {
+                                            Name = "POSTGRES_PASSWORD",
+                                            ValueFrom = new EnvVarSourceArgs
+                                            {
+                                                SecretKeyRef = new SecretKeySelectorArgs
+                                                {
+                                                    Name = postgresCredentials.Metadata.Apply(m => m.Name),
+                                                    Key = "password"
+                                                }
+                                            }
+                                        },
+                                    },
                             }
-                        }
+                        },
+                        Volumes = Constants.IsKindLocal
+                            ? new InputList<VolumeArgs>
+                            {
+                                new VolumeArgs
+                                {
+                                    Name = "postgres-data",
+                                    PersistentVolumeClaim = new PersistentVolumeClaimVolumeSourceArgs
+                                    {
+                                        ClaimName = postgresData!.Metadata.Apply(m => m.Name),
+                                    },
+                                },
+                            }
+                            : null!,
                     }
                 }
             }
@@ -149,7 +257,9 @@ public class Postgres : ComponentResource
         {
             Parent = this,
             Provider = provider,
-            DependsOn = new[] { postgresCred }
+            DependsOn = Constants.IsKindLocal
+                ? new Resource[] { postgresCredentials, postgresData! }
+                : new Resource[] { postgresCredentials }
         });
 
         var postgresService = new Service("postgres-service", new ServiceArgs
@@ -157,7 +267,7 @@ public class Postgres : ComponentResource
             Metadata = new ObjectMetaArgs
             {
                 Name = "postgres-service",
-                Namespace = "polaris"
+                Namespace = Constants.PolarisNamespace
             },
             Spec = new ServiceSpecArgs
             {

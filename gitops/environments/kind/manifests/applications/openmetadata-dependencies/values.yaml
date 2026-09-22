@@ -1,0 +1,192 @@
+global:
+  security:
+    allowInsecureImages: true
+
+mysql:
+  enabled: true
+  fullnameOverride: mysql
+  architecture: standalone
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/mysql
+    tag: 8.0.37-debian-12-r2
+    pullPolicy: IfNotPresent
+  auth:
+    username: openmetadata_user
+    database: openmetadata_db
+    existingSecret: mysql-secrets
+  # Airflow has its own metadata schema while sharing the local MySQL pod.
+  initdbScripts:
+    01-airflow.sql: |
+      CREATE DATABASE IF NOT EXISTS airflow_db;
+      GRANT ALL PRIVILEGES ON airflow_db.* TO 'openmetadata_user'@'%';
+      FLUSH PRIVILEGES;
+  primary:
+    extraFlags: "--sort_buffer_size=10M"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    persistence:
+      enabled: true
+      size: 2Gi
+
+opensearch:
+  enabled: true
+  clusterName: opensearch
+  fullnameOverride: opensearch
+  nodeGroup: ""
+  imagePullPolicy: IfNotPresent
+  opensearchJavaOpts: "-Xmx512m -Xms512m"
+  persistence:
+    enabled: true
+    size: 2Gi
+  protocol: http
+  config:
+    opensearch.yml: |
+      plugins.security.disabled: true
+      indices.query.bool.max_clause_count: 4096
+  singleNode: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 750m
+      memory: 1Gi
+
+airflow:
+  enabled: true
+  # Let the chart generate its own webserver key; credentials used by the
+  # OpenMetadata client and metadata DB come from ExternalSecrets.
+  webserverSecretKey: ""
+  images:
+    airflow:
+      repository: docker.getcollate.io/openmetadata/ingestion
+      tag: 1.12.1
+      pullPolicy: IfNotPresent
+  executor: LocalExecutor
+  env:
+    - name: AIRFLOW__API__AUTH_BACKENDS
+      value: airflow.api.auth.backend.session,airflow.api.auth.backend.basic_auth
+    - name: AIRFLOW__OPENMETADATA_AIRFLOW_APIS__DAG_GENERATED_CONFIGS
+      value: /opt/airflow/dags
+    - name: _PIP_ADDITIONAL_REQUIREMENTS
+      value: apache-airflow-providers-fab==2.4.4
+  scheduler:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+  webserver:
+    enabled: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    defaultUser:
+      enabled: true
+      role: Admin
+      username: admin
+      email: admin@example.com
+      firstName: admin
+      lastName: user
+      # The create-user args below read the actual password from
+      # AIRFLOW_ADMIN_PASSWORD instead of rendering a credential here.
+      password: ""
+  createUserJob:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+    # The dependency app's ExternalSecret supplies the fresh isolated admin
+    # credential.  Use a valid env name while selecting its hyphenated Secret
+    # key; envFrom would drop that key as an invalid environment variable.
+    env:
+      - name: AIRFLOW_ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: airflow-secrets
+            key: openmetadata-airflow-password
+    args:
+      - bash
+      - -c
+      - |-
+        exec \
+        airflow {{ semverCompare ">=2.0.0" .Values.airflowVersion | ternary "users create" "create_user" }} "$@" -p "$AIRFLOW_ADMIN_PASSWORD"
+      - --
+      - -r
+      - "{{ .Values.webserver.defaultUser.role }}"
+      - -u
+      - "{{ .Values.webserver.defaultUser.username }}"
+      - -e
+      - "{{ .Values.webserver.defaultUser.email }}"
+      - -f
+      - "{{ .Values.webserver.defaultUser.firstName }}"
+      - -l
+      - "{{ .Values.webserver.defaultUser.lastName }}"
+  migrateDatabaseJob:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+  triggerer:
+    enabled: false
+  dagProcessor:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+  postgresql:
+    enabled: false
+  workers:
+    replicas: 0
+  flower:
+    enabled: false
+  redis:
+    enabled: false
+  statsd:
+    enabled: false
+  data:
+    metadataSecretName: airflow-metadata-secret
+  dags:
+    persistence:
+      enabled: true
+      size: 1Gi
+  logs:
+    persistence:
+      enabled: false
+  apiServer:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    extraVolumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: '{{ include "airflow.fullname" . }}-dags'
+    extraVolumeMounts:
+      - name: dags
+        mountPath: /opt/airflow/dags
